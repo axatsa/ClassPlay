@@ -230,8 +230,9 @@ const WordSearch = () => {
               ) : (
                 <div
                   className="bg-gray-50 rounded-3xl p-4 border border-gray-200 shadow-sm select-none"
-                  onMouseLeave={endSelect}
-                  onMouseUp={endSelect}
+                  style={{ touchAction: "none" }}
+                  onPointerLeave={endSelect}
+                  onPointerUp={endSelect}
                 >
                   <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)` }}>
                     {grid.map((row, r) =>
@@ -239,19 +240,19 @@ const WordSearch = () => {
                         const sel = isSelecting(r, c);
                         const hiClass = getHighlightClass(r, c);
                         return (
-                          <motion.div
+                          <div
                             key={`${r}-${c}`}
-                            onMouseDown={() => startSelect(r, c)}
-                            onMouseEnter={() => moveSelect(r, c)}
-                            onMouseUp={endSelect}
-                            whileHover={{ scale: 1.05 }}
+                            onPointerDown={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); startSelect(r, c); }}
+                            onPointerEnter={() => moveSelect(r, c)}
+                            onPointerUp={endSelect}
                             className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold font-mono cursor-pointer select-none transition-colors ${hiClass ? `${hiClass} text-white shadow-sm` :
                               sel ? "bg-yellow-300 text-yellow-900 shadow-sm" :
                                 "bg-white border border-gray-200 text-gray-700 hover:bg-blue-50 hover:border-blue-200"
                               }`}
+                            style={{ touchAction: "none", userSelect: "none" }}
                           >
                             {letter}
-                          </motion.div>
+                          </div>
                         );
                       })
                     )}

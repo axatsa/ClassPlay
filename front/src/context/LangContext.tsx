@@ -209,6 +209,11 @@ export const translations = {
     game_word_search_sub: "Поиск слов",
     game_word_search_cat: "Язык",
     game_word_search_how: "Найдите все спрятанные слова в сетке букв. Слова могут быть расположены по горизонтали и вертикали.",
+
+    game_crossword_title: "Кроссворд",
+    game_crossword_sub: "Интерактивный кроссворд",
+    game_crossword_cat: "Язык",
+    game_crossword_how: "AI генерирует кроссворд по любой теме. Нажмите на подсказку, чтобы выбрать слово, и введите буквы в сетку. Нажмите 'Проверить' — правильные ответы будут зелёными, неправильные — красными. Заполните все слова правильно чтобы победить!",
   },
 
   uz: {
@@ -384,6 +389,11 @@ export const translations = {
     game_word_search_sub: "So'z qidirish",
     game_word_search_cat: "Til",
     game_word_search_how: "Harflar tarmog'idan barcha yashiringan so'zlarni toping. So'zlar gorizontal va vertikal joylashishi mumkin.",
+
+    game_crossword_title: "Krossvord",
+    game_crossword_sub: "Interaktiv krossvord",
+    game_crossword_cat: "Til",
+    game_crossword_how: "AI ixtiyoriy mavzuda krossvord yaratadi. Ko'rsatmani bosib so'zni tanlang, so'ng katakchalarga harflar kiriting. 'Tekshirish'ni bosing — to'g'ri javoblar yashil, noto'g'rilar qizil bo'ladi. Barcha so'zlarni to'g'ri to'ldiring va g'alaba qozonasiz!",
   },
 } as const;
 

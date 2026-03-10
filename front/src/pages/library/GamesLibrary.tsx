@@ -18,6 +18,7 @@ const coverImages: Record<string, string> = {
   "memory": gameMemory,
   "scales": gameScales,
   "word-search": gameWordSearch,
+  "crossword": gameWordSearch, // reuse word-search image
 };
 
 const GamesLibrary = () => {

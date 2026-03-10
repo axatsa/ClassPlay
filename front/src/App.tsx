@@ -20,6 +20,7 @@ import Jeopardy from "./pages/games/Jeopardy";
 import MemoryMatrix from "./pages/games/MemoryMatrix";
 import BalanceScales from "./pages/games/BalanceScales";
 import WordSearch from "./pages/games/WordSearch";
+import Crossword from "./pages/games/Crossword";
 import Profile from "./pages/dashboard/Profile";
 import Library from "./pages/library/Library";
 import NotFound from "./pages/NotFound";
@@ -101,6 +102,7 @@ const App = () => (
                 <Route path="/games/memory" element={<ProtectedRoute allowedRoles={["teacher"]}><MemoryMatrix /></ProtectedRoute>} />
                 <Route path="/games/scales" element={<ProtectedRoute allowedRoles={["teacher"]}><BalanceScales /></ProtectedRoute>} />
                 <Route path="/games/word-search" element={<ProtectedRoute allowedRoles={["teacher"]}><WordSearch /></ProtectedRoute>} />
+                <Route path="/games/crossword" element={<ProtectedRoute allowedRoles={["teacher"]}><Crossword /></ProtectedRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

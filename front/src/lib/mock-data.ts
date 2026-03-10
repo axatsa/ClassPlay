@@ -61,6 +61,16 @@ export const GAMES_CONFIG: Game[] = [
     route: "/games/word-search",
     howToPlay: "A grid of letters hides hidden words related to your chosen topic. Drag across letters to highlight and find words. Found words are crossed off the list. Find all words to win! Choose difficulty for more directions.",
   },
+  {
+    id: "crossword",
+    title: "Кроссворд",
+    subtitle: "Interactive Crossword",
+    category: "Language",
+    rating: 4.8,
+    coverImage: "crossword",
+    route: "/games/crossword",
+    howToPlay: "AI generates a crossword on any topic you choose. Click a clue to select a word, then type letters in the grid. Press 'Check' to see which answers are correct (green) or wrong (red). Fill all words correctly to win!",
+  },
 ];
 
 export const mathProblems = [
