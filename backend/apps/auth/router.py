@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User
-from schemas import UserLogin, Token, ChangePasswordRequest
+from apps.auth.models import User
+from apps.auth.schemas import UserLogin, Token, ChangePasswordRequest
+from apps.auth.dependencies import get_current_user
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta, datetime
-from dependencies import get_current_user
 from jose import jwt
 from passlib.context import CryptContext
 

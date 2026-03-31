@@ -3,28 +3,20 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from typing import List
 from database import get_db
-from models import User, TokenUsage, Organization, Payment, AuditLog
-from schemas import (
-    UserResponse, OrganizationResponse, OrganizationCreate, 
-    PaymentResponse, PaymentCreate, AuditLogResponse
+
+from apps.auth.models import User, AuditLog
+from apps.generator.models import TokenUsage
+from apps.admin.models import Organization, Payment
+
+from apps.auth.schemas import UserResponse, AuditLogResponse
+from apps.admin.schemas import (
+    OrganizationResponse, OrganizationCreate, 
+    PaymentResponse, PaymentCreate, 
+    CreateTeacherRequest, TokenUsageStats
 )
-from dependencies import require_admin, get_current_user
-from pydantic import BaseModel
-from datetime import datetime
+from apps.auth.dependencies import require_admin, get_current_user
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
-
-class CreateTeacherRequest(BaseModel):
-    email: str
-    password: str
-    full_name: str
-
-class TokenUsageStats(BaseModel):
-    user_id: int
-    full_name: str
-    email: str
-    total_tokens: int
-    last_active: str | None
 
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -75,7 +67,6 @@ def delete_teacher(user_id: int, db: Session = Depends(get_db), admin: User = De
 
 @router.get("/analytics", response_model=List[TokenUsageStats])
 def get_analytics(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    # Aggregate tokens per user
     stats = db.query(
         User.id, 
         User.full_name, 
@@ -112,7 +103,6 @@ def create_org(req: OrganizationCreate, db: Session = Depends(get_db), admin: Us
     db.commit()
     db.refresh(org)
     
-    # Audit Log
     log = AuditLog(action="Create Org", target=org.name, user_id=admin.id, log_type="success")
     db.add(log)
     db.commit()

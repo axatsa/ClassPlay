@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
-from models import ClassGroup
-from schemas import ClassCreate, ClassResponse
+from apps.classes.models import ClassGroup
+from apps.classes.schemas import ClassCreate, ClassResponse
 
 router = APIRouter(prefix="/api/classes", tags=["classes"])
 

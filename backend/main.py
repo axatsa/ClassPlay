@@ -6,14 +6,27 @@ from slowapi.errors import RateLimitExceeded
 from rate_limiter import limiter
 from config import DATABASE_URL
 from database import engine, Base
-from routes import auth, classes, generator, admin, resources, library
+
+# Import all models to ensure they are registered with SQLAlchemy
+from apps.auth.models import User, AuditLog
+from apps.classes.models import ClassGroup
+from apps.generator.models import TokenUsage
+from apps.gamification.models import StudentProfile, XPTransaction, CoinTransaction, DailyProgress, SeasonStats, ShopItem, Purchase
+from apps.library.models import SavedResource
+from apps.admin.models import Organization, Payment
+
+from apps.auth.router import router as auth_router
+from apps.classes.router import router as classes_router
+from apps.generator.router import router as generator_router
+from apps.gamification.router import router as gamification_router
+from apps.library.router import router as library_router
+from apps.admin.router import router as admin_router
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ClassPlay API")
 
-# Rate limit exceeded handler — возвращает 429 с понятным сообщением
 app.state.limiter = limiter
 
 @app.exception_handler(RateLimitExceeded)
@@ -27,11 +40,10 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         }
     )
 
-# CORS Configuration
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "*",  # Разрешаем все для временного запуска
+    "*",
 ]
 
 app.add_middleware(
@@ -42,12 +54,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
-app.include_router(classes.router)
-app.include_router(generator.router)
-app.include_router(admin.router)
-app.include_router(resources.router)
-app.include_router(library.router)
+app.include_router(auth_router)
+app.include_router(classes_router)
+app.include_router(generator_router)
+app.include_router(gamification_router)
+app.include_router(library_router)
+app.include_router(admin_router)
 
 @app.get("/")
 def read_root():

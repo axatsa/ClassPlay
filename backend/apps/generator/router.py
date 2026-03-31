@@ -1,30 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
-from models import ClassGroup, TokenUsage, User
-from schemas import MathRequest, CrosswordRequest
+from apps.generator.models import TokenUsage
+from apps.classes.models import ClassGroup
+from apps.auth.models import User
+from apps.generator.schemas import MathRequest, CrosswordRequest, QuizRequest, AssignmentRequest, JeopardyRequest
+from apps.generator.services import check_token_quota, increment_token_usage, get_quota_info
 from services.openai_service import generate_math_problems, generate_crossword_words, generate_quiz, generate_assignment, generate_jeopardy
-from services.quota import check_token_quota, increment_token_usage
-from dependencies import get_current_user
-from pydantic import BaseModel
+from apps.auth.dependencies import get_current_user
 from typing import Optional
 from config import RATE_LIMIT_PER_HOUR
 from rate_limiter import limiter
 
 router = APIRouter(prefix="/api/generate", tags=["generator"])
-
-class QuizRequest(BaseModel):
-    topic: str
-    count: int
-    language: str = "Russian"
-    class_id: Optional[int] = None
-
-class AssignmentRequest(BaseModel):
-    subject: str
-    topic: str
-    count: int
-    language: str = "Russian"
-    class_id: Optional[int] = None
 
 def log_usage(db: Session, user_id: int, feature: str, tokens: int):
     usage = TokenUsage(user_id=user_id, feature_name=feature, tokens_total=tokens)
@@ -92,11 +80,6 @@ def gen_quiz(request: Request, req: QuizRequest, db: Session = Depends(get_db), 
         
     return {"questions": questions or []}
 
-class JeopardyRequest(BaseModel):
-    topic: str
-    language: str = "Russian"
-    class_id: Optional[int] = None
-
 @router.post("/jeopardy")
 @limiter.limit(_rate_limit)
 def gen_jeopardy(request: Request, req: JeopardyRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -133,6 +116,4 @@ def gen_assignment(request: Request, req: AssignmentRequest, db: Session = Depen
 
 @router.get("/quota")
 def get_my_quota(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """Возвращает информацию о квоте токенов текущего пользователя."""
-    from services.quota import get_quota_info
     return get_quota_info(user, db)

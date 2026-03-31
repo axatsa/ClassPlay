@@ -1,8 +1,10 @@
 import pytest
 from sqlalchemy import create_client, create_engine
 from sqlalchemy.orm import sessionmaker
-from backend.models import Base, User, StudentProfile, XPTransaction, DailyProgress
-from backend.services.gamification_service import process_activity_completion, calculate_level
+from database import Base
+from apps.auth.models import User
+from apps.gamification.models import StudentProfile, XPTransaction, DailyProgress
+from apps.gamification.services import process_activity_completion, calculate_level
 
 # Setup in-memory SQLite for testing
 engine = create_engine("sqlite:///:memory:")

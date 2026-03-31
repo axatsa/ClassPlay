@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine, Base
-from models import ClassGroup, User
+from apps.classes.models import ClassGroup
+from apps.auth.models import User
 from passlib.context import CryptContext
 
 # Init DB

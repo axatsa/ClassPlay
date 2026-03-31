@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User
+from apps.auth.models import User
 from config import SECRET_KEY, ALGORITHM
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
@@ -16,24 +16,18 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
     
     if token is None:
-        print("Auth Error: No Authorization header or token found")
         raise credentials_exception
 
     try:
-        import time
-        print(f"DEBUG: Token Validation - time.time(): {time.time()}")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
-            print("Auth Error: Email missing in token")
             raise credentials_exception
-    except JWTError as e:
-        print(f"Auth Error: JWT Decode validation failed: {str(e)}")
+    except JWTError:
         raise credentials_exception
     
     user = db.query(User).filter(User.email == email).first()
     if user is None:
-        print(f"Auth Error: User not found for email {email}")
         raise credentials_exception
     return user
 

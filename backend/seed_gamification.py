@@ -1,5 +1,5 @@
 from database import SessionLocal
-from models import ShopItem
+from apps.gamification.models import ShopItem
 
 def seed_shop():
     db = SessionLocal()
