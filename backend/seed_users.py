@@ -8,7 +8,12 @@ print("Started seed_users.py script...", flush=True)
 try:
     from sqlalchemy.orm import Session
     from database import SessionLocal, engine, Base
-    from apps.auth.models import User
+    from apps.auth.models import User, AuditLog
+    from apps.classes.models import ClassGroup
+    from apps.generator.models import TokenUsage
+    from apps.gamification.models import StudentProfile, XPTransaction, CoinTransaction, DailyProgress, SeasonStats, ShopItem, Purchase
+    from apps.library.models import SavedResource
+    from apps.admin.models import Organization, Payment
     from passlib.context import CryptContext
     print("Imports successful.", flush=True)
 except Exception as e:
