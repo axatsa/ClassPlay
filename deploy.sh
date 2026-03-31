@@ -1,8 +1,6 @@
 #!/bin/bash
 echo '🚀 Начинаем деплой OnlineGame_v3 (Modular Monolith)'
 
-# 1. Переходим в папку с основным кодом
-# Предполагаем путь /home/temp/OnlineGame_v3 на основе вашего SSH логина
 PROJECT_DIR="/home/temp/OnlineGame_v3"
 
 if [ -d "$PROJECT_DIR" ]; then
@@ -16,18 +14,26 @@ fi
 echo '🔄 Загрузка кода из GitHub...'
 git pull origin main
 
-# 3. Пересборка и запуск контейнеров
-echo '🔨 Обновление Docker контейнеров...'
-# Используем docker-compose.prod.yml для продакшена
-docker-compose -f docker-compose.prod.yml up -d --build
+# 3. Определяем команду docker compose
+if docker compose version >/dev/null 2>&1; then
+    DOCKER_CMD="docker compose"
+else
+    DOCKER_CMD="docker-compose"
+fi
+echo "🛠️ Используем команду: $DOCKER_CMD"
 
-# 4. Ожидание готовности БД
+# 4. Пересборка и запуск контейнеров
+echo '🔨 Обновление Docker контейнеров...'
+$DOCKER_CMD -f docker-compose.prod.yml up -d --build
+
+# 5. Ожидание готовности БД
 echo '⏳ Ожидание инициализации базы данных...'
 sleep 5
 
-# 5. Запуск миграций и сидов
+# 6. Запуск миграций и сидов
 echo '🌱 Наполнение базы данных (Seeding)...'
 # Запускаем скрипты внутри контейнера backend
+# Мы используем -T для неинтерактивного запуска
 docker exec -t online_games_backend_prod python seed_users.py
 docker exec -t online_games_backend_prod python seed.py
 docker exec -t online_games_backend_prod python seed_gamification.py
