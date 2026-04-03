@@ -299,7 +299,7 @@ export const BookReaderFlip = ({ book, onClose }: { book: Book; onClose: () => v
                         <HTMLFlipBook 
                             width={420} 
                             height={570} 
-                            size="fit" 
+                            size="stretch" 
                             minWidth={315} 
                             maxWidth={500} 
                             minHeight={420} 
