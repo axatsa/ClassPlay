@@ -36,8 +36,10 @@ services:
       dockerfile: Dockerfile
     container_name: online_games_frontend_prod
     restart: always
-    ports:
-      - "8090:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.online_games_frontend.rule=Host(`classplay.uz`) || Host(`www.classplay.uz`)"
+      - "traefik.http.services.online_games_frontend.loadbalancer.server.port=80"
     depends_on:
       - backend
     networks:

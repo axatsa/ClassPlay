@@ -9,8 +9,6 @@ services:
       POSTGRES_USER: v3_user
       POSTGRES_PASSWORD: v3_password
       POSTGRES_DB: v3_db
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
