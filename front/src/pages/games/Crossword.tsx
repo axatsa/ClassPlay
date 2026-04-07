@@ -137,9 +137,9 @@ const Crossword = () => {
   };
 
   const getCellStyle = (r: number, c: number): string => {
-    if (!crossword || !crossword.grid[r][c]) return "bg-black";
+    if (!crossword || !crossword.grid[r][c]) return "";
     const cell = inputs[r]?.[c];
-    if (!cell) return "bg-white border border-gray-300";
+    if (!cell) return "bg-white border border-slate-200 rounded shadow-sm";
 
     const isSelected = selectedWord && (
       selectedWord.isAcross
@@ -147,10 +147,10 @@ const Crossword = () => {
         : c === selectedWord.col && r >= selectedWord.row && r < selectedWord.row + selectedWord.word.length
     );
 
-    if (cell.correct === true) return "bg-green-100 border-green-400 border-2";
-    if (cell.correct === false) return "bg-red-100 border-red-400 border-2";
-    if (isSelected) return "bg-blue-100 border-blue-400 border-2";
-    return "bg-white border border-gray-300 hover:bg-blue-50";
+    if (cell.correct === true) return "bg-green-50 border-2 border-green-400 rounded shadow-sm";
+    if (cell.correct === false) return "bg-red-50 border-2 border-red-400 rounded shadow-sm";
+    if (isSelected) return "bg-violet-100 border-2 border-violet-400 rounded shadow-sm";
+    return "bg-white border border-slate-200 hover:bg-violet-50 hover:border-violet-300 rounded shadow-sm transition-colors";
   };
 
   const getWordAtCell = (r: number, c: number): CrosswordWord | null => {
@@ -309,11 +309,8 @@ const Crossword = () => {
                   display: "grid",
                   gridTemplateColumns: `repeat(${crossword.width}, ${CELL_SIZE}px)`,
                   gridTemplateRows: `repeat(${crossword.height}, ${CELL_SIZE}px)`,
-                  gap: "1px",
-                  backgroundColor: "#d1d5db",
-                  border: "2px solid #9ca3af",
-                  borderRadius: "8px",
-                  overflow: "hidden",
+                  gap: "2px",
+                  background: "transparent",
                 }}
               >
                 {crossword.grid.map((row, r) =>
@@ -325,7 +322,7 @@ const Crossword = () => {
                     if (isEmpty) {
                       return (
                         <div key={`${r}-${c}`}
-                          style={{ width: CELL_SIZE, height: CELL_SIZE, backgroundColor: "#1f2937" }}
+                          style={{ width: CELL_SIZE, height: CELL_SIZE, background: "transparent" }}
                         />
                       );
                     }

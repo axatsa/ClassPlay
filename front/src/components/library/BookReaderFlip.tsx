@@ -297,13 +297,13 @@ export const BookReaderFlip = ({ book, onClose }: { book: Book; onClose: () => v
                         
                         {/* @ts-ignore - react-pageflip typings can be tricky */}
                         <HTMLFlipBook 
-                            width={420} 
-                            height={570} 
+                            width={630} 
+                            height={855} 
                             size="stretch" 
-                            minWidth={315} 
-                            maxWidth={500} 
-                            minHeight={420} 
-                            maxHeight={680} 
+                            minWidth={420} 
+                            maxWidth={750} 
+                            minHeight={560} 
+                            maxHeight={1020} 
                             maxShadowOpacity={0.6} 
                             showCover={true} 
                             mobileScrollSupport={true}

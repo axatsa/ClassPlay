@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Dices, Gamepad2, GraduationCap, User, BookOpen,
-  ChevronDown, Plus, Check, Settings2, Globe, BookMarked, Sun, Moon,
-  ArrowRight,
+  ChevronDown, Plus, Check, Globe, BookMarked, Sun, Moon, Settings,
 } from "lucide-react";
 import { useClass } from "@/context/ClassContext";
 import { useTranslation } from "react-i18next";
@@ -24,49 +23,95 @@ const TeacherDashboard = () => {
 
   const navPills = [
     { key: "Generators", label: t("navGenerators"), route: "/generator" },
-    { key: "History", label: "История", route: "/history" },
-    { key: "Tools", label: t("navTools"), route: "/tools" },
-    { key: "Games", label: t("navGames"), route: "/games" },
-    { key: "Library", label: t("navLibrary"), route: "/library" },
+    { key: "History",    label: lang === "ru" ? "История" : "Tarix",  route: "/history" },
+    { key: "Tools",      label: t("navTools"),      route: "/tools" },
+    { key: "Games",      label: t("navGames"),      route: "/games" },
+    { key: "Library",    label: t("navLibrary"),    route: "/library" },
   ] as const;
 
   const [activeNav, setActiveNav] = useState<typeof navPills[number]["key"]>("Generators");
 
-  const quickActions = [
-    { icon: Sparkles, label: t("cardAiTitle"), route: "/generator", color: "from-emerald-500 to-sky-500" },
-    { icon: Gamepad2, label: t("cardGamesTitle"), route: "/games", color: "from-amber-400 to-orange-500" },
-    { icon: BookMarked, label: t("cardLibraryTitle"), route: "/library", color: "from-violet-500 to-fuchsia-500" },
-    { icon: Dices, label: t("cardToolsTitle"), route: "/tools", color: "from-sky-400 to-indigo-500" },
+  // Bento cards — compact grid
+  const cards = [
+    {
+      title: t("cardAiTitle"),
+      desc: t("cardAiDesc"),
+      icon: Sparkles,
+      route: "/generator",
+      gradient: "from-violet-500/10 to-purple-500/5",
+      iconBg: "bg-violet-500/15",
+      iconColor: "text-violet-600",
+      span: "md:col-span-2", // wide card
+    },
+    {
+      title: t("cardGamesTitle"),
+      desc: t("cardGamesDesc"),
+      icon: Gamepad2,
+      route: "/games",
+      gradient: "from-emerald-500/10 to-teal-500/5",
+      iconBg: "bg-emerald-500/15",
+      iconColor: "text-emerald-600",
+      span: "",
+    },
+    {
+      title: t("cardToolsTitle"),
+      desc: t("cardToolsDesc"),
+      icon: Dices,
+      route: "/tools",
+      gradient: "from-sky-500/10 to-blue-500/5",
+      iconBg: "bg-sky-500/15",
+      iconColor: "text-sky-600",
+      span: "",
+    },
+    {
+      title: lang === "ru" ? "История" : "Tarix",
+      desc: lang === "ru" ? "Просмотр созданных материалов" : "Yaratilgan materiallar",
+      icon: BookMarked,
+      route: "/history",
+      gradient: "from-amber-500/10 to-orange-500/5",
+      iconBg: "bg-amber-500/15",
+      iconColor: "text-amber-600",
+      span: "",
+    },
+    {
+      title: t("cardLibraryTitle"),
+      desc: t("cardLibraryDesc"),
+      icon: BookOpen,
+      route: "/library",
+      gradient: "from-rose-500/10 to-pink-500/5",
+      iconBg: "bg-rose-500/15",
+      iconColor: "text-rose-600",
+      span: "",
+    },
   ];
 
-  const firstName = user?.full_name?.split(" ")[0] || (lang === "ru" ? "Учитель" : "O'qituvchi");
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* ── STICKY HEADER ── */}
       <header className="sticky top-0 z-30 bg-card/90 backdrop-blur-xl border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={() => navigate("/teacher")} className="flex items-center gap-3 group">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          {/* Logo */}
+          <button onClick={() => navigate("/teacher")} className="flex items-center gap-2.5 group shrink-0">
             <img
               src="/logo_sticker.webp"
               alt="ClassPlay Logo"
-              className="w-10 h-10 rounded-xl object-contain group-hover:scale-110 transition-transform duration-200"
+              className="w-9 h-9 rounded-xl object-contain group-hover:scale-110 transition-transform duration-200"
             />
-            <span className="text-xl font-display font-bold text-foreground hidden sm:inline tracking-tight">ClassPlay</span>
+            <span className="text-lg font-display font-bold text-foreground hidden sm:inline tracking-tight">ClassPlay</span>
           </button>
 
-          {/* Nav Pills */}
-          <div className="flex items-center bg-muted rounded-full p-1 mx-4">
+          {/* Nav Pills — centered */}
+          <div className="flex items-center bg-muted rounded-full p-1 gap-0.5 overflow-x-auto">
             {navPills.map((pill) => (
               <button
                 key={pill.key}
                 onClick={() => { setActiveNav(pill.key); navigate(pill.route); }}
-                className={`relative px-5 py-2 text-sm font-medium font-sans rounded-full transition-colors ${activeNav === pill.key ? "text-white" : "text-muted-foreground hover:text-foreground"}`}
+                className={`relative px-4 py-1.5 text-sm font-medium font-sans rounded-full transition-colors whitespace-nowrap ${activeNav === pill.key ? "text-white" : "text-muted-foreground hover:text-foreground"}`}
               >
                 {activeNav === pill.key && (
                   <motion.div
                     layoutId="activePillDash"
-                    className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-sky-500 rounded-full"
+                    className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-500 rounded-full"
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}
@@ -76,20 +121,20 @@ const TeacherDashboard = () => {
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Class Picker */}
-            <div className="relative mr-2">
+            <div className="relative">
               <button
                 onClick={() => setShowClassPicker(v => !v)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted transition-colors text-sm font-sans font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted transition-colors text-sm font-sans font-medium"
               >
-                <GraduationCap className="w-4 h-4 text-emerald-500" />
+                <GraduationCap className="w-3.5 h-3.5 text-violet-500" />
                 {activeClass ? (
-                  <span className="max-w-[100px] truncate">{activeClass.name}</span>
+                  <span className="max-w-[80px] truncate">{activeClass.name}</span>
                 ) : (
-                  <span className="text-muted-foreground">{t("selectClass")}</span>
+                  <span className="text-muted-foreground text-xs">{t("selectClass")}</span>
                 )}
-                <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${showClassPicker ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${showClassPicker ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {showClassPicker && (
@@ -97,7 +142,7 @@ const TeacherDashboard = () => {
                     initial={{ opacity: 0, scale: 0.95, y: -4 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                    className="absolute right-0 top-12 bg-card border border-border rounded-2xl shadow-xl p-1.5 min-w-[200px] z-50 flex flex-col gap-1"
+                    className="absolute right-0 top-11 bg-card border border-border rounded-2xl shadow-xl p-1.5 min-w-[190px] z-50 flex flex-col gap-1"
                   >
                     {classes.map((cls) => (
                       <button
@@ -106,16 +151,16 @@ const TeacherDashboard = () => {
                         className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-muted transition-colors text-left text-sm font-sans"
                       >
                         <div className="flex flex-col">
-                          <span className="font-medium text-foreground">{cls.name}</span>
+                          <span className="font-medium text-foreground text-sm">{cls.name}</span>
                           <span className="text-[10px] text-muted-foreground">{cls.studentCount} {t("studentsLabel")}</span>
                         </div>
-                        {cls.id === activeClass?.id && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                        {cls.id === activeClass?.id && <Check className="w-3.5 h-3.5 text-violet-500" />}
                       </button>
                     ))}
                     <div className="h-px bg-border my-1" />
                     <button
                       onClick={() => { setShowClassPicker(false); navigate("/classes"); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-emerald-600 font-semibold font-sans hover:bg-muted rounded-xl transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-violet-600 font-semibold font-sans hover:bg-muted rounded-xl transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" /> {t("addClass")}
                     </button>
@@ -124,14 +169,14 @@ const TeacherDashboard = () => {
               </AnimatePresence>
             </div>
 
-            {/* Language Switcher */}
+            {/* Language */}
             <div className="relative">
               <button
                 onClick={() => setShowLangMenu(v => !v)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted hover:bg-muted/80 transition-colors text-sm font-sans font-medium text-foreground"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-sm font-sans font-medium text-foreground"
               >
                 <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                {lang === "ru" ? "RU" : "UZ"}
+                {lang === "ru" ? "RU" : lang === "uz" ? "UZ" : "EN"}
               </button>
               <AnimatePresence>
                 {showLangMenu && (
@@ -139,16 +184,15 @@ const TeacherDashboard = () => {
                     initial={{ opacity: 0, scale: 0.95, y: -4 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                    transition={{ duration: 0.12 }}
-                    className="absolute right-0 top-10 bg-card border border-border rounded-2xl shadow-xl p-1.5 min-w-[130px] z-50"
+                    className="absolute right-0 top-10 bg-card border border-border rounded-2xl shadow-xl p-1.5 min-w-[150px] z-50"
                   >
-                    {(["ru", "uz"] as string[]).map(l => (
+                    {(["ru", "uz", "en"] as string[]).map(l => (
                       <button
                         key={l}
                         onClick={() => { setLang(l); setShowLangMenu(false); }}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-sm font-sans transition-colors flex items-center gap-2 ${lang === l ? "bg-emerald-50 text-emerald-700 font-semibold" : "hover:bg-muted text-foreground"}`}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-sm font-sans transition-colors flex items-center gap-2 ${lang === l ? "bg-violet-50 text-violet-700 font-semibold" : "hover:bg-muted text-foreground"}`}
                       >
-                        {l === "ru" ? "🇷🇺 Русский" : "🇺🇿 O'zbekcha"}
+                        {l === "ru" ? "🇷🇺 Русский" : l === "uz" ? "🇺🇿 O'zbekcha" : "🇬🇧 English"}
                         {lang === l && <Check className="w-3.5 h-3.5 ml-auto" />}
                       </button>
                     ))}
@@ -160,8 +204,7 @@ const TeacherDashboard = () => {
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
-              title={isDark ? "Светлая тема" : "Тёмная тема"}
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
             >
               {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-muted-foreground" />}
             </button>
@@ -169,184 +212,121 @@ const TeacherDashboard = () => {
             {/* Profile */}
             <button
               onClick={() => navigate("/profile")}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-sky-500 flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
             >
-              <User className="w-5 h-5 text-white" />
+              <User className="w-4 h-4 text-white" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* ── ZONE 1: WELCOME & QUICK-CREATE (emerald) ── */}
-      <section className="zone-emerald min-h-[50vh] px-6 lg:px-16 pt-16 pb-20 flex flex-col justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="max-w-5xl"
-        >
-          <h1 className="text-5xl md:text-8xl font-display font-medium tracking-tighter leading-[0.9] mb-6">
-            {lang === "ru" ? "Добро пожаловать," : "Xush kelibsiz,"}<br />
-            <span style={{ color: "var(--zone-emerald-muted)" }}>{firstName}.</span>
-          </h1>
-          <p className="text-xl max-w-xl mb-12" style={{ color: "var(--zone-emerald-muted)" }}>
-            {t("dashSub")}
-          </p>
+      {/* ── MAIN CONTENT — compact, single screen ── */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-5 flex flex-col gap-5">
 
-          {/* Quick Actions */}
-          <div className="flex flex-wrap gap-4">
-            {quickActions.map((action, i) => (
-              <motion.button
-                key={action.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.08 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => navigate(action.route)}
-                className={`px-6 py-4 rounded-full font-semibold text-white flex items-center gap-3 shadow-lg bg-gradient-to-r ${action.color}`}
-              >
-                <action.icon size={20} />
-                {action.label}
-              </motion.button>
-            ))}
+        {/* Welcome bar + active class — compact horizontal strip */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card rounded-2xl border border-border px-5 py-4 shadow-sm"
+        >
+          <div>
+            <h1 className="text-xl font-display font-bold text-foreground tracking-tight">
+              {lang === "ru" ? "Привет," : "Xush kelibsiz,"}{" "}
+              <span className="bg-gradient-to-r from-violet-600 to-indigo-500 bg-clip-text text-transparent">
+                {user?.full_name?.split(" ")[0] || (lang === "ru" ? "Учитель" : "O'qituvchi")}
+              </span>
+            </h1>
+            <p className="text-sm text-muted-foreground font-sans mt-0.5">{t("dashSub")}</p>
           </div>
-        </motion.div>
-      </section>
 
-      {/* ── ZONE 2: ACTIVE CLASS (amber) ── */}
-      <section className="zone-amber py-20 px-6 lg:px-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="max-w-5xl flex flex-col xl:flex-row gap-16"
-        >
-          <div className="xl:w-1/3 flex flex-col gap-4">
-            <h2 className="text-4xl md:text-6xl font-display font-medium tracking-tighter">{t("activeClass")}</h2>
+          {/* Active class badge */}
+          {activeClass && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-200/50">
+              <GraduationCap className="w-4 h-4 text-violet-600 shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-foreground truncate max-w-[140px]">{activeClass.name}</span>
+                <span className="text-[10px] text-muted-foreground">{t("grade")} {activeClass.grade} · {activeClass.studentCount} {t("students")}</span>
+              </div>
+              <button
+                onClick={() => navigate("/classes")}
+                className="ml-2 p-1 rounded-lg hover:bg-violet-100 transition-colors"
+              >
+                <Settings className="w-3.5 h-3.5 text-violet-500" />
+              </button>
+            </div>
+          )}
+          {!activeClass && (
             <button
               onClick={() => navigate("/classes")}
-              className="flex items-center gap-2 text-sm font-semibold mt-2 hover:opacity-70 transition-opacity w-fit"
-              style={{ color: "var(--zone-amber-muted)" }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-violet-300 text-violet-600 text-sm font-semibold hover:bg-violet-50 transition-colors"
             >
-              <Settings2 className="w-4 h-4" /> {t("manageClasses")} <ArrowRight className="w-4 h-4" />
+              <Plus className="w-4 h-4" /> {t("createFirstClass")}
             </button>
-          </div>
+          )}
+        </motion.div>
 
-          <div className="xl:w-2/3">
-            {activeClass ? (
-              <>
-                <div className="relative mb-6">
-                  <button
-                    onClick={() => setShowClassPicker(v => !v)}
-                    className="w-full flex items-center justify-between px-6 py-4 rounded-2xl border-2 border-current/20 hover:border-current/40 bg-white/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-white/50 flex items-center justify-center">
-                        <GraduationCap className="w-6 h-6" style={{ color: "var(--zone-amber-muted)" }} />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-xl font-display font-bold tracking-tight">{activeClass.name}</p>
-                        <p className="text-sm opacity-60">{t("grade")} {activeClass.grade} · {activeClass.studentCount} {t("students")}</p>
-                      </div>
-                    </div>
-                    <ChevronDown className={`w-5 h-5 opacity-50 transition-transform ${showClassPicker ? "rotate-180" : ""}`} />
-                  </button>
-
-                  <AnimatePresence>
-                    {showClassPicker && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-2xl z-20 overflow-hidden"
-                      >
-                        {classes.map((cls) => (
-                          <button
-                            key={cls.id}
-                            onClick={() => { setActiveClassId(cls.id); setShowClassPicker(false); }}
-                            className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted transition-colors text-left"
-                          >
-                            <div>
-                              <p className="text-sm font-semibold text-foreground font-sans">{cls.name}</p>
-                              <p className="text-xs text-muted-foreground font-sans">{t("grade")} {cls.grade} · {cls.studentCount} {t("students")}</p>
-                            </div>
-                            {cls.id === activeClass.id && <Check className="w-4 h-4 text-emerald-500" />}
-                          </button>
-                        ))}
-                        <button
-                          onClick={() => { setShowClassPicker(false); navigate("/classes"); }}
-                          className="w-full flex items-center gap-2 px-5 py-4 text-sm text-emerald-600 font-semibold font-sans hover:bg-muted transition-colors border-t border-border"
-                        >
-                          <Plus className="w-4 h-4" /> {t("addClass")}
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {activeClass.description && (
-                  <div className="flex items-start gap-3 px-6 py-4 rounded-2xl bg-white/30">
-                    <Sparkles className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "var(--zone-amber-muted)" }} />
-                    <p className="text-sm opacity-70">{activeClass.description}</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-                <BookOpen className="w-16 h-16 opacity-30" />
-                <p className="text-xl opacity-50">{t("noClass")}</p>
-                <button
-                  onClick={() => navigate("/classes")}
-                  className="px-6 py-3 rounded-full font-semibold text-sm border-2 border-current hover:bg-white/30 transition-colors"
-                >
-                  {t("createFirstClass")}
-                </button>
+        {/* Bento Grid — compact cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+          {cards.map((card, i) => (
+            <motion.button
+              key={card.title}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * i }}
+              whileHover={{ scale: 1.02, y: -3 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(card.route)}
+              className={`text-left p-5 rounded-2xl bg-gradient-to-br ${card.gradient} bg-card border border-border shadow-sm hover:shadow-md transition-shadow min-h-[120px] flex flex-col ${card.span}`}
+            >
+              <div className={`w-11 h-11 rounded-xl ${card.iconBg} flex items-center justify-center mb-3 shrink-0`}>
+                <card.icon className={`w-5 h-5 ${card.iconColor}`} />
               </div>
-            )}
-          </div>
-        </motion.div>
-      </section>
+              <h3 className="text-base font-bold text-foreground font-serif leading-tight">{card.title}</h3>
+              <p className="text-xs text-muted-foreground font-sans mt-1 line-clamp-2">{card.desc}</p>
+            </motion.button>
+          ))}
+        </div>
 
-      {/* ── ZONE 3: ALL TOOLS (sky) ── */}
-      <section className="zone-sky py-20 px-6 lg:px-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="max-w-5xl"
-        >
-          <h2 className="text-4xl md:text-6xl font-display font-medium tracking-tighter mb-16">
-            {lang === "ru" ? "Инструменты" : "Vositalar"}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
-            {[
-              { icon: Sparkles, title: t("cardAiTitle"), desc: t("cardAiDesc"), route: "/generator" },
-              { icon: BookMarked, title: "История", desc: "Просмотр ранее созданных материалов", route: "/history" },
-              { icon: Dices, title: t("cardToolsTitle"), desc: t("cardToolsDesc"), route: "/tools" },
-              { icon: Gamepad2, title: t("cardGamesTitle"), desc: t("cardGamesDesc"), route: "/games" },
-              { icon: BookOpen, title: t("cardLibraryTitle"), desc: t("cardLibraryDesc"), route: "/library" },
-              { icon: GraduationCap, title: t("cardClassTitle") || "Классы", desc: t("cardClassDesc") || "Управляйте вашими классами", route: "/classes" },
-            ].map((item, i) => (
-              <motion.button
-                key={item.title}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                whileHover={{ x: 4 }}
-                onClick={() => navigate(item.route)}
-                className="flex flex-col text-left group cursor-pointer border-l-4 border-current/20 pl-6 hover:border-current transition-colors duration-300"
+        {/* Classes quick row */}
+        {classes.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="bg-card rounded-2xl border border-border shadow-sm px-5 py-4"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-foreground font-serif">{t("activeClass")}</h3>
+              <button onClick={() => navigate("/classes")} className="text-xs text-violet-600 font-semibold hover:underline">
+                {t("manageClasses")} →
+              </button>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {classes.map((cls) => (
+                <button
+                  key={cls.id}
+                  onClick={() => setActiveClassId(cls.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-sans transition-colors border ${
+                    cls.id === activeClass?.id
+                      ? "bg-violet-600 text-white border-violet-600 font-semibold"
+                      : "bg-muted border-border text-foreground hover:border-violet-300"
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  {cls.name}
+                  <span className="text-[10px] opacity-60">{cls.studentCount}</span>
+                </button>
+              ))}
+              <button
+                onClick={() => navigate("/classes")}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-sans border border-dashed border-violet-300 text-violet-600 hover:bg-violet-50 transition-colors"
               >
-                <item.icon className="w-10 h-10 mb-5 opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all origin-left duration-300" />
-                <h3 className="text-2xl md:text-3xl font-display font-medium tracking-tighter leading-tight mb-2">{item.title}</h3>
-                <p className="text-base opacity-50 font-sans">{item.desc}</p>
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
-      </section>
+                <Plus className="w-3.5 h-3.5" /> {t("addClass")}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </main>
     </div>
   );
 };
