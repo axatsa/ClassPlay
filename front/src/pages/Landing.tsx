@@ -78,11 +78,11 @@ const Landing = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-slate-50 via-red-50/30 to-slate-100 font-sans text-slate-900 overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/30 font-sans text-slate-900 overflow-x-hidden">
       {/* Background Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-primary/10 rounded-full blur-[100px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-secondary/15 rounded-full blur-[120px]" />
       </div>
 
       {/* Header */}
@@ -154,7 +154,7 @@ const Landing = () => {
           <div className="absolute inset-0 bg-primary/20 rounded-[3rem] blur-3xl group-hover:bg-primary/30 transition-all duration-700" />
           <div className="relative rounded-[2.5rem] border-8 border-white/60 overflow-hidden shadow-2xl backdrop-blur-sm">
             <img 
-              src="/landing/dashboard.png" 
+              src="/placeholder.svg" 
               alt="ClassPlay Dashboard" 
               className="w-full object-cover rounded-[1.8rem]"
             />
@@ -254,7 +254,7 @@ const Landing = () => {
               className="relative grid grid-cols-2 gap-4"
             >
               <div className="space-y-4 translate-y-8">
-                <img src="/landing/game.png" alt="Игра" className="rounded-3xl shadow-xl border-4 border-white hover:scale-105 transition-transform" />
+                <img src="/placeholder.svg" alt="Игра" className="rounded-3xl shadow-xl border-4 border-white hover:scale-105 transition-transform bg-white" />
                 <div className="p-8 rounded-3xl bg-primary shadow-2xl text-white">
                    <h5 className="text-2xl font-black mb-2">{t("land_stat_gen")}</h5>
                    <p className="opacity-80">{t("land_stat_gen_desc")}</p>
@@ -266,7 +266,7 @@ const Landing = () => {
                    <h5 className="text-xl font-bold">{t("land_org_title")}</h5>
                    <p className="opacity-60 text-sm">{t("land_org_desc")}</p>
                 </div>
-                <img src="/landing/books.png" alt="Книги" className="rounded-3xl shadow-xl border-4 border-white hover:scale-105 transition-transform" />
+                <img src="/placeholder.svg" alt="Книги" className="rounded-3xl shadow-xl border-4 border-white hover:scale-105 transition-transform bg-white" />
               </div>
             </motion.div>
           </div>
