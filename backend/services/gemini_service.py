@@ -16,8 +16,27 @@ import logging
 import re
 import traceback
 from typing import Optional
+import threading
 
 logger = logging.getLogger(__name__)
+
+from config import GEMINI_API_KEYS_LIST
+
+class GeminiKeyManager:
+    def __init__(self, keys: list[str]):
+        self.keys = keys
+        self.current_index = 0
+        self.lock = threading.Lock()
+
+    def get_next_key(self) -> str:
+        if not self.keys:
+            return ""
+        with self.lock:
+            key = self.keys[self.current_index]
+            self.current_index = (self.current_index + 1) % len(self.keys)
+            return key
+
+key_manager = GeminiKeyManager(GEMINI_API_KEYS_LIST)
 
 # ─── Image models to try in order ────────────────────────────────────────────
 # gemini-2.5-flash-image is newest; fall back to gemini-2.0-flash-exp if unavailable
@@ -92,7 +111,6 @@ async def generate_storybook(
     age_group: str = "7-10",
     language: str = "Russian",
     genre: str = "fairy tale",
-    gemini_api_key: str = "",
 ) -> Optional[dict]:
     """
     Two-step generation:
@@ -100,39 +118,52 @@ async def generate_storybook(
       2. Generate 10 illustrations in parallel (tries gemini-2.0-flash-exp first)
     Returns dict with pages list, each page has image_base64 (or None).
     """
-    if not gemini_api_key:
-        logger.error("GEMINI_API_KEY is not set")
+    if not key_manager.keys:
+        logger.error("No Gemini API keys configured")
         return None
 
-    client = genai.Client(api_key=gemini_api_key)
+    max_retries = len(key_manager.keys)
+    story_data = None
 
-    # ── STEP 1: Generate story text ──────────────────────────────────────
-    logger.info("Generating story text with gemini-2.0-flash...")
-    try:
-        # NOTE: Model.generate_content is synchronous in some GenAI versions, 
-        # but calling it in an executor ensures it doesn't block the loop.
-        # Alternatively, use generate_content_async if using the async client.
-        story_response = await asyncio.to_thread(
-            client.models.generate_content,
-            model="gemini-2.0-flash",
-            contents=_story_prompt(title, topic, age_group, language, genre),
-            config=genai_types.GenerateContentConfig(
-                system_instruction=STORY_SYSTEM,
-                temperature=0.9,
-                max_output_tokens=8192,
-            ),
-        )
-        raw = story_response.text.strip()
-    except Exception as e:
-        logger.error(f"Story generation failed: {e}")
-        return None
+    # ── STEP 1: Generate story text (with retries) ───────────────────────
+    for attempt in range(max_retries):
+        api_key = key_manager.get_next_key()
+        client = genai.Client(api_key=api_key)
+        
+        logger.info(f"Generating story text with gemini-2.0-flash (attempt {attempt + 1}/{max_retries})...")
+        try:
+            story_response = await asyncio.to_thread(
+                client.models.generate_content,
+                model="gemini-2.0-flash",
+                contents=_story_prompt(title, topic, age_group, language, genre),
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=STORY_SYSTEM,
+                    temperature=0.9,
+                    max_output_tokens=8192,
+                ),
+            )
+            raw = story_response.text.strip()
+            
+            # Parse story JSON
+            story_data = _parse_json(raw)
+            if not story_data or "pages" not in story_data:
+                logger.error(f"Could not parse story JSON. Raw output was likely not JSON.")
+                story_data = None
+                continue # Try another key or just fail? Usually JSON failure is not a 429, but could retry just in case.
+                
+            break # Success!
+        except Exception as e:
+            error_msg = str(e).lower()
+            if "429" in error_msg or "quota" in error_msg or "exhausted" in error_msg or "too many requests" in error_msg:
+                logger.warning(f"Rate limit exceeded (429) on attempt {attempt + 1}. Retrying with next key...")
+                continue
+            else:
+                logger.error(f"Story generation failed on attempt {attempt + 1}: {e}")
+                # Don't break here, some other random error might be resolved by another key or a subsequent retry
+                continue
 
-    # Parse story JSON
-    story_data = _parse_json(raw)
-    if not story_data or "pages" not in story_data:
-        logger.error(f"Could not parse story JSON. Raw output was likely not JSON.")
-        # Fallback: if it failed to parse as JSON, maybe it returned text with markdown
-        # The _parse_json already tries to extract JSON, but if it's still missing 'pages'...
+    if not story_data:
+        logger.error("Story generation failed after all retries.")
         return None
 
     logger.info(f"Story parsed: {len(story_data['pages'])} pages")
@@ -145,7 +176,7 @@ async def generate_storybook(
             page.get("illustration_prompt", f"Scene from page {page['page_number']}"),
             age_group,
         )
-        tasks.append(_generate_image(client, prompt))
+        tasks.append(_generate_image(prompt))
 
     # Run all image generations concurrently
     image_results = await asyncio.gather(*tasks)
@@ -156,41 +187,49 @@ async def generate_storybook(
     return story_data
 
 
-async def _generate_image(client: genai.Client, prompt: str) -> Optional[str]:
-    """Try each image model in order. Returns base64 PNG string or None."""
-    for model_name in IMAGE_MODELS:
-        try:
-            logger.info(f"Attempting image generation with {model_name}...")
-            # Use to_thread for the synchronous SDK calls
-            response = await asyncio.to_thread(
-                client.models.generate_content,
-                model=model_name,
-                contents=prompt,
-                config=genai_types.GenerateContentConfig(
-                    response_modalities=["IMAGE"],
-                    temperature=1.0,
-                ),
-            )
-            
-            # Use candidates to be safe with the newer SDK
-            if not response.candidates:
-                logger.warning(f"No candidates returned from {model_name}")
-                continue
+async def _generate_image(prompt: str) -> Optional[str]:
+    """Try each image model in order, with key rotation on 429 limit errors. Returns base64 PNG string or None."""
+    max_retries = max(1, len(key_manager.keys))
+    
+    for attempt in range(max_retries):
+        api_key = key_manager.get_next_key()
+        client = genai.Client(api_key=api_key)
+        
+        for model_name in IMAGE_MODELS:
+            try:
+                logger.info(f"Attempting image generation with {model_name} (key attempt {attempt + 1})...")
+                response = await asyncio.to_thread(
+                    client.models.generate_content,
+                    model=model_name,
+                    contents=prompt,
+                    config=genai_types.GenerateContentConfig(
+                        response_modalities=["IMAGE"],
+                        temperature=1.0,
+                    ),
+                )
                 
-            for part in response.candidates[0].content.parts:
-                if part.inline_data:
-                    raw = part.inline_data.data
-                    mime = part.inline_data.mime_type
-                    logger.info(f"Image generated with {model_name} (MIME: {mime})")
-                    if isinstance(raw, bytes):
-                        return base64.b64encode(raw).decode("utf-8")
-                    return str(raw) # already base64
-        except Exception as e:
-            logger.warning(f"Model {model_name} failed: {str(e)}")
-            # Log full traceback for deep debugging
-            traceback.print_exc()
+                if not response.candidates:
+                    logger.warning(f"No candidates returned from {model_name}")
+                    continue
+                    
+                for part in response.candidates[0].content.parts:
+                    if part.inline_data:
+                        raw = part.inline_data.data
+                        mime = part.inline_data.mime_type
+                        logger.info(f"Image generated with {model_name} (MIME: {mime})")
+                        if isinstance(raw, bytes):
+                            return base64.b64encode(raw).decode("utf-8")
+                        return str(raw) # already base64
+            except Exception as e:
+                error_msg = str(e).lower()
+                if "429" in error_msg or "quota" in error_msg or "exhausted" in error_msg or "too many requests" in error_msg:
+                    logger.warning(f"Rate limit exceeded (429) for {model_name}. Breaking inner loop to try next key.")
+                    break # Break inner model loop, try outer loop (next key)
+                else:
+                    logger.warning(f"Model {model_name} failed: {e}")
+                    # traceback.print_exc()
 
-    logger.error("All image models failed — returning None")
+    logger.error("All image generation keys and models failed — returning None")
     return None
 
 

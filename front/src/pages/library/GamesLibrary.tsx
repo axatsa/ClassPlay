@@ -61,7 +61,7 @@ const GamesLibrary = () => {
                 <img
                   src={coverImages[game.coverImage]}
                   alt={game.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover scale-[1.08] group-hover:scale-[1.15] transition-transform duration-500"
                 />
               </div>
 

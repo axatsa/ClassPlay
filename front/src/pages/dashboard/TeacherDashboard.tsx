@@ -192,11 +192,11 @@ const TeacherDashboard = () => {
                         onClick={() => { setLang(l); setShowLangMenu(false); }}
                         className={`w-full text-left px-3 py-2 rounded-xl text-sm font-sans transition-colors flex items-center gap-2 ${lang === l ? "bg-violet-50 text-violet-700 font-semibold" : "hover:bg-muted text-foreground"}`}
                       >
-                        {l === "ru" ? "🇷🇺 Русский" : l === "uz" ? "🇺🇿 O'zbekcha" : "🇬🇧 English"}
+                        {l === "ru" ? "🇷🇺 Русский" : l === "uz" ? "🇺🇿 O'zbekcha" : "en English"}
                         {lang === l && <Check className="w-3.5 h-3.5 ml-auto" />}
                       </button>
                     ))}
-                  </motion.div>
+                  </motion.div>   
                 )}
               </AnimatePresence>
             </div>

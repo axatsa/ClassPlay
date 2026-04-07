@@ -38,7 +38,6 @@ async def gen_storybook(
                 age_group=req.age_group,
                 language=req.language,
                 genre=req.genre,
-                gemini_api_key=GEMINI_API_KEY,
             )
             if result:
                 provider = "gemini"
