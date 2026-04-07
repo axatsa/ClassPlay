@@ -20,12 +20,6 @@
 
 **Файлы:** `front/src/pages/admin/OrganizationDetail.tsx`, `backend/app/routers/admin_orgs.py`
 
-**Что делать:**
-
-**Backend — новый эндпоинт:**
-```
-GET /api/admin/organizations/{org_id}/stats
-```
 Ответ:
 ```json
 {
