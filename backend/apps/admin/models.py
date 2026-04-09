@@ -14,6 +14,8 @@ class Organization(Base):
     expires_at = Column(DateTime)
     status = Column(String, default="active") # active, expiring, expired, blocked
 
+    teachers = relationship("User", back_populates="organization")
+
 class Payment(Base):
     __tablename__ = "payments"
 
@@ -31,3 +33,16 @@ class Payment(Base):
     @property
     def org_name(self):
         return self.organization.name if self.organization else "Unknown"
+
+class InviteToken(Base):
+    __tablename__ = "invite_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True)  # UUID
+    org_id = Column(Integer, ForeignKey("organizations.id"))
+    expires_at = Column(DateTime)
+    max_uses = Column(Integer, default=30)
+    uses_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Integer, default=1) # 1 = active, 0 = revoked
+
+    organization = relationship("Organization")

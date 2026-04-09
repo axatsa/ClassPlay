@@ -22,6 +22,9 @@ class User(Base):
     tokens_reset_at = Column(DateTime, nullable=True)  # when quota was last reset
 
     # Relationships are handled via strings to avoid circular imports.
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
+    organization = relationship("Organization", back_populates="teachers")
+    
     token_usage = relationship("TokenUsage", back_populates="user")
     saved_resources = relationship("SavedResource", back_populates="user")
     books = relationship("GeneratedBook", back_populates="user")

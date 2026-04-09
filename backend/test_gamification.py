@@ -1,10 +1,13 @@
 import pytest
-from sqlalchemy import create_client, create_engine
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database import Base
 from apps.auth.models import User
 from apps.gamification.models import StudentProfile, XPTransaction, DailyProgress
 from apps.gamification.services import process_activity_completion, calculate_level
+from apps.generator.models import TokenUsage
+from apps.resource_save.models import SavedResource
+from apps.books.models import GeneratedBook
 
 # Setup in-memory SQLite for testing
 engine = create_engine("sqlite:///:memory:")

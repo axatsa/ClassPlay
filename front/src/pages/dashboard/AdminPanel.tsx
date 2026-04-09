@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
 import BulkImportModal from "./BulkImportModal";
 import OrgStatsModal from "./OrgStatsModal";
+import InviteModal from "./InviteModal";
 import TeacherModal, { TeacherFormData } from "@/components/admin/TeacherModal";
 import OrgModal, { OrgFormData } from "@/components/admin/OrgModal";
 import * as docx from "docx";
@@ -647,6 +648,7 @@ const OrgsView = ({ orgs, isLoading, onRefresh }: { orgs: Org[]; isLoading: bool
   const lang = i18n.language;
   const [importOrg, setImportOrg] = useState<{ id: number, name: string } | null>(null);
   const [statsOrg, setStatsOrg] = useState<number | null>(null);
+  const [inviteOrg, setInviteOrg] = useState<{ id: number, name: string } | null>(null);
   const [modal, setModal] = useState<{isOpen: boolean, data?: OrgFormData}>({isOpen: false});
 
   const handleSave = async (data: OrgFormData) => {
@@ -728,6 +730,14 @@ const OrgsView = ({ orgs, isLoading, onRefresh }: { orgs: Org[]; isLoading: bool
                     <Button variant="outline" size="sm" onClick={() => setModal({ isOpen: true, data: org as any })} className="rounded-xl font-sans h-8 text-xs gap-1">
                       <Settings className="w-3 h-3" /> Орг
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="rounded-xl font-sans h-8 text-xs gap-1 border-primary/40 text-primary hover:bg-primary/5"
+                      onClick={() => setInviteOrg({ id: org.id, name: org.name })}
+                    >
+                      <Plus className="w-3 h-3" /> Инвайт
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => handleDelete(org.id)} className="rounded-xl font-sans h-8 text-xs gap-1 border-destructive/40 text-destructive hover:bg-destructive/10">
                       <Ban className="w-3 h-3" /> Удалить
                     </Button>
@@ -742,6 +752,7 @@ const OrgsView = ({ orgs, isLoading, onRefresh }: { orgs: Org[]; isLoading: bool
       <OrgModal isOpen={modal.isOpen} onClose={() => setModal({isOpen: false})} onSave={handleSave} initialData={modal.data} />
       {importOrg && <BulkImportModal orgId={importOrg.id} orgName={importOrg.name} onClose={() => { setImportOrg(null); onRefresh(); }} />}
       {statsOrg && <OrgStatsModal orgId={statsOrg} onClose={() => setStatsOrg(null)} />}
+      {inviteOrg && <InviteModal orgId={inviteOrg.id} orgName={inviteOrg.name} onClose={() => setInviteOrg(null)} />}
     </div>
   );
 };

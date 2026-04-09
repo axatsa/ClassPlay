@@ -52,6 +52,7 @@ class CreateTeacherRequest(BaseModel):
     school: Optional[str] = None
     phone: Optional[str] = None
     tokens_limit: Optional[int] = 100000
+    organization_id: Optional[int] = None
 
 class UpdateTeacherRequest(BaseModel):
     full_name: Optional[str] = None
@@ -95,3 +96,37 @@ class BulkImportResponse(BaseModel):
     created: List[ImportedTeacher]
     skipped: List[str]
     errors: List[str]
+
+# ── B2B: Invite System ──────────────────────────────────────────
+
+class InviteCreate(BaseModel):
+    max_uses: Optional[int] = 30
+    expires_in_days: Optional[int] = 7
+
+class InviteResponse(BaseModel):
+    id: int
+    token: str
+    org_id: int
+    expires_at: datetime
+    max_uses: int
+    uses_count: int
+    is_active: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class RegisterWithInviteRequest(BaseModel):
+    token: str
+    email: str
+    password: str
+    full_name: str
+
+# ── B2B: Financials ───────────────────────────────────────────
+
+class FinancialStats(BaseModel):
+    total_revenue: float
+    mrr: float
+    active_subscriptions: int
+    pending_payments: int
+    recent_payments: List[PaymentResponse]

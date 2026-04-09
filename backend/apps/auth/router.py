@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from database import get_db
 from apps.auth.models import User
 from apps.auth.schemas import UserLogin, Token, ChangePasswordRequest
+from apps.admin.schemas import RegisterWithInviteRequest
+from apps.admin.models import InviteToken, Organization
 from apps.auth.dependencies import get_current_user
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta, datetime
@@ -86,3 +88,54 @@ def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db), u
     db.commit()
     
     return {"message": "Password updated successfully"}
+
+@router.post("/register-with-invite", response_model=Token)
+def register_with_invite(req: RegisterWithInviteRequest, db: Session = Depends(get_db)):
+    # 1. Validate Invite
+    invite = db.query(InviteToken).filter(
+        InviteToken.token == req.token,
+        InviteToken.is_active == 1,
+        InviteToken.expires_at > datetime.utcnow()
+    ).first()
+    
+    if not invite:
+        raise HTTPException(status_code=400, detail="Invalid or expired invite token")
+        
+    if invite.uses_count >= invite.max_uses:
+        raise HTTPException(status_code=400, detail="Invite capacity reached")
+        
+    # 2. Check organization seats
+    org = db.query(Organization).filter(Organization.id == invite.org_id).first()
+    if not org or org.used_seats >= org.license_seats:
+        raise HTTPException(status_code=400, detail="No available seats in organization")
+
+    # 3. Check if user already exists
+    existing = db.query(User).filter(User.email == req.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+        
+    # 4. Create User
+    new_user = User(
+        email=req.email,
+        full_name=req.full_name,
+        hashed_password=pwd_context.hash(req.password),
+        role="teacher",
+        organization_id=invite.org_id,
+        is_active=True
+    )
+    db.add(new_user)
+    
+    # 5. Update counts
+    invite.uses_count += 1
+    org.used_seats += 1
+    
+    db.commit()
+    db.refresh(new_user)
+    
+    # 6. Auto-login
+    access_token = create_access_token(data={"sub": new_user.email})
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "user": new_user
+    }

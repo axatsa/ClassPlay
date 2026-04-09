@@ -10,14 +10,15 @@ from database import get_db
 
 from apps.auth.models import User, AuditLog
 from apps.generator.models import TokenUsage
-from apps.admin.models import Organization, Payment
+from apps.admin.models import Organization, Payment, InviteToken
 
 from apps.auth.schemas import UserResponse, AuditLogResponse
 from apps.admin.schemas import (
     OrganizationResponse, OrganizationCreate, OrganizationUpdate,
     PaymentResponse, PaymentCreate,
     CreateTeacherRequest, UpdateTeacherRequest, ResetPasswordRequest,
-    TokenUsageStats, OrgStatsResponse, TeacherStatItem, BulkImportResponse, ImportedTeacher
+    TokenUsageStats, OrgStatsResponse, TeacherStatItem, BulkImportResponse, ImportedTeacher,
+    InviteCreate, InviteResponse
 )
 from apps.auth.dependencies import require_admin, get_current_user
 
@@ -42,6 +43,7 @@ def create_teacher(req: CreateTeacherRequest, db: Session = Depends(get_db), adm
         school=req.school,
         phone=req.phone,
         tokens_limit=req.tokens_limit,
+        organization_id=req.organization_id,
     )
     db.add(new_teacher)
     db.commit()
@@ -217,7 +219,7 @@ def get_org_stats(org_id: int, db: Session = Depends(get_db), admin: User = Depe
     seven_days_ago = datetime.utcnow() - timedelta(days=7)
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
     
-    teachers = db.query(User).filter(User.role == "teacher").all()
+    teachers = db.query(User).filter(User.role == "teacher", User.organization_id == org_id).all()
     
     teacher_stats = []
     total_generations = 0
@@ -286,11 +288,13 @@ async def import_csv(org_id: int, file: UploadFile = File(...), db: Session = De
             email=email,
             full_name=name,
             hashed_password=pwd_context.hash(temp_pwd),
-            role="teacher"
+            role="teacher",
+            organization_id=org_id
         )
         db.add(user)
         created.append(ImportedTeacher(email=email, temp_password=temp_pwd))
         
+    org.used_seats += len(created)
     db.commit()
     
     log = AuditLog(action="Bulk CSV Import", target=f"{len(created)} created", user_id=admin.id, log_type="success")
@@ -299,29 +303,84 @@ async def import_csv(org_id: int, file: UploadFile = File(...), db: Session = De
     
     return BulkImportResponse(created=created, skipped=skipped, errors=errors)
 
+# ── Invites ───────────────────────────────────────────────────
+
+@router.post("/organizations/{org_id}/invites", response_model=InviteResponse)
+def create_invite(org_id: int, req: InviteCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+        
+    token = str(uuid.uuid4())
+    expires_at = datetime.utcnow() + timedelta(days=req.expires_in_days)
+    
+    new_invite = InviteToken(
+        token=token,
+        org_id=org_id,
+        expires_at=expires_at,
+        max_uses=req.max_uses
+    )
+    db.add(new_invite)
+    db.commit()
+    db.refresh(new_invite)
+    
+    log = AuditLog(action="Create Invite", target=f"Org {org.name}", user_id=admin.id, log_type="success")
+    db.add(log)
+    db.commit()
+    return new_invite
+
+@router.get("/organizations/{org_id}/invites", response_model=List[InviteResponse])
+def get_org_invites(org_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    return db.query(InviteToken).filter(InviteToken.org_id == org_id, InviteToken.is_active == 1).all()
+
+@router.delete("/invites/{invite_id}")
+def revoke_invite(invite_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    invite = db.query(InviteToken).filter(InviteToken.id == invite_id).first()
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invite not found")
+        
+    invite.is_active = 0
+    db.commit()
+    return {"message": "Invite revoked"}
+
 # ── Payments ──────────────────────────────────────────────────
 
-@router.get("/payments", response_model=List[PaymentResponse])
-def get_payments(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
-):
-    payments = db.query(Payment)\
-        .options(joinedload(Payment.organization))\
-        .order_by(Payment.date.desc())\
-        .offset(skip).limit(limit).all()
-        
-    return payments
-
-@router.post("/payments", response_model=PaymentResponse)
-def create_payment(req: PaymentCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    payment = Payment(**req.dict())
-    db.add(payment)
-    db.commit()
-    db.refresh(payment)
-    return payment
+@router.get("/financials", response_model=FinancialStats)
+def get_financial_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    # 1. Total Revenue (all paid)
+    total_rev = db.query(func.sum(Payment.amount)).filter(Payment.status == "paid").scalar() or 0
+    
+    # 2. MRR (all paid in last 30 days or current month)
+    first_day_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    mrr = db.query(func.sum(Payment.amount)).filter(
+        Payment.status == "paid",
+        Payment.date >= first_day_of_month
+    ).scalar() or 0
+    
+    # 3. Counts
+    active_subs = db.query(func.count(Organization.id)).filter(Organization.status == "active").scalar()
+    pending = db.query(func.count(Payment.id)).filter(Payment.status == "pending").scalar()
+    
+    # 4. Recent Payments with Org Names
+    recent = db.query(
+        Payment.id, Payment.amount, Payment.currency, Payment.method, 
+        Payment.status, Payment.period, Payment.date, Payment.organization_id,
+        Organization.name.label("org_name")
+    ).join(Organization).order_by(Payment.date.desc()).limit(10).all()
+    
+    return FinancialStats(
+        total_revenue=float(total_rev),
+        mrr=float(mrr),
+        active_subscriptions=active_subs,
+        pending_payments=pending,
+        recent_payments=[
+            PaymentResponse(
+                id=p.id, amount=p.amount, currency=p.currency, method=p.method,
+                status=p.status, period=p.period, date=p.date, organization_id=p.organization_id,
+                org_name=p.org_name
+            ) for p in recent
+        ]
+    )
 
 # ── Audit Logs ────────────────────────────────────────────────
 

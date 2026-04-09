@@ -80,5 +80,20 @@ export const adminService = {
             headers: { "Content-Type": "multipart/form-data" },
         });
         return response.data;
+    },
+
+    getOrgInvites: async (orgId: number) => {
+        const response = await api.get(`/admin/organizations/${orgId}/invites`);
+        return response.data;
+    },
+
+    createInvite: async (orgId: number, data: { max_uses: number }) => {
+        const response = await api.post(`/admin/organizations/${orgId}/invites`, data);
+        return response.data;
+    },
+
+    revokeInvite: async (inviteId: number) => {
+        const response = await api.delete(`/admin/invites/${inviteId}`);
+        return response.data;
     }
 };
