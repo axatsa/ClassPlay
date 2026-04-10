@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { History, Star, Brain, LayoutGrid, FileText, Calculator, Search, Filter, Loader2, Play, Eye } from "lucide-react";
+import { History, Star, Brain, LayoutGrid, FileText, Calculator, Search, Filter, Loader2, Play, Eye, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,15 @@ const HistoryPage = () => {
   return (
     <div className="flex-1 overflow-y-auto bg-background p-6 lg:p-10">
       <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center gap-4 border-b border-border pb-6">
+        <div className="flex items-center gap-4 border-b border-border pb-6 relative">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full hover:bg-muted" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+          </Button>
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
             <History className="w-6 h-6 text-primary" />
           </div>

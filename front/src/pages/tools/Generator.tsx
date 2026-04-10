@@ -16,6 +16,7 @@ import { generateCrosswordLayout, CrosswordGrid } from "@/lib/crossword";
 import { EmptyState } from "@/components/common/EmptyState";
 import { RichTextRenderer } from "@/components/common/RichTextRenderer";
 import ResultEditor from "./ResultEditor";
+import { handleAIError } from "@/lib/errorUtils";
 
 type GeneratorType = "math" | "crossword" | "quiz" | "assignment";
 
@@ -222,8 +223,7 @@ const Generator = () => {
       setGenerated(true);
       toast.success("Content generated successfully!");
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to generate content. Check API connection.");
+      handleAIError(error, t);
     } finally {
       setIsGenerating(false);
     }

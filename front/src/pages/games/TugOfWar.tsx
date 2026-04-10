@@ -9,6 +9,7 @@ import { useClass } from "@/context/ClassContext";
 import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { handleAIError } from "@/lib/errorUtils";
 import { Loader2 } from "lucide-react";
 import { RichTextRenderer } from "@/components/common/RichTextRenderer";
 
@@ -141,8 +142,7 @@ const TugOfWar = () => {
       setStatus("playing");
       toast.success("Battle prepared!");
     } catch (e) {
-      console.error(e);
-      toast.error("Failed to prepare battle. Try again.");
+      handleAIError(e, t);
       setStatus("setup");
     }
   };
