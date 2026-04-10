@@ -14,22 +14,21 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { generateCrosswordLayout, CrosswordGrid } from "@/lib/crossword";
 import { EmptyState } from "@/components/common/EmptyState";
+import { RichTextRenderer } from "@/components/common/RichTextRenderer";
 import ResultEditor from "./ResultEditor";
 
 type GeneratorType = "math" | "crossword" | "quiz" | "assignment";
 
-// Заменяет x^2 → x<sup>2</sup>, поддерживает любые степени
-function formatMathText(text: string): React.ReactNode {
-  const parts = text.split(/(\w+\^\d+)/g);
-  return parts.map((part, i) => {
-    const match = part.match(/^(\w+)\^(\d+)$/);
-    if (match) {
-      return <span key={i}>{match[1]}<sup>{match[2]}</sup></span>;
-    }
-    return <span key={i}>{part}</span>;
-  });
-}
 // difficulties are handled via t() now
+
+// Cleans up [FRAC:N:D] and other markers for plain text export (e.g. DOCX)
+function cleanMathForExport(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/\[FRAC:([^:]+):([^\]]+)\]/g, "$1/$2")
+    .replace(/\*/g, "×")
+    .replace(/((?:[a-zA-Z0-9]|\([^)]+\))\^\d+)/g, "$1"); // Simple text fallback
+}
 
 const SegmentedControl = ({
   label,
@@ -345,7 +344,7 @@ const Generator = () => {
                         new Paragraph({
                           children: [
                             new TextRun({ text: `${i * 2 + 1}) `, bold: true }),
-                            new TextRun({ text: `${p1.q}` })
+                            new TextRun({ text: cleanMathForExport(p1.q) })
                           ],
                           spacing: { before: 200, after: 400 }
                         })
@@ -356,7 +355,7 @@ const Generator = () => {
                         new Paragraph({
                           children: [
                             new TextRun({ text: `${i * 2 + 2}) `, bold: true }),
-                            new TextRun({ text: `${p2.q}` })
+                            new TextRun({ text: cleanMathForExport(p2.q) })
                           ],
                           spacing: { before: 200, after: 400 }
                         })
@@ -380,7 +379,7 @@ const Generator = () => {
                         new Paragraph({
                           children: [
                             new TextRun({ text: `${idx + 1}) `, bold: true, color: "666666" }),
-                            new TextRun({ text: `${p.a}`, bold: true })
+                            new TextRun({ text: cleanMathForExport(p.a), bold: true })
                           ]
                         })
                       ] : []
@@ -426,7 +425,7 @@ const Generator = () => {
                 new Paragraph({
                   children: [
                     new TextRun({ text: `${i + 1}. `, bold: true }),
-                    new TextRun({ text: q.q })
+                    new TextRun({ text: cleanMathForExport(q.q) })
                   ],
                   spacing: { before: 200, after: 100 }
                 }),
@@ -453,7 +452,7 @@ const Generator = () => {
                         new Paragraph({
                           children: [
                             new TextRun({ text: `${idx + 1}) `, bold: true, color: "666666" }),
-                            new TextRun({ text: `${q.a}`, bold: true, color: "15803d" }) // green-700
+                            new TextRun({ text: cleanMathForExport(q.a), bold: true, color: "15803d" }) // green-700
                           ],
                           alignment: AlignmentType.CENTER
                         })
@@ -479,7 +478,7 @@ const Generator = () => {
               new Paragraph({
                 children: [
                   new TextRun({ text: `${q.num}. `, bold: true }),
-                  new TextRun({ text: q.text })
+                  new TextRun({ text: cleanMathForExport(q.text) })
                 ],
                 spacing: { before: 200, after: 100 }
               }),
@@ -490,7 +489,7 @@ const Generator = () => {
             ]),
             new Paragraph({ text: "Answer Key", heading: HeadingLevel.HEADING_2, pageBreakBefore: true }),
             ...assignmentData.questions.map((q: any) => new Paragraph({
-              text: `${q.num}) ${q.answer?.split(")")[0] || q.answer}`
+              text: `${q.num}) ${cleanMathForExport(q.answer?.split(")")[0] || q.answer)}`
             }))
           ]
         });
@@ -1311,14 +1310,14 @@ const Generator = () => {
                               const globalIdx = pi * QUIZ_PER_PAGE + qi;
                               return (
                                 <div key={qi} className="pb-2 border-b border-gray-100 last:border-0">
-                                  <p style={{ fontSize: "11px" }} className="font-semibold text-gray-800 mb-1.5 leading-snug">
-                                    {globalIdx + 1}. {q.q}
-                                  </p>
+                                  <div style={{ fontSize: "11px" }} className="font-semibold text-gray-800 mb-1.5 leading-snug">
+                                    {globalIdx + 1}. <RichTextRenderer text={q.q} />
+                                  </div>
                                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-3">
                                     {q.options?.map((opt: string, idx: number) => (
                                       <div key={idx} style={{ fontSize: "10px" }} className="flex items-start gap-1 text-gray-700">
                                         <span className="shrink-0 w-3 h-3 mt-0.5 rounded-full border border-gray-400 inline-block" />
-                                        <span className="leading-tight">{opt}</span>
+                                        <RichTextRenderer text={opt} className="leading-tight" />
                                       </div>
                                     ))}
                                   </div>
@@ -1402,12 +1401,14 @@ const Generator = () => {
                       <div className="space-y-4 flex-1 text-sm print:space-y-3">
                         {assignmentData.questions?.map((q: any, i: number) => (
                           <div key={i} className="space-y-1 pb-3 border-b border-gray-100 last:border-0 print:pb-2">
-                            <p className="font-semibold text-gray-800">{q.num}. {q.text}</p>
+                            <div className="font-semibold text-gray-800">
+                              {q.num}. <RichTextRenderer text={q.text} />
+                            </div>
                             <div className="space-y-1 pl-4 print:space-y-0.5">
                               {q.options?.map((opt: string, idx: number) => (
                                 <div key={idx} className="text-gray-600 flex items-center gap-2 text-sm print:text-xs">
                                   <span className="w-3 h-3 rounded-full border border-gray-300 inline-block"></span>
-                                  {opt}
+                                  <RichTextRenderer text={opt} />
                                 </div>
                               ))}
                             </div>
@@ -1467,7 +1468,7 @@ const Generator = () => {
                           <div key={i} className="flex gap-4 items-start">
                             <span className="text-xs text-gray-300 font-mono mt-1 w-5">{i + 1})</span>
                             <div className="text-lg font-mono text-gray-800 tracking-wider">
-                              {formatMathText(p.q)}
+                              <RichTextRenderer text={p.q} />
                             </div>
                           </div>
                         ))}

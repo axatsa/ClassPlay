@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { RichTextRenderer } from "@/components/common/RichTextRenderer";
 
 type GameStatus = "setup" | "loading" | "playing" | "finished";
 
@@ -278,7 +279,9 @@ const TugOfWar = () => {
                 <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-1.5">
                   <p className="text-xs text-blue-500 font-sans font-medium">{t('game_question_number')}{blueCurrentQ + 1}</p>
                 </div>
-                <p className="text-blue-700 font-bold text-center text-base font-sans leading-snug px-1 pt-2">{blueQ.q}</p>
+                <div className="text-blue-700 font-bold text-center text-base font-sans leading-snug px-1 pt-2">
+                  <RichTextRenderer text={blueQ.q} />
+                </div>
                 <div className="flex flex-col gap-2 mt-1">
                   {blueQ.options.map((opt, i) => {
                     const isCorrect = opt === blueQ.a;
@@ -291,14 +294,14 @@ const TugOfWar = () => {
                         whileTap={!feedback ? { scale: 0.98 } : {}}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left font-sans text-sm font-medium transition-all ${isFeedback && isCorrect ? "border-green-400 bg-green-50 text-green-700" :
                           isFeedback && !isCorrect ? "border-red-200 bg-red-50 text-red-400" :
-                            "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 text-gray-700"
+                          : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 text-gray-700"
                           }`}
                       >
                         <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isFeedback && isCorrect ? "bg-green-400 text-white" :
                           isFeedback && !isCorrect ? "bg-red-200 text-red-500" :
                             "bg-blue-100 text-blue-600"
                           }`}>{LABELS[i]}</span>
-                        {opt}
+                        <RichTextRenderer text={opt} />
                       </motion.button>
                     );
                   })}
@@ -377,7 +380,9 @@ const TugOfWar = () => {
                 <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-1.5">
                   <p className="text-xs text-red-500 font-sans font-medium">{t('game_question_number')}{redCurrentQ + 1}</p>
                 </div>
-                <p className="text-red-600 font-bold text-center text-base font-sans leading-snug px-1 pt-2">{redQ.q}</p>
+                <div className="text-red-600 font-bold text-center text-base font-sans leading-snug px-1 pt-2">
+                  <RichTextRenderer text={redQ.q} />
+                </div>
                 <div className="flex flex-col gap-2 mt-1">
                   {redQ.options.map((opt, i) => {
                     const isCorrect = opt === redQ.a;
@@ -397,7 +402,7 @@ const TugOfWar = () => {
                           isFeedback && !isCorrect ? "bg-red-200 text-red-500" :
                             "bg-red-100 text-red-600"
                           }`}>{LABELS[i]}</span>
-                        {opt}
+                        <RichTextRenderer text={opt} />
                       </motion.button>
                     );
                   })}

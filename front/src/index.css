@@ -147,3 +147,32 @@
   .zone-fuchsia { background-color: var(--zone-fuchsia-bg); color: var(--zone-fuchsia-text); }
   .zone-stone   { background-color: var(--zone-stone-bg);   color: #1c1917; }
 }
+
+
+/* Math Fractions */
+.math-fraction {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  align-items: center;
+  font-size: 0.9em;
+  margin: 0 0.15em;
+  line-height: 1;
+}
+
+.math-num {
+  border-bottom: 1.5px solid currentColor;
+  padding: 0 0.2em;
+  display: block;
+}
+
+.math-den {
+  padding: 0 0.2em;
+  display: block;
+}
+
+.rich-text-renderer sup {
+  font-size: 0.65em;
+  vertical-align: super;
+  margin-left: 0.05em;
+}

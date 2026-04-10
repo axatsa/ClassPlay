@@ -9,6 +9,7 @@ import { useClass } from "@/context/ClassContext";
 import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { RichTextRenderer } from "@/components/common/RichTextRenderer";
 
 const POINTS = [100, 200, 300, 400, 500];
 
@@ -250,9 +251,9 @@ const Jeopardy = () => {
               <div className="text-blue-500 font-bold font-sans text-sm mb-3 uppercase tracking-wider">
                 {activeCell.cat} — {activeCell.pts} {t('points')}
               </div>
-              <p className="text-gray-800 text-3xl font-bold font-serif mb-6 leading-tight">
-                {questions[`${activeCell.cat}-${activeCell.pts}`]?.q}
-              </p>
+              <div className="text-gray-800 text-3xl font-bold font-serif mb-6 leading-tight">
+                <RichTextRenderer text={questions[`${activeCell.cat}-${activeCell.pts}`]?.q} />
+              </div>
               {!showAnswer ? (
                 <Button onClick={() => setShowAnswer(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8">
                   {t('game_show_answer')}
@@ -260,7 +261,9 @@ const Jeopardy = () => {
               ) : (
                 <div className="space-y-4">
                   <div className="bg-green-50 border border-green-300 rounded-2xl p-4">
-                    <p className="text-green-700 font-bold text-2xl font-serif">{questions[`${activeCell.cat}-${activeCell.pts}`]?.a}</p>
+                    <div className="text-green-700 font-bold text-2xl font-serif">
+                      <RichTextRenderer text={questions[`${activeCell.cat}-${activeCell.pts}`]?.a} />
+                    </div>
                   </div>
                   <p className="text-gray-500 text-sm font-sans">{t('game_award_points_to')}</p>
                   <div className="flex flex-wrap gap-2 justify-center">

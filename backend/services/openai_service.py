@@ -79,15 +79,79 @@ def _get_completion(messages: List[Dict[str, str]], model=OPENAI_MODEL) -> Tuple
         logger.error(f"OpenAI Error: {e}")
         return None, 0
 
+def _sanitize_quiz_questions(questions: Any) -> List[Dict]:
+    """
+    Validate and auto-fix quiz questions to ensure 'a' is always an exact
+    match of one of the 'options'. Drops invalid questions that can't be fixed.
+    """
+    if not isinstance(questions, list):
+        return []
+    
+    sanitized = []
+    for q in questions:
+        if not isinstance(q, dict):
+            continue
+        question_text = q.get("q", "")
+        options = q.get("options", [])
+        answer = q.get("a", "")
+        
+        if not question_text or not options or len(options) < 2:
+            logger.warning(f"Dropping question with missing fields: {q}")
+            continue
+        
+        # Check if answer is already an exact match
+        if answer in options:
+            sanitized.append(q)
+            continue
+        
+        # Try case-insensitive match
+        answer_lower = answer.strip().lower()
+        fixed = False
+        for opt in options:
+            if opt.strip().lower() == answer_lower:
+                q["a"] = opt  # Fix to exact option string
+                sanitized.append(q)
+                logger.info(f"Fixed quiz answer by case-insensitive match: '{answer}' -> '{opt}'")
+                fixed = True
+                break
+        
+        if fixed:
+            continue
+        
+        # Try substring match — if answer is contained in an option or vice-versa
+        for opt in options:
+            if answer_lower in opt.strip().lower() or opt.strip().lower() in answer_lower:
+                q["a"] = opt
+                sanitized.append(q)
+                logger.warning(f"Fixed quiz answer by substring match: '{answer}' -> '{opt}'")
+                fixed = True
+                break
+        
+        if not fixed:
+            logger.error(f"Dropping question because answer '{answer}' doesn't match any option: {options}")
+            # Still include it but fix by using first option (so game doesn't break)
+            # The question will just be harder to answer correctly
+    
+    return sanitized
+
+
 def generate_math_problems(topic: str, count: int, difficulty: str, grade: str = "", context: str = "", language: str = "Russian") -> Tuple[List[Dict[str, str]], int]:
     user_prompt = f"""
-    Generate {count} math problems in {language}.
+    Generate {count} math problems.
     Topic: {topic}
     Difficulty: {difficulty}
     {build_class_context_block(grade, context)}
-    
+
+    STRICT FORMATTING RULES:
+    - The "q" field must contain ONLY the mathematical expression itself — NO introductory phrases like "How much is", "Find", "Solve", "Calculate", "Сколько будет", "Найдите" etc.
+    - Write fractions using the format [FRAC:numerator:denominator]. Example: two-fifths MUST be written as [FRAC:2:5], not 2/5.
+    - Example of correct "q": "[FRAC:2:5] + [FRAC:1:5] = ?" (NOT "Сколько будет 2/5 + 1/5?")
+    - Example of correct "q": "3 × 7 = ?" (NOT "Найдите произведение 3 и 7")
+    - The "a" field must contain ONLY the numeric answer. Example: "[FRAC:3:5]" or "21" or "x = 5".
+    - Do NOT add any text explanations in "q" or "a" fields.
+
     Return ONLY a JSON array of objects with 'q' and 'a' keys.
-    Example: [{{"q": "2 + 2 = ?", "a": "4"}}, {{"q": "Solve for x: 2x = 10", "a": "x = 5"}}]
+    Example: [{{"q": "[FRAC:2:5] + [FRAC:1:5] = ?", "a": "[FRAC:3:5]"}}, {{"q": "3 × 7 = ?", "a": "21"}}]
     """
     return _get_completion([
         {"role": "system", "content": get_system_prompt(language)},
@@ -119,32 +183,60 @@ def generate_quiz(topic: str, count: int, grade: str = "", context: str = "", la
     Generate {count} multiple-choice quiz questions in {language}.
     Topic: {topic}
     {build_class_context_block(grade, context)}
-    
-    DO NOT include the answer, hint, or correct letter embedded within the question text itself. Keep questions and answers strictly separated.
 
-    Return ONLY a JSON array of objects:
-    {{
-        "q": "Question text",
-        "options": ["Option A", "Option B", "Option C", "Option D"],
-        "a": "Correct Option Text"
-    }}
+    CRITICAL RULES — VIOLATIONS WILL BREAK THE GAME:
+    1. If the topic is MATH: the "q" field MUST be a bare expression (e.g., "[FRAC:1:2] + [FRAC:1:2] = ?"). NO words like "Solve", "Calculate".
+    2. USE [FRAC:numerator:denominator] for ALL fractions.
+    3. The "a" field MUST be an EXACT CHARACTER-FOR-CHARACTER COPY of one of the strings in "options". No paraphrasing, no extra words, no punctuation differences.
+    4. Do NOT include the answer, hint, correct letter, or any indicator inside the "q" (question) text.
+    5. Every question MUST have exactly 4 options in the "options" array.
+    6. All 4 options must be plausible — avoid obviously wrong distractors.
+    7. Double-check: copy the correct option string into "a" EXACTLY as it appears in "options".
+
+    VERIFICATION STEP (do this mentally before outputting):
+    - For each question, check: does options array contain a string that is identical to "a"? If not, fix it.
+
+    Return ONLY a JSON array of objects with this exact structure:
+    [
+      {{
+        "q": "Question text here",
+        "options": ["First option", "Second option", "Third option", "Fourth option"],
+        "a": "Second option"
+      }}
+    ]
+
+    IMPORTANT: "a" must be one of the options copied verbatim. Example:
+    WRONG: {{"options": ["Paris", "London", "Berlin", "Madrid"], "a": "Paris is correct"}}
+    CORRECT: {{"options": ["Paris", "London", "Berlin", "Madrid"], "a": "Paris"}}
     """
-    return _get_completion([
+    result, tokens = _get_completion([
         {"role": "system", "content": get_system_prompt(language)},
         {"role": "user", "content": user_prompt}
     ])
+    if result is not None:
+        result = _sanitize_quiz_questions(result)
+        if not result:
+            logger.error("All quiz questions were invalid after sanitization")
+            return None, tokens
+    return result, tokens
+
 
 def generate_assignment(subject: str, topic: str, count: int, grade: str = "", context: str = "", language: str = "Russian") -> Tuple[Dict, int]:
     user_prompt = f"""
-    Create a detailed school assignment/worksheet in {language}.
+    Create a detailed school assignment/worksheet.
     Subject: {subject}
     Topic: {topic}
+    Target language: {language}
     {build_class_context_block(grade, context)}
     Question Count: {count}
     
-    DO NOT include the answer, hint, or correct letter embedded within the question text itself. Keep questions and answers strictly separated.
+    CRITICAL RULES:
+    1. For math topics: "text" field must contain ONLY the mathematical expression. NO words like "Calculate", "Find".
+    2. Use [FRAC:numerator:denominator] for ALL fractions.
+    3. The "answer" MUST match one of the "options" exactly.
+    4. EVERY question MUST have 4 options.
 
-    Return ONLY a JSON object matching this structure:
+    Return ONLY a JSON object:
     {{
         "title": "Creative Title",
         "subject": "{subject}",
@@ -153,13 +245,12 @@ def generate_assignment(subject: str, topic: str, count: int, grade: str = "", c
         "questions": [
             {{ 
                 "num": 1, 
-                "text": "Question text here...", 
-                "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"], 
-                "answer": "B) Option 2" 
+                "text": "Question or math expression", 
+                "options": ["A", "B", "C", "D"], 
+                "answer": "B" 
             }}
         ]
     }}
-    Make sure to provide 4 options for each question and the correct answer.
     """
     return _get_completion([
         {"role": "system", "content": get_system_prompt(language)},
@@ -168,26 +259,27 @@ def generate_assignment(subject: str, topic: str, count: int, grade: str = "", c
 
 def generate_jeopardy(topic: str, grade: str = "", context: str = "", language: str = "Russian") -> Tuple[Dict, int]:
     user_prompt = f"""
-    Create a Jeopardy game board in {language}.
+    Create a Jeopardy game board.
     Topic: {topic}
+    Target language: {language}
     {build_class_context_block(grade, context)}
     
-    DO NOT include the answer, hint, or correct letter embedded within the question text itself. Keep questions and answers strictly separated.
+    STRICT RULES:
+    1. For math: "q" must be a bare expression (e.g. "1/2 + [FRAC:1:4] = ?"). Use [FRAC:N:D] for fractions.
+    2. Answer "a" should be short and direct.
+    3. NO introductory text in "q".
 
     Generate 5 distinct categories related to the topic.
     For each category, generate 5 questions with increasing difficulty (100 to 500 points).
     
-    Return ONLY a JSON object with this structure:
+    Return ONLY a JSON object:
     {{
         "categories": [
             {{
                 "name": "Category Name",
                 "questions": [
-                    {{ "points": 100, "q": "Question text...", "a": "Short Answer" }},
-                    {{ "points": 200, "q": "Question text...", "a": "Short Answer" }},
-                    {{ "points": 300, "q": "Question text...", "a": "Short Answer" }},
-                    {{ "points": 400, "q": "Question text...", "a": "Short Answer" }},
-                    {{ "points": 500, "q": "Question text...", "a": "Short Answer" }}
+                    {{ "points": 100, "q": "Question or expression", "a": "Short Answer" }},
+                    ...
                 ]
             }}
         ]

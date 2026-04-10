@@ -34,6 +34,9 @@ const ResultEditor = ({ open, onOpenChange, type, data, onSave }: ResultEditorPr
 
     return (
       <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div className="text-[10px] text-muted-foreground bg-primary/5 rounded-lg border border-primary/20 p-2 italic mb-2">
+          Подсказка: используйте <strong>[FRAC:1:2]</strong> для красивых дробей и <strong>x^2</strong> для степеней.
+        </div>
         {editData.map((prob: any, idx: number) => (
           <div key={idx} className="flex gap-4 items-start p-3 bg-muted/30 border border-border rounded-xl">
             <span className="mt-2 text-muted-foreground cursor-grab"><GripVertical className="w-4 h-4" /></span>
@@ -87,6 +90,9 @@ const ResultEditor = ({ open, onOpenChange, type, data, onSave }: ResultEditorPr
 
     return (
       <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div className="text-[10px] text-muted-foreground bg-primary/5 rounded-lg border border-primary/20 p-2 italic mb-2">
+          Подсказка: используйте <strong>[FRAC:1:2]</strong> для красивых дробей и <strong>x^2</strong> для степеней.
+        </div>
         {editData.map((q: any, qIdx: number) => (
           <div key={qIdx} className="p-4 bg-muted/30 border border-border rounded-xl space-y-3 relative group">
             <button 
