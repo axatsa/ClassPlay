@@ -164,20 +164,20 @@ const TeacherDashboard = () => {
             </div>
             <div>
               <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">
-                {lang === "ru" ? "Привет," : "Xush kelibsiz,"} {" "}
+                {t("welcomeBack")} {" "}
                 <span className="bg-gradient-to-r from-violet-600 to-indigo-500 bg-clip-text text-transparent">
-                  {user?.full_name?.split(" ")[0] || "Учитель"}
+                  {user?.full_name?.split(" ")[0] || t("teacher_placeholder")}
                 </span>
               </h1>
-              <p className="text-muted-foreground mt-2 max-w-md">Рады видеть вас снова. Давайте создадим что-то интересное для ваших учеников сегодня!</p>
+              <p className="text-muted-foreground mt-2 max-w-md">{t("welcome_back_detailed")}</p>
             </div>
             
             <div className="flex flex-wrap gap-4 mt-8">
                <Button onClick={() => navigate("/generator")} size="lg" className="rounded-2xl px-8 h-12 font-bold shadow-lg shadow-primary/20 gap-2">
-                 <Zap className="w-5 h-5" /> Создать урок
+                 <Zap className="w-5 h-5" /> {t("create_lesson")}
                </Button>
                <Button onClick={() => navigate("/games")} variant="secondary" size="lg" className="rounded-2xl px-8 h-12 font-bold gap-2">
-                 <Gamepad2 className="w-5 h-5" /> Запустить игру
+                 <Gamepad2 className="w-5 h-5" /> {t("launch_game")}
                </Button>
             </div>
           </motion.div>
@@ -186,28 +186,28 @@ const TeacherDashboard = () => {
              <MetricCard 
                icon={<Zap className="w-5 h-5 text-violet-600" />} 
                value={stats?.total_generations || 0} 
-               label="Всего заданий" 
+               label={t("stats_total_tasks")} 
                color="bg-violet-500/10" 
                delay={0.1}
              />
              <MetricCard 
                icon={<Calendar className="w-5 h-5 text-emerald-600" />} 
                value={stats?.generations_this_month || 0} 
-               label="В этом месяце" 
+               label={t("stats_this_month")} 
                color="bg-emerald-500/10" 
                delay={0.2}
              />
              <MetricCard 
                icon={<Gamepad2 className="w-5 h-5 text-orange-600" />} 
                value={stats?.games_launched || 0} 
-               label="Игр запущено" 
+               label={t("stats_games_launched")} 
                color="bg-orange-500/10" 
                delay={0.3}
              />
              <MetricCard 
                icon={<TrendingUp className="w-5 h-5 text-blue-600" />} 
                value={classes.length} 
-               label="Ваши классы" 
+               label={t("stats_your_classes")} 
                color="bg-blue-500/10" 
                delay={0.4}
              />
@@ -228,8 +228,8 @@ const TeacherDashboard = () => {
                 <card.icon className={`w-6 h-6 ${card.iconColor}`} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground leading-tight">{card.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{card.desc}</p>
+                <h3 className="text-lg font-bold text-foreground leading-tight">{t(card.title)}</h3>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{t(card.desc)}</p>
               </div>
             </motion.button>
           ))}
@@ -260,8 +260,8 @@ const MetricCard = ({ icon, value, label, color, delay }: any) => (
 
 const cardsList = [
   {
-    title: "AI Генераторы",
-    desc: "Создавайте тесты и упражнения в один клик",
+    title: "cardAiTitle",
+    desc: "cardAiDesc",
     icon: Sparkles,
     route: "/generator",
     iconBg: "bg-violet-500/10",
@@ -269,16 +269,16 @@ const cardsList = [
     span: "md:col-span-2"
   },
   {
-    title: "Игры",
-    desc: "Интерактив на смарт-борде",
+    title: "cardGamesTitle",
+    desc: "cardGamesDesc",
     icon: Gamepad2,
     route: "/games",
     iconBg: "bg-emerald-500/10",
     iconColor: "text-emerald-600",
   },
   {
-    title: "Библиотека",
-    desc: "Готовые материалы коллег",
+    title: "cardLibraryTitle",
+    desc: "cardLibraryDesc",
     icon: BookOpen,
     route: "/library",
     iconBg: "bg-rose-500/10",

@@ -27,19 +27,19 @@ export default function Landing() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const testimonials = [
-    { name: "Айгуль М.", role: "Учитель математики", school: "Алматы", text: "Раньше тратила 2 часа на составление тестов. Теперь — 5 минут. ИИ понимает специфику наших программ!", rating: 5 },
-    { name: "Дмитрий К.", role: "Учитель истории", school: "Ташкент", text: "Дети в восторге от игр на смарт-борде. Jeopardy — главный хит класса, теперь это любимый день недели.", rating: 5 },
-    { name: "Наталья С.", role: "Завуч", school: "Гимназия №3", text: "Купили лицензию для всей школы. Учителя освободились от рутины и больше времени уделяют детям. Окупилось за месяц.", rating: 5 },
-    { name: "Камила Ю.", role: "Учитель английского", school: "Private School", text: "AI кроссворды — любимое задание детей каждую пятницу. Генерация на разных языках работает безупречно.", rating: 5 },
+    { name: t("testim_1_name"), role: t("testim_1_role"), school: t("testim_1_school"), text: t("testim_1_text"), rating: 5 },
+    { name: t("testim_2_name"), role: t("testim_2_role"), school: t("testim_2_school"), text: t("testim_2_text"), rating: 5 },
+    { name: t("testim_3_name"), role: t("testim_3_role"), school: t("testim_3_school"), text: t("testim_3_text"), rating: 5 },
+    { name: t("testim_4_name"), role: t("testim_4_role"), school: t("testim_4_school"), text: t("testim_4_text"), rating: 5 },
   ];
 
   const faqs = [
-    { q: "Работает ли на казахском?", a: "Сейчас поддерживаются Русский и Узбекский. Казахский в планах на Q3 2026." },
-    { q: "Сколько стоит для школы?", a: "План School — $49/мес за 10 учителей. Для более крупных школ — индивидуальный расчёт." },
-    { q: "Нужен ли смарт-борд для игр?", a: "Нет, игры работают в любом браузере. Смарт-борд улучшает опыт, но не обязателен." },
-    { q: "Могу ли я отменить подписку?", a: "Да, в любой момент из личного кабинета. Деньги за неиспользованный период возвращаем." },
-    { q: "Безопасны ли данные учеников?", a: "Мы не храним данные учеников. Учитель вводит только темы уроков или загружает список имен без фамилий." },
-    { q: "Есть ли приложение?", a: "Пока только веб-версия, полностью оптимизированная для планшетов, ПК и смарт-бордов." },
+    { q: t("faq_1_q"), a: t("faq_1_a") },
+    { q: t("faq_2_q"), a: t("faq_2_a") },
+    { q: t("faq_3_q"), a: t("faq_3_a") },
+    { q: t("faq_4_q"), a: t("faq_4_a") },
+    { q: t("faq_5_q"), a: t("faq_5_a") },
+    { q: t("faq_6_q"), a: t("faq_6_a") },
   ];
 
   useEffect(() => {
@@ -110,10 +110,10 @@ export default function Landing() {
                     <p className="text-xs text-slate-400">{user.email}</p>
                   </div>
                   <button onClick={() => navigate("/teacher")} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 rounded-xl text-sm text-slate-700 transition-colors">
-                    <Settings className="w-4 h-4 opacity-50" /> Дашборд
+                    <Settings className="w-4 h-4 opacity-50" /> {t("land_dashboard")}
                   </button>
                   <button onClick={logout} className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 rounded-xl text-sm text-red-500 transition-colors">
-                    <LogOut className="w-4 h-4" /> Выйти
+                    <LogOut className="w-4 h-4" /> {t("logout")}
                   </button>
                 </motion.div>
               )}
@@ -394,10 +394,10 @@ export default function Landing() {
           >
             <div className="max-w-xl">
               <div className="flex items-center gap-2 text-emerald-600 font-bold mb-4 uppercase tracking-wider text-sm">
-                <Quote className="w-5 h-5" /> {t("land_testimonials_badge", "Отзывы учителей")}
+                <Quote className="w-5 h-5" /> {t("land_testimonials_badge")}
               </div>
               <h2 className="text-4xl md:text-6xl font-display font-semibold tracking-tighter text-slate-900">
-                Тысячи учителей уже экономят время
+                {t("land_testimonials_title")}
               </h2>
             </div>
           </motion.div>
@@ -436,7 +436,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-6xl font-display font-semibold tracking-tighter text-slate-900 mb-6">
-              Часто задаваемые вопросы
+              {t("land_faq_title")}
             </h2>
           </div>
 
@@ -489,7 +489,7 @@ export default function Landing() {
             <span className="text-sm font-semibold uppercase tracking-widest opacity-80">{t("land_start", "Начать сейчас")}</span>
           </div>
           <h2 className="text-5xl md:text-8xl font-display font-medium tracking-tighter leading-[0.9] mb-12">
-             Готовы изменить<br />ваши уроки?
+             {t("land_ready_to_change")}
           </h2>
           <div className="flex flex-wrap gap-6 mb-16">
             {["ИИ-Генератор", "Интерактив", "Аналитика", "Безлимит"].map(item => (
@@ -504,7 +504,7 @@ export default function Landing() {
             className="px-10 py-6 rounded-full text-2xl font-display font-semibold flex items-center gap-4 hover:scale-105 transition-transform shadow-2xl"
             style={{ background: "var(--zone-fuchsia-text)", color: "var(--zone-fuchsia-bg)" }}
           >
-            Попробовать ClassPlay <ArrowRight size={26} />
+            {t("land_cta_try")} <ArrowRight size={26} />
           </button>
         </motion.div>
       </section>

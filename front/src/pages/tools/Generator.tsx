@@ -781,10 +781,10 @@ const Generator = () => {
                   transition={{ duration: 2, repeat: Infinity }}
                   className="text-3xl font-display font-bold text-foreground tracking-tight mb-2"
                 >
-                  {lang === "ru" ? "AI создаёт материал…" : "AI kontent yaratmoqda…"}
+                  {t("ai_generating")}
                 </motion.h2>
                 <p className="text-muted-foreground font-sans text-base">
-                  {lang === "ru" ? "Это займёт несколько секунд" : "Bu bir necha soniya davom etadi"}
+                  {t("take_few_seconds")}
                 </p>
               </div>
 
@@ -914,10 +914,13 @@ const Generator = () => {
 
             {/* Generation Language Switcher */}
             <SegmentedControl
-              label={t("language_label", "Язык генерации")}
-              options={["Russian", "Uzbek", "English"]}
-              value={targetLang}
-              onChange={setTargetLang}
+              label={t("language_label")}
+              options={[t("lang_ru"), t("lang_uz"), t("lang_en")]}
+              value={targetLang === "Russian" ? t("lang_ru") : targetLang === "Uzbek" ? t("lang_uz") : t("lang_en")}
+              onChange={(v) => {
+                const langMap: any = { [t("lang_ru")]: "Russian", [t("lang_uz")]: "Uzbek", [t("lang_en")]: "English" };
+                setTargetLang(langMap[v]);
+              }}
               segId="targetLang"
             />
 
@@ -1068,17 +1071,27 @@ const Generator = () => {
               >
                 {/* Subject — выбор или ввод */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Предмет</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("subject_label")}</Label>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {["Math", "Biology", "History", "Physics", "Chemistry", "English", "Geography", "Literature", "General"].map((s) => (
-                      <button key={s} onClick={() => setAssignSubject(s)}
-                        className={`py-2 px-2 text-xs font-sans rounded-lg border transition-all ${assignSubject === s ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"}`}>
-                        {s}
+                    {[
+                      { key: "Math", label: t("subject_math") },
+                      { key: "Biology", label: t("subject_biology") },
+                      { key: "History", label: t("subject_history") },
+                      { key: "Physics", label: t("subject_physics") },
+                      { key: "Chemistry", label: t("subject_chemistry") },
+                      { key: "English", label: t("subject_english") },
+                      { key: "Geography", label: t("subject_geography") },
+                      { key: "Literature", label: t("subject_literature") },
+                      { key: "General", label: t("subject_general") }
+                    ].map((s) => (
+                      <button key={s.key} onClick={() => setAssignSubject(s.key)}
+                        className={`py-2 px-2 text-xs font-sans rounded-lg border transition-all ${assignSubject === s.key ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"}`}>
+                        {s.label}
                       </button>
                     ))}
                   </div>
                   <Input
-                    placeholder="или введите свой предмет..."
+                    placeholder={t("subject_placeholder")}
                     value={assignSubject}
                     onChange={(e) => setAssignSubject(e.target.value)}
                     className="h-10 rounded-xl font-sans mt-1"

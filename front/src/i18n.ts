@@ -414,6 +414,62 @@ i18n
                     admin_top_ai: "Топ пользователей AI",
                     admin_anomaly: "аномалия",
 
+                    // New Dashboard Strings
+                    welcome_back_detailed: "Рады видеть вас снова. Давайте создадим что-то интересное для ваших учеников сегодня!",
+                    stats_total_tasks: "Всего заданий",
+                    stats_this_month: "В этом месяце",
+                    stats_games_launched: "Игр запущено",
+                    stats_your_classes: "Ваши классы",
+                    create_lesson: "Создать урок",
+                    launch_game: "Запустить игру",
+                    teacher_placeholder: "Учитель",
+                    ai_generating: "AI создаёт материал…",
+                    take_few_seconds: "Это займёт несколько секунд",
+
+                    // New Landing Strings
+                    land_testimonials_badge: "Отзывы учителей",
+                    land_testimonials_title: "Тысячи учителей уже экономят время",
+                    land_faq_title: "Часто задаваемые вопросы",
+                    land_ready_to_change: "Готовы изменить ваши уроки?",
+                    land_cta_try: "Попробовать ClassPlay",
+                    land_dashboard: "Дашборд",
+                    land_demo: "Демо",
+
+                    // Testimonials
+                    testim_1_name: "Айгуль М.",
+                    testim_1_role: "Учитель математики",
+                    testim_1_school: "Алматы",
+                    testim_1_text: "Раньше тратила 2 часа на составление тестов. Теперь — 5 минут. ИИ понимает специфику наших программ!",
+                    
+                    testim_2_name: "Дмитрий К.",
+                    testim_2_role: "Учитель истории",
+                    testim_2_school: "Ташкент",
+                    testim_2_text: "Дети в восторге от игр на смарт-борде. Jeopardy — главный хит класса, теперь это любимый день недели.",
+                    
+                    testim_3_name: "Наталья С.",
+                    testim_3_role: "Завуч",
+                    testim_3_school: "Гимназия №3",
+                    testim_3_text: "Купили лицензию для всей школы. Учителя освободились от рутины и больше времени уделяют детям. Окупилось за месяц.",
+                    
+                    testim_4_name: "Камила Ю.",
+                    testim_4_role: "Учитель английского",
+                    testim_4_school: "Private School",
+                    testim_4_text: "AI кроссворды — любимое задание детей каждую пятницу. Генерация на разных языках работает безупречно.",
+
+                    // FAQ
+                    faq_1_q: "Работает ли на казахском?",
+                    faq_1_a: "Сейчас поддерживаются Русский и Узбекский. Казахский в планах на Q3 2026.",
+                    faq_2_q: "Сколько стоит для школы?",
+                    faq_2_a: "План School — $49/мес за 10 учителей. Для более крупных школ — индивидуальный расчёт.",
+                    faq_3_q: "Нужен ли смарт-борд для игр?",
+                    faq_3_a: "Нет, игры работают в любом браузере. Смарт-борд улучшает опыт, но не обязателен.",
+                    faq_4_q: "Могу ли я отменить подписку?",
+                    faq_4_a: "Да, в любой момент из личного кабинета. Деньги за неиспользованный период возвращаем.",
+                    faq_5_q: "Безопасны ли данные учеников?",
+                    faq_5_a: "Мы не храним данные учеников. Учитель вводит только темы уроков или загружает список имен без фамилий.",
+                    faq_6_q: "Есть ли приложение?",
+                    faq_6_a: "Пока только веб-версия, полностью оптимизированная для планшетов, ПК и смарт-бордов.",
+
                     // Pagination
                     pag_previous: "Назад",
                     pag_next: "Вперед",
@@ -453,6 +509,24 @@ i18n
                     admin_finances_sub: "MRR, история платежей и выставление счётов",
                     admin_system_title: "Система",
                     admin_system_sub: "Настройки, API ключи, объявления",
+
+                    // Subjects
+                    subject_label: "Предмет",
+                    subject_placeholder: "или введите свой предмет...",
+                    subject_math: "Математика",
+                    subject_biology: "Биология",
+                    subject_history: "История",
+                    subject_physics: "Физика",
+                    subject_chemistry: "Химия",
+                    subject_english: "Английский",
+                    subject_geography: "География",
+                    subject_literature: "Литература",
+                    subject_general: "Общее",
+
+                    // Languages
+                    lang_ru: "Русский",
+                    lang_uz: "Узбекский",
+                    lang_en: "Английский",
                 }
             },
             uz: {
@@ -802,6 +876,62 @@ i18n
                     land_copy: "© 2026 ClassPlay Inc. Barcha huquqlar himoyalangan.",
                     land_start: "Hozir boshlash",
 
+                    // New Dashboard Strings
+                    welcome_back_detailed: "Sizni yana ko'rganimizdan xursandmiz. Keling, bugun o'quvchilaringiz uchun qiziqarli narsa yaratamiz!",
+                    stats_total_tasks: "Jami topshiriqlar",
+                    stats_this_month: "Shu oyda",
+                    stats_games_launched: "O'yinlar ishga tushirildi",
+                    stats_your_classes: "Sizning sinflaringiz",
+                    create_lesson: "Dars yaratish",
+                    launch_game: "O'yinni boshlash",
+                    teacher_placeholder: "O'qituvchi",
+                    ai_generating: "AI kontent yaratmoqda…",
+                    take_few_seconds: "Bu bir necha soniya davom etadi",
+
+                    // New Landing Strings
+                    land_testimonials_badge: "O'qituvchilar fikri",
+                    land_testimonials_title: "Minglab o'qituvchilar vaqtingizni tejashmoqda",
+                    land_faq_title: "Ko'p beriladigan savollar",
+                    land_ready_to_change: "Darslaringizni o'zgartirishga tayyormisiz?",
+                    land_cta_try: "ClassPlay-ni sinab ko'ring",
+                    land_dashboard: "Boshqaruv paneli",
+                    land_demo: "Demo",
+
+                    // Testimonials
+                    testim_1_name: "Aygul M.",
+                    testim_1_role: "Matematika o'qituvchisi",
+                    testim_1_school: "Almati",
+                    testim_1_text: "Ilgari testlar tuzishga 2 soat vaqt sarflardim. Endi — 5 daqiqa. AI bizning dasturlarimiz xususiyatlarini tushunadi!",
+                    
+                    testim_2_name: "Dmitriy K.",
+                    testim_2_role: "Tarix o'qituvchisi",
+                    testim_2_school: "Toshkent",
+                    testim_2_text: "Bolalar smart-doskadagi o'yinlardan juda hayratda. Jeopardy — sinfning asosiy hiti, endi bu haftaning sevimli kuni.",
+                    
+                    testim_3_name: "Natalya S.",
+                    testim_3_role: "O'quv ishlari bo'yicha mudir",
+                    testim_3_school: "3-sonli gimnaziya",
+                    testim_3_text: "Butun maktab uchun litsenziya sotib oldik. O'qituvchilar muntazam ishlardan ozod bo'lishdi va bolalarga ko'proq vaqt ajratishmoqda. Bir oyda o'zini oqladi.",
+                    
+                    testim_4_name: "Kamila Yu.",
+                    testim_4_role: "Ingliz tili o'qituvchisi",
+                    testim_4_school: "Xususiy maktab",
+                    testim_4_text: "AI krossvordlari — har juma kuni bolalarning sevimli topshirig'i. Turli tillarda generatsiya qilish mukammal ishlaydi.",
+
+                    // FAQ
+                    faq_1_q: "Qozoq tilida ishlaydimi?",
+                    faq_1_a: "Hozirda Rus va O'zbek tillari qo'llab-quvvatlanadi. Qozoq tili 2026 yilning 3-choragi rejalarida.",
+                    faq_2_q: "Maktab uchun qancha turadi?",
+                    faq_2_a: "School rejasi — 10 ta o'qituvchi uchun oyiga $49. Kattaroq maktablar uchun — individual hisob-kitob.",
+                    faq_3_q: "O'yinlar uchun smart-doska kerakmi?",
+                    faq_3_a: "Yo'q, o'yinlar istalgan brauzerda ishlaydi. Smart-doska tajribani yaxshilaydi, lekin majburiy emas.",
+                    faq_4_q: "Obunani bekor qila olamanmi?",
+                    faq_4_a: "Ha, istalgan vaqtda shaxsiy kabinetdan. Foydalanilmagan davr uchun pulni qaytaramiz.",
+                    faq_5_q: "O'quvchilar ma'lumotlari xavfsizimi?",
+                    faq_5_a: "Biz o'quvchilar ma'lumotlarini saqlamaymiz. O'qituvchi faqat dars mavzulari yoki familiyasiz ismlar ro'yxatini kiritadi.",
+                    faq_6_q: "Ilovasi bormi?",
+                    faq_6_a: "Hozircha faqat veb-versiyasi bor, planshetlar, PK va smart-doskalar uchun to'liq optimallashtirilgan.",
+
                     // Class Manager Hints
                     grade_hint_1: "100 gacha sanash, 20 doirasida qo'shish/ayirish",
                     grade_hint_2: "1000 gacha qo'shish/ayirish, ko'paytirish jadvali boshlanadi",
@@ -894,6 +1024,24 @@ i18n
                     admin_finances_sub: "MRR, to'lovlar tarixi va hisob-faktura",
                     admin_system_title: "Tizim",
                     admin_system_sub: "Sozlamalar, API kalitlari, e'lonlar",
+
+                    // Subjects
+                    subject_label: "Fan",
+                    subject_placeholder: "yoki o'z faningizni kiriting...",
+                    subject_math: "Matematika",
+                    subject_biology: "Biologiya",
+                    subject_history: "Tarix",
+                    subject_physics: "Fizika",
+                    subject_chemistry: "Kimyo",
+                    subject_english: "Ingliz tili",
+                    subject_geography: "Geografiya",
+                    subject_literature: "Adabiyot",
+                    subject_general: "Umumiy",
+
+                    // Languages
+                    lang_ru: "Ruscha",
+                    lang_uz: "O'zbekcha",
+                    lang_en: "Inglizcha",
                 }
             },
             en: {
@@ -1297,6 +1445,62 @@ i18n
                     admin_top_ai: "Top AI Users",
                     admin_anomaly: "anomaly",
 
+                    // New Dashboard Strings
+                    welcome_back_detailed: "Glad to see you again. Let's create something interesting for your students today!",
+                    stats_total_tasks: "Total Tasks",
+                    stats_this_month: "This Month",
+                    stats_games_launched: "Games Launched",
+                    stats_your_classes: "Your Classes",
+                    create_lesson: "Create Lesson",
+                    launch_game: "Launch Game",
+                    teacher_placeholder: "Teacher",
+                    ai_generating: "AI is creating content…",
+                    take_few_seconds: "This will take a few seconds",
+
+                    // New Landing Strings
+                    land_testimonials_badge: "Teacher Reviews",
+                    land_testimonials_title: "Thousands of teachers are already saving time",
+                    land_faq_title: "Frequently Asked Questions",
+                    land_ready_to_change: "Ready to change your lessons?",
+                    land_cta_try: "Try ClassPlay",
+                    land_dashboard: "Dashboard",
+                    land_demo: "Demo",
+
+                    // Testimonials
+                    testim_1_name: "Aigul M.",
+                    testim_1_role: "Math Teacher",
+                    testim_1_school: "Almaty",
+                    testim_1_text: "I used to spend 2 hours making tests. Now — 5 minutes. AI understands the specifics of our curriculum!",
+                    
+                    testim_2_name: "Dmitry K.",
+                    testim_2_role: "History Teacher",
+                    testim_2_school: "Tashkent",
+                    testim_2_text: "Kids are excited about smart-board games. Jeopardy is the class hit, now it's the favorite day of the week.",
+                    
+                    testim_3_name: "Natalya S.",
+                    testim_3_role: "Head Teacher",
+                    testim_3_school: "Gymnasium №3",
+                    testim_3_text: "Bought a license for the whole school. Teachers are free from routine and spend more time with kids. Paid off in a month.",
+                    
+                    testim_4_name: "Kamila Y.",
+                    testim_4_role: "English Teacher",
+                    testim_4_school: "Private School",
+                    testim_4_text: "AI crosswords are the kids' favorite every Friday. Generation in different languages works flawlessly.",
+
+                    // FAQ
+                    faq_1_q: "Does it work in Kazakh?",
+                    faq_1_a: "Currently Russian and Uzbek are supported. Kazakh is planned for Q3 2026.",
+                    faq_2_q: "How much does it cost for a school?",
+                    faq_2_a: "School plan — $49/mo for 10 teachers. For larger schools — individual calculation.",
+                    faq_3_q: "Do I need a smart-board for games?",
+                    faq_3_a: "No, games work in any browser. A smart-board improves the experience but isn't required.",
+                    faq_4_q: "Can I cancel my subscription?",
+                    faq_4_a: "Yes, at any time from your account. We refund for the unused period.",
+                    faq_5_q: "Is student data safe?",
+                    faq_5_a: "We don't store student data. Teachers only enter lesson topics or student name lists without surnames.",
+                    faq_6_q: "Is there an app?",
+                    faq_6_a: "Currently web-only, fully optimized for tablets, PCs, and smart-boards.",
+
                     // Pagination
                     pag_previous: "Previous",
                     pag_next: "Next",
@@ -1336,6 +1540,24 @@ i18n
                     admin_finances_sub: "MRR, payment history and invoicing",
                     admin_system_title: "System",
                     admin_system_sub: "Settings, API keys, announcements",
+
+                    // Subjects
+                    subject_label: "Subject",
+                    subject_placeholder: "or enter your subject...",
+                    subject_math: "Math",
+                    subject_biology: "Biology",
+                    subject_history: "History",
+                    subject_physics: "Physics",
+                    subject_chemistry: "Chemistry",
+                    subject_english: "English",
+                    subject_geography: "Geography",
+                    subject_literature: "Literature",
+                    subject_general: "General",
+
+                    // Languages
+                    lang_ru: "Russian",
+                    lang_uz: "Uzbek",
+                    lang_en: "English",
                 }
             }
         }
