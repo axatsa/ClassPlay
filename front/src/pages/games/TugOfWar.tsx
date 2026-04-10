@@ -294,7 +294,7 @@ const TugOfWar = () => {
                         whileTap={!feedback ? { scale: 0.98 } : {}}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left font-sans text-sm font-medium transition-all ${isFeedback && isCorrect ? "border-green-400 bg-green-50 text-green-700" :
                           isFeedback && !isCorrect ? "border-red-200 bg-red-50 text-red-400" :
-                          : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 text-gray-700"
+                          "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 text-gray-700"
                           }`}
                       >
                         <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isFeedback && isCorrect ? "bg-green-400 text-white" :
