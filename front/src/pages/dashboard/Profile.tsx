@@ -293,7 +293,6 @@ export default function Profile() {
           >
             {savingPwd ? "Меняем..." : "Изменить пароль"}
           </button>
-          </button>
         </div>
       </div>
 
