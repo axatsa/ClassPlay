@@ -62,6 +62,7 @@ def get_me(user: User = Depends(get_current_user)):
         "tokens_limit": user.tokens_limit,
         "tokens_used_this_month": user.tokens_used_this_month,
         "onboarding_completed": getattr(user, 'onboarding_completed', False),
+        "organization_id": user.organization_id,
     }
 
 @router.patch("/me")

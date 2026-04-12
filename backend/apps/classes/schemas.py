@@ -14,6 +14,8 @@ class ClassCreate(ClassBase):
 class ClassResponse(ClassBase):
     id: int
     created_at: datetime
-    
+    teacher_id: Optional[int] = None
+    organization_id: Optional[int] = None
+
     class Config:
         from_attributes = True

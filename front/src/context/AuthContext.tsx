@@ -9,6 +9,7 @@ interface User {
     role: "super_admin" | "teacher";
     full_name: string;
     onboarding_completed: boolean;
+    organization_id: number | null;
 }
 
 interface AuthContextType {
