@@ -22,6 +22,11 @@ dist/
 build/
 *.egg-info/
 
+# SQLite (dev leftovers — prod uses PostgreSQL)
+*.db
+*.sqlite
+*.sqlite3
+
 # Logs
 *.log
 

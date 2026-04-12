@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 echo '🚀 Начинаем деплой OnlineGame_v3 (Modular Monolith)'
 
 PROJECT_DIR="/home/temp/OnlineGame_v3"
@@ -31,25 +32,36 @@ echo '🧹 Очистка старых контейнеров...'
 $DOCKER_CMD -f docker-compose.prod.yml down --remove-orphans
 
 # Принудительное удаление, если down не справился
-docker rm -f online_games_db_prod online_games_backend_prod online_games_frontend_prod 2>/dev/null
+docker rm -f online_games_db_prod online_games_backend_prod online_games_frontend_prod 2>/dev/null || true
 
 # 5. Сборка и запуск новых
 echo '🔨 Пересборка и запуск контейнеров...'
 $DOCKER_CMD -f docker-compose.prod.yml up -d --build --force-recreate
 
-# 6. Ожидание готовности БД
-echo '⏳ Ожидание инициализации базы данных...'
-sleep 5
+# 6. Ожидание готовности БД (с loop-проверкой вместо sleep)
+echo '⏳ Ожидание готовности базы данных...'
+MAX_WAIT=60
+WAITED=0
+until docker exec online_games_db_prod pg_isready -U postgres >/dev/null 2>&1; do
+    if [ $WAITED -ge $MAX_WAIT ]; then
+        echo "❌ База данных не поднялась за ${MAX_WAIT}с!"
+        exit 1
+    fi
+    sleep 2
+    WAITED=$((WAITED + 2))
+    echo "   ...ждём БД (${WAITED}с)"
+done
+echo "✅ База данных готова (${WAITED}с)"
 
 # 7. Миграция схемы (добавление новых колонок)
 echo '⚙️ Синхронизация схемы базы данных...'
-docker exec -t online_games_backend_prod python fix_db.py
+docker exec -t online_games_backend_prod python scripts/fix_db.py
 
 # 8. Запуск сидов
 echo '🌱 Наполнение базы данных (Seeding)...'
-docker exec -t online_games_backend_prod python seed_users.py
-docker exec -t online_games_backend_prod python seed.py
-docker exec -t online_games_backend_prod python seed_gamification.py
+docker exec -t online_games_backend_prod python scripts/seed_users.py
+docker exec -t online_games_backend_prod python scripts/seed.py
+docker exec -t online_games_backend_prod python scripts/seed_gamification.py
 
 echo '✅ Деплой успешно завершен!'
 echo '🌐 Проект доступен по адресу: https://classplay.uz!'
