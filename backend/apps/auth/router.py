@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import get_db
 from apps.auth.models import User
-from apps.auth.schemas import UserLogin, Token, ChangePasswordRequest
+from apps.auth.schemas import UserLogin, Token, ChangePasswordRequest, UserRegister
 from apps.admin.schemas import RegisterWithInviteRequest
 from apps.admin.models import InviteToken, Organization, GlobalSetting
 from apps.auth.dependencies import get_current_user
@@ -147,6 +147,33 @@ def onboarding_complete(db: Session = Depends(get_db), user: User = Depends(get_
     user.onboarding_completed = True
     db.commit()
     return {"message": "Onboarding completed"}
+
+@router.post("/register", response_model=Token)
+def register(req: UserRegister, db: Session = Depends(get_db)):
+    # Check if user already exists
+    existing = db.query(User).filter(User.email == req.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+        
+    # Create User
+    new_user = User(
+        email=req.email,
+        full_name=req.full_name,
+        hashed_password=pwd_context.hash(req.password),
+        role="teacher",
+        is_active=True
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    # Auto-login
+    access_token = create_access_token(data={"sub": new_user.email})
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "user": new_user
+    }
 
 @router.get("/announcement")
 def get_announcement(db: Session = Depends(get_db)):

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Loader2, LogIn } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, LogIn, Rocket } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { paymentService, Plan, PaymentMethod } from "@/api/paymentService";
 import { toast } from "sonner";
+import api from "@/lib/api";
 
 const DARK = "#07101F";
 const BLUE = "#0EA5E9";
@@ -74,10 +75,42 @@ export default function Checkout() {
     const plan = PLANS[planId] ?? PLANS.pro;
 
     const [loading, setLoading] = useState<PaymentMethod | null>(null);
+    const [authMode, setAuthMode] = useState<"login" | "register">("register");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [fullName, setFullName] = useState("");
+    const [authLoading, setAuthLoading] = useState(false);
 
-    const handlePay = async (method: PaymentMethod) => {
+    const { login: contextLogin } = useAuth();
+
+    const handleAuthAndPay = async (method: PaymentMethod) => {
         setLoading(method);
         try {
+            let activeUser = user;
+
+            // If not logged in, try to register/login first
+            if (!activeUser) {
+                setAuthLoading(true);
+                try {
+                    const endpoint = authMode === "login" ? "/auth/login" : "/auth/register";
+                    const payload = authMode === "login" 
+                        ? { email, password } 
+                        : { email, password, full_name: fullName };
+                    
+                    const res = await api.post(endpoint, payload);
+                    contextLogin(res.data.access_token, res.data.user);
+                    activeUser = res.data.user;
+                    toast.success(authMode === "login" ? "Вход выполнен" : "Аккаунт создан");
+                } catch (err: any) {
+                    toast.error(err.response?.data?.detail || "Ошибка авторизации");
+                    setLoading(null);
+                    setAuthLoading(false);
+                    return;
+                }
+                setAuthLoading(false);
+            }
+
+            // Now initiate payment
             const res = await paymentService.initiate({ plan: plan.planKey, method });
             window.location.href = res.redirect_url;
         } catch (err: any) {
@@ -88,37 +121,92 @@ export default function Checkout() {
 
     if (!user) {
         return (
-            <div style={{ minHeight: "100vh", background: DARK, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div style={{ minHeight: "100vh", background: DARK, display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 24px" }}>
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     style={{
                         background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 24, padding: "48px 40px",
-                        maxWidth: 400, width: "100%", textAlign: "center",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 32, padding: "40px",
+                        maxWidth: 480, width: "100%", textAlign: "center",
+                        backdropFilter: "blur(20px)",
                     }}
                 >
-                    <LogIn size={40} color={BLUE} style={{ margin: "0 auto 20px" }} />
-                    <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 10 }}>
-                        Войдите для оформления
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+                        <div style={{ width: 64, height: 64, borderRadius: 20, background: plan.accent, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 12px 32px rgba(14,165,233,0.3)" }}>
+                            <Rocket size={32} color="#fff" />
+                        </div>
+                    </div>
+
+                    <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: 8 }}>
+                        {authMode === "register" ? "Создайте аккаунт" : "Войдите в аккаунт"}
                     </h2>
-                    <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 28 }}>
-                        Чтобы оформить подписку, нужно войти в аккаунт.
+                    <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 32 }}>
+                        Чтобы активировать план <strong style={{ color: "#fff" }}>{plan.name}</strong>
                     </p>
-                    <button
-                        onClick={() => {
-                            localStorage.setItem("redirectAfter", `/checkout?plan=${planId}`);
-                            navigate("/login");
-                        }}
-                        style={{
-                            width: "100%", padding: "14px 24px",
-                            background: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
-                            color: "#fff", fontSize: 15, fontWeight: 700,
-                            border: "none", borderRadius: 14, cursor: "pointer",
-                        }}
+
+                    <form style={{ display: "flex", flexDirection: "column", gap: 16, textAlign: "left" }} onSubmit={(e) => e.preventDefault()}>
+                        {authMode === "register" && (
+                            <div>
+                                <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>ФИО</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Иван Иванов" 
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "14px 20px", color: "#fff", outline: "none" }} 
+                                />
+                            </div>
+                        )}
+                        <div>
+                            <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>Email</label>
+                            <input 
+                                type="email" 
+                                placeholder="example@mail.com" 
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "14px 20px", color: "#fff", outline: "none" }} 
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>Пароль</label>
+                            <input 
+                                type="password" 
+                                placeholder="••••••••" 
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "14px 20px", color: "#fff", outline: "none" }} 
+                            />
+                        </div>
+
+                        <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+                            {PAYMENT_METHODS.map(m => (
+                                <button
+                                    key={m.id}
+                                    disabled={loading !== null || !email || !password}
+                                    onClick={() => handleAuthAndPay(m.id)}
+                                    style={{
+                                        width: "100%", padding: "16px",
+                                        background: loading === m.id ? "rgba(255,255,255,0.1)" : `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
+                                        color: "#fff", fontSize: 15, fontWeight: 700,
+                                        border: "none", borderRadius: 16, cursor: "pointer",
+                                        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                                        opacity: (!email || !password) ? 0.5 : 1,
+                                        boxShadow: (email && password) ? `0 8px 24px rgba(14,165,233,0.3)` : "none",
+                                    }}
+                                >
+                                    {loading === m.id ? <Loader2 size={18} className="animate-spin" /> : <>Оплатить через {m.label}</>}
+                                </button>
+                            ))}
+                        </div>
+                    </form>
+
+                    <button 
+                        onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
+                        style={{ marginTop: 24, background: "none", border: "none", color: BLUE, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
                     >
-                        Войти
+                        {authMode === "login" ? "Нет аккаунта? Зарегистрироваться" : "Уже есть аккаунт? Войти"}
                     </button>
                 </motion.div>
             </div>
@@ -203,7 +291,7 @@ export default function Checkout() {
                             whileHover={{ scale: 1.02, background: "rgba(255,255,255,0.08)" }}
                             whileTap={{ scale: 0.98 }}
                             disabled={loading !== null}
-                            onClick={() => handlePay(m.id)}
+                            onClick={() => handleAuthAndPay(m.id)}
                             style={{
                                 width: "100%", padding: "18px 24px",
                                 background: "rgba(255,255,255,0.05)",

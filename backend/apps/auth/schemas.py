@@ -45,3 +45,8 @@ class AuditLogResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserRegister(BaseModel):
+    email: str
+    password: str
+    full_name: Optional[str] = None
