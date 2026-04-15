@@ -17,7 +17,6 @@ i18n
                     // Legacy Global
                     logout: "Выйти",
                     view_profile: "Профиль",
-                    language_label: "Язык генерации",
                     appName: "ClassPlay",
                     save: "Сохранить",
                     cancel: "Отмена",
@@ -534,7 +533,6 @@ i18n
                     // Legacy Global
                     logout: "Chiqish",
                     view_profile: "Profil",
-                    language_label: "Generatsiya tili",
                     appName: "ClassPlay",
                     save: "Saqlash",
                     cancel: "Bekor qilish",
@@ -1048,7 +1046,6 @@ i18n
                 translation: {
                     logout: "Logout",
                     view_profile: "Profile",
-                    language_label: "Generation Language",
                     appName: "ClassPlay",
                     save: "Save",
                     cancel: "Cancel",

@@ -651,6 +651,7 @@ const TeachersView = ({
                     </td>
                     <td className="px-5 py-4"><StatusBadge status={t.status} /></td>
                     <td className="px-5 py-4">
+                        <div className="flex items-center gap-1">
                         <button onClick={() => onImpersonate(t.id)} className="p-2 rounded-lg hover:bg-primary/10 transition-colors" title="Войти как пользователь">
                           <LogIn className="w-3.5 h-3.5 text-primary" />
                         </button>
@@ -672,7 +673,7 @@ const TeachersView = ({
                         <button onClick={() => handleDelete(t.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors" title="Удалить">
                           <X className="w-3.5 h-3.5 text-destructive" />
                         </button>
-                      </div>
+                        </div>
                     </td>
                   </motion.tr>
                 ))
