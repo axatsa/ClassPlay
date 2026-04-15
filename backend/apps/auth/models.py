@@ -29,6 +29,7 @@ class User(Base):
     token_usage = relationship("TokenUsage", back_populates="user")
     saved_resources = relationship("SavedResource", back_populates="user")
     books = relationship("GeneratedBook", back_populates="user")
+    subscription = relationship("UserSubscription", back_populates="user", uselist=False)
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

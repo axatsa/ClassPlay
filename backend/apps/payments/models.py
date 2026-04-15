@@ -43,5 +43,5 @@ class UserSubscription(Base):
     activated_at = Column(DateTime, default=datetime.utcnow)
     payment_id = Column(Integer, ForeignKey("user_payments.id"), nullable=True)
 
-    user = relationship("User", foreign_keys=[user_id])
+    user = relationship("User", back_populates="subscription", foreign_keys=[user_id])
     payment = relationship("UserPayment", foreign_keys=[payment_id])

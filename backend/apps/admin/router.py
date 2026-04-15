@@ -11,6 +11,7 @@ from database import get_db
 from apps.auth.models import User, AuditLog
 from apps.generator.models import TokenUsage
 from apps.admin.models import Organization, Payment, InviteToken, GlobalSetting
+from apps.payments.models import UserSubscription
 
 from apps.auth.schemas import UserResponse, AuditLogResponse
 from apps.admin.schemas import (
@@ -62,14 +63,23 @@ def get_teachers(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
-    query = db.query(User).filter(User.role == "teacher")
+    query = db.query(User).options(joinedload(User.subscription)).filter(User.role == "teacher")
+    
     if search:
         search_filter = f"%{search}%"
         query = query.filter(
             (User.full_name.ilike(search_filter)) |
             (User.email.ilike(search_filter))
         )
-    return query.offset(skip).limit(limit).all()
+    
+    teachers = query.offset(skip).limit(limit).all()
+    
+    # Map the subscription data to the User objects for UserResponse
+    for t in teachers:
+        t.plan = t.subscription.plan if t.subscription else "free"
+        t.expires_at = t.subscription.expires_at if t.subscription else None
+        
+    return teachers
 
 @router.patch("/teachers/{user_id}", response_model=UserResponse)
 def update_teacher(user_id: int, req: UpdateTeacherRequest, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
@@ -82,6 +92,10 @@ def update_teacher(user_id: int, req: UpdateTeacherRequest, db: Session = Depend
     
     db.commit()
     db.refresh(user)
+    
+    # Load subscription for response
+    user.plan = user.subscription.plan if user.subscription else "free"
+    user.expires_at = user.subscription.expires_at if user.subscription else None
     
     log = AuditLog(action="Update Teacher", target=user.email, user_id=admin.id, log_type="success")
     db.add(log)
@@ -96,12 +110,16 @@ def toggle_teacher_status(user_id: int, db: Session = Depends(get_db), admin: Us
     
     user.is_active = not getattr(user, 'is_active', True)
     db.commit()
+    db.refresh(user)
+    
+    # Load subscription for response info if needed (returning dict here, but let's match schema style)
+    plan = user.subscription.plan if user.subscription else "free"
     
     action = "Unblock Teacher" if user.is_active else "Block Teacher"
     log = AuditLog(action=action, target=user.email, user_id=admin.id, log_type="warning")
     db.add(log)
     db.commit()
-    return {"id": user.id, "email": user.email, "is_active": user.is_active}
+    return {"id": user.id, "email": user.email, "is_active": user.is_active, "plan": plan}
 
 @router.post("/teachers/{user_id}/reset-password")
 def reset_teacher_password(user_id: int, req: ResetPasswordRequest, db: Session = Depends(get_db), admin: User = Depends(require_admin)):

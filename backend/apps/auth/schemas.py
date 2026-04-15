@@ -13,6 +13,8 @@ class UserResponse(BaseModel):
     school: Optional[str] = None
     tokens_limit: Optional[int] = None
     tokens_used_this_month: Optional[int] = None
+    plan: Optional[str] = None
+    expires_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
