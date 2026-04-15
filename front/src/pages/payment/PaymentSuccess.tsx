@@ -76,7 +76,6 @@ export default function PaymentSuccess() {
                         margin: "0 auto 28px",
                     }}
                 >
-                >
                     {status === "verifying" ? (
                         <motion.div
                             animate={{ rotate: 360 }}
