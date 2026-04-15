@@ -15,6 +15,7 @@ try:
     from apps.gamification.models import StudentProfile, XPTransaction, CoinTransaction, DailyProgress, SeasonStats, ShopItem, Purchase
     from apps.library.models import SavedResource
     from apps.admin.models import Organization, Payment
+    from apps.payments.models import UserSubscription  # needed to resolve User.subscription relationship
     from passlib.context import CryptContext
     print("Imports successful.", flush=True)
 except Exception as e:
