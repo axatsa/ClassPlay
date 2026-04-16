@@ -70,6 +70,20 @@ def seed():
             
         db.commit()
         print("Seeding transaction committed.", flush=True)
+
+        # Ensure global settings exist
+        from apps.admin.models import GlobalSetting
+        settings = {
+            "ai-provider": "gemini",
+            "system-alert": "",
+            "alert-enabled": "false"
+        }
+        for key, val in settings.items():
+            exists = db.query(GlobalSetting).filter(GlobalSetting.key == key).first()
+            if not exists:
+                db.add(GlobalSetting(key=key, value=val))
+        db.commit()
+        print("Global settings seeded.", flush=True)
         
         # Verify
         users_count = db.query(User).count()
