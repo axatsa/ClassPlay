@@ -3,6 +3,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine, Base
+from apps.payments.models import UserSubscription  # needed for User relationship
 from apps.classes.models import ClassGroup
 from apps.auth.models import User, AuditLog
 from apps.generator.models import TokenUsage, Template
