@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, User, Key, Calendar, X, Save } from "lucide-react";
+import { Building2, User, Key, Calendar, X, Save, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
 
 export interface OrgFormData {
   id?: number;
@@ -24,6 +25,10 @@ export default function OrgModal({ isOpen, onClose, onSave, initialData }: OrgMo
     name: "", contact_person: "", license_seats: 10, expires_at: "", status: "active"
   });
   const [saving, setSaving] = useState(false);
+  const [geminiKey, setGeminiKey] = useState("");
+  const [geminiKeyPreview, setGeminiKeyPreview] = useState<string | null>(null);
+  const [showKey, setShowKey] = useState(false);
+  const [savingKey, setSavingKey] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -36,17 +41,25 @@ export default function OrgModal({ isOpen, onClose, onSave, initialData }: OrgMo
           expires_at: initialData.expires_at ? initialData.expires_at.slice(0, 10) : "",
           status: initialData.status || "active"
         });
+        if (initialData.id) {
+          api.get(`/admin/organizations/${initialData.id}/gemini-key`)
+            .then(r => setGeminiKeyPreview(r.data.key_preview))
+            .catch(() => {});
+        }
       } else {
         const nextMonth = new Date();
         nextMonth.setMonth(nextMonth.getMonth() + 1);
-        setForm({ 
-          name: "", 
-          contact_person: "", 
-          license_seats: 10, 
-          expires_at: nextMonth.toISOString().slice(0, 10), 
-          status: "active" 
+        setForm({
+          name: "",
+          contact_person: "",
+          license_seats: 10,
+          expires_at: nextMonth.toISOString().slice(0, 10),
+          status: "active"
         });
+        setGeminiKeyPreview(null);
       }
+      setGeminiKey("");
+      setShowKey(false);
     }
   }, [isOpen, initialData]);
 
@@ -167,6 +180,75 @@ export default function OrgModal({ isOpen, onClose, onSave, initialData }: OrgMo
                 </select>
               </label>
             </div>
+
+            {/* Gemini API Key (edit only) */}
+            {isEdit && (
+              <div className="mt-2 p-3 rounded-xl border border-violet-500/30 bg-violet-500/5">
+                <p className="text-xs font-medium text-violet-400 uppercase tracking-wide mb-2">
+                  🟣 Собственный Gemini API ключ
+                </p>
+                {geminiKeyPreview && (
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Текущий: <code className="text-violet-300">{geminiKeyPreview}</code>
+                  </p>
+                )}
+                <div className="relative">
+                  <input
+                    type={showKey ? "text" : "password"}
+                    className="w-full pr-10 pl-3 py-2 rounded-xl border border-border bg-muted/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 font-mono"
+                    value={geminiKey}
+                    onChange={e => setGeminiKey(e.target.value)}
+                    placeholder={geminiKeyPreview ? "Введите новый ключ для замены..." : "AIza..."}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowKey(v => !v)}
+                  >
+                    {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 rounded-xl text-xs border-violet-500/40 text-violet-400 hover:bg-violet-500/10"
+                    disabled={!geminiKey || savingKey}
+                    onClick={async () => {
+                      if (!form.id) return;
+                      setSavingKey(true);
+                      try {
+                        await api.put(`/admin/organizations/${form.id}/gemini-key`, { api_key: geminiKey });
+                        setGeminiKeyPreview(geminiKey.slice(0, 8) + "..." + geminiKey.slice(-4));
+                        setGeminiKey("");
+                      } finally { setSavingKey(false); }
+                    }}
+                  >
+                    {savingKey ? "Сохранение..." : "Сохранить ключ"}
+                  </Button>
+                  {geminiKeyPreview && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xl text-xs border-red-500/40 text-red-400 hover:bg-red-500/10"
+                      disabled={savingKey}
+                      onClick={async () => {
+                        if (!form.id) return;
+                        setSavingKey(true);
+                        try {
+                          await api.put(`/admin/organizations/${form.id}/gemini-key`, { api_key: "" });
+                          setGeminiKeyPreview(null);
+                        } finally { setSavingKey(false); }
+                      }}
+                    >
+                      Удалить
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="pt-4 flex gap-3">
               <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={onClose}>

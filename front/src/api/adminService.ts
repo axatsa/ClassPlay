@@ -122,6 +122,16 @@ export const adminService = {
         return response.data;
     },
 
+    getOrgGeminiKey: async (orgId: number) => {
+        const response = await api.get(`/admin/organizations/${orgId}/gemini-key`);
+        return response.data as { org_id: number; has_custom_key: boolean; key_preview: string | null };
+    },
+
+    setOrgGeminiKey: async (orgId: number, apiKey: string) => {
+        const response = await api.put(`/admin/organizations/${orgId}/gemini-key`, { api_key: apiKey });
+        return response.data;
+    },
+
     // ── Settings ──────────────────────────────────────────────
     getSetting: async (key: string) => {
         const response = await api.get(`/admin/settings/${key}`);

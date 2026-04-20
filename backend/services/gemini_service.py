@@ -11,6 +11,7 @@ from google.genai import types as genai_types
 
 import asyncio
 import base64
+import collections
 import json
 import time
 import logging
@@ -21,15 +22,20 @@ import threading
 
 logger = logging.getLogger(__name__)
 
-from config import GEMINI_API_KEYS_LIST, OPENAI_API_KEY
+from config import GEMINI_API_KEYS_LIST, OPENAI_API_KEY, get_env_int
+
+_COOLDOWN_SECONDS = get_env_int("GEMINI_KEY_COOLDOWN_SECONDS", 900)
+_GLOBAL_RPM_LIMIT = get_env_int("GLOBAL_RPM_LIMIT", 70)
 
 class GeminiKeyManager:
     def __init__(self, keys: list[str]):
         self.keys = keys
         self.current_index = 0
-        self.cooldowns = {} # key -> timestamp when it becomes available
+        self.cooldowns = {}  # key -> timestamp when it becomes available
         self.lock = threading.Lock()
-        self.COOLDOWN_DURATION = 15 * 60 # 15 minutes
+        self.COOLDOWN_DURATION = _COOLDOWN_SECONDS
+        self._rpm_window: collections.deque = collections.deque()
+        self.GLOBAL_RPM_LIMIT = _GLOBAL_RPM_LIMIT
 
     def get_next_key(self) -> Optional[str]:
         if not self.keys:
@@ -52,12 +58,30 @@ class GeminiKeyManager:
             # All keys are in cooldown
             return None
 
+    def is_rpm_available(self) -> bool:
+        """Check if global RPM limit has not been reached."""
+        now = time.time()
+        with self.lock:
+            while self._rpm_window and self._rpm_window[0] < now - 60:
+                self._rpm_window.popleft()
+            return len(self._rpm_window) < self.GLOBAL_RPM_LIMIT
+
+    def record_request(self) -> None:
+        """Record a Gemini API request for RPM tracking."""
+        with self.lock:
+            self._rpm_window.append(time.time())
+
     def mark_limited(self, key: str):
         """Mark a key as rate-limited for 15 minutes."""
         with self.lock:
             until = time.time() + self.COOLDOWN_DURATION
             self.cooldowns[key] = until
-            logger.warning(f"Key {key[:8]}... marked as LIMITED until {time.strftime('%H:%M:%S', time.localtime(until))}")
+            available_count = sum(1 for k in self.keys if time.time() >= self.cooldowns.get(k, 0))
+            logger.warning(
+                f"Key {key[:8]}... LIMITED. Available keys: {available_count}/{len(self.keys)}"
+            )
+            if available_count == 0:
+                logger.critical("ALL GEMINI KEYS IN COOLDOWN! System falling back to OpenAI or returning errors.")
 
     def has_available_keys(self) -> bool:
         if not self.keys: return False
@@ -140,23 +164,35 @@ async def generate_storybook(
     age_group: str = "7-10",
     language: str = "Russian",
     genre: str = "fairy tale",
+    custom_api_key: Optional[str] = None,
 ) -> Optional[dict]:
     """
     Two-step generation:
       1. Generate 10-page story text with gemini-2.0-flash
       2. Generate 10 illustrations in parallel (tries gemini-2.0-flash-exp first)
     Returns dict with pages list, each page has image_base64 (or None).
+    If custom_api_key is provided (org's own key), it bypasses the shared key pool.
     """
-    if not key_manager.keys:
+    if custom_api_key:
+        # Use org's dedicated key — bypass shared pool
+        max_retries = 1
+        _get_key = lambda: custom_api_key
+        _mark_limited = lambda k: None
+    elif key_manager.keys:
+        max_retries = len(key_manager.keys)
+        _get_key = key_manager.get_next_key
+        _mark_limited = key_manager.mark_limited
+    else:
         logger.error("No Gemini API keys configured")
         return None
 
-    max_retries = len(key_manager.keys)
     story_data = None
 
     # ── STEP 1: Generate story text (with retries) ───────────────────────
     for attempt in range(max_retries):
-        api_key = key_manager.get_next_key()
+        api_key = _get_key()
+        if not api_key:
+            break
         client = genai.Client(api_key=api_key)
         
         logger.info(f"Generating story text with gemini-2.0-flash (attempt {attempt + 1}/{max_retries})...")
@@ -185,7 +221,7 @@ async def generate_storybook(
             error_msg = str(e).lower()
             if "429" in error_msg or "quota" in error_msg or "exhausted" in error_msg or "too many requests" in error_msg:
                 logger.warning(f"Rate limit exceeded (429) on attempt {attempt + 1}.")
-                key_manager.mark_limited(api_key)
+                _mark_limited(api_key)
                 continue
             else:
                 logger.error(f"Story generation failed on attempt {attempt + 1}: {e}")
@@ -217,7 +253,7 @@ async def generate_storybook(
             page.get("illustration_prompt", f"Scene from page {page['page_number']}"),
             age_group,
         )
-        tasks.append(_generate_image(prompt))
+        tasks.append(_generate_image(prompt, custom_api_key=custom_api_key))
 
     # Run all image generations concurrently
     image_results = await asyncio.gather(*tasks)
@@ -228,12 +264,21 @@ async def generate_storybook(
     return story_data
 
 
-async def _generate_image(prompt: str) -> Optional[str]:
+async def _generate_image(prompt: str, custom_api_key: Optional[str] = None) -> Optional[str]:
     """Try each image model in order, with key rotation on 429 limit errors. Returns base64 PNG string or None."""
-    max_retries = max(1, len(key_manager.keys))
-    
+    if custom_api_key:
+        max_retries = 1
+        _get_key = lambda: custom_api_key
+        _mark_limited = lambda k: None
+    else:
+        max_retries = max(1, len(key_manager.keys))
+        _get_key = key_manager.get_next_key
+        _mark_limited = key_manager.mark_limited
+
     for attempt in range(max_retries):
-        api_key = key_manager.get_next_key()
+        api_key = _get_key()
+        if not api_key:
+            break
         client = genai.Client(api_key=api_key)
         
         for model_name in IMAGE_MODELS:
@@ -265,7 +310,7 @@ async def _generate_image(prompt: str) -> Optional[str]:
                 error_msg = str(e).lower()
                 if "429" in error_msg or "quota" in error_msg or "exhausted" in error_msg or "too many requests" in error_msg:
                     logger.warning(f"Rate limit exceeded (429) for {model_name}.")
-                    key_manager.mark_limited(api_key)
+                    _mark_limited(api_key)
                     break # Break inner model loop, try outer loop (next key)
                 else:
                     logger.warning(f"Model {model_name} failed: {e}")
@@ -320,7 +365,12 @@ async def generate_content(
 
     max_retries = len(key_manager.keys)
     result_data = None
-    
+
+    if not key_manager.is_rpm_available():
+        logger.warning("Global RPM limit reached, backing off 5s...")
+        await asyncio.sleep(5)
+    key_manager.record_request()
+
     for attempt in range(max_retries):
         api_key = key_manager.get_next_key()
         if not api_key: break

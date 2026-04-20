@@ -6,7 +6,7 @@ from apps.generator.models import TokenUsage, GenerationLog, Template
 from apps.classes.models import ClassGroup
 from apps.auth.models import User
 from apps.generator.schemas import MathRequest, CrosswordRequest, QuizRequest, AssignmentRequest, JeopardyRequest, GenerationLogResponse, TemplateCreate, TemplateResponse, BatchRequest
-from apps.generator.services import check_token_quota, increment_token_usage, get_quota_info
+from apps.generator.services import check_token_quota, increment_token_usage, get_quota_info, priority_guard
 from services.openai_service import generate_math_problems, generate_crossword_words, generate_quiz, generate_assignment, generate_jeopardy
 from apps.auth.dependencies import get_current_user
 from apps.generator.batch_utils import create_batch_zip
@@ -48,6 +48,7 @@ _rate_limit = f"{RATE_LIMIT_PER_HOUR}/hour"
 @router.post("/math")
 @limiter.limit(_rate_limit)
 async def gen_math(request: Request, req: MathRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    await priority_guard(user, db)
     check_token_quota(user, db)
     grade, context = get_class_context(db, req.class_id)
     
@@ -88,6 +89,7 @@ async def gen_math_demo(request: Request, req: MathRequest):
 @router.post("/crossword")
 @limiter.limit(_rate_limit)
 async def gen_crossword(request: Request, req: CrosswordRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    await priority_guard(user, db)
     check_token_quota(user, db)
 
     if req.custom_words:
@@ -118,6 +120,7 @@ async def gen_crossword(request: Request, req: CrosswordRequest, db: Session = D
 @router.post("/quiz")
 @limiter.limit(_rate_limit)
 async def gen_quiz(request: Request, req: QuizRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    await priority_guard(user, db)
     check_token_quota(user, db)
     grade, context = get_class_context(db, req.class_id)
     
@@ -136,6 +139,7 @@ async def gen_quiz(request: Request, req: QuizRequest, db: Session = Depends(get
 @router.post("/jeopardy")
 @limiter.limit(_rate_limit)
 async def gen_jeopardy(request: Request, req: JeopardyRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    await priority_guard(user, db)
     check_token_quota(user, db)
     grade, context = get_class_context(db, req.class_id)
     
@@ -154,6 +158,7 @@ async def gen_jeopardy(request: Request, req: JeopardyRequest, db: Session = Dep
 @router.post("/assignment")
 @limiter.limit(_rate_limit)
 async def gen_assignment(request: Request, req: AssignmentRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    await priority_guard(user, db)
     check_token_quota(user, db)
     grade, context = get_class_context(db, req.class_id)
     

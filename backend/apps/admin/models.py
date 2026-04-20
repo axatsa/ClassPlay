@@ -13,6 +13,7 @@ class Organization(Base):
     used_seats = Column(Integer, default=0)
     expires_at = Column(DateTime)
     status = Column(String, default="active") # active, expiring, expired, blocked
+    custom_gemini_key = Column(String, nullable=True)  # School's own Gemini API key
 
     teachers = relationship("User", back_populates="organization")
 

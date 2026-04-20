@@ -29,7 +29,12 @@ GEMINI_API_KEYS_ENV = os.getenv("GEMINI_API_KEYS", "") or os.getenv("GEMINI_API_
 GEMINI_API_KEYS_LIST = [k.strip() for k in GEMINI_API_KEYS_ENV.split(",") if k.strip()]
 
 # Rate limiting (requests per hour per user for AI endpoints)
-RATE_LIMIT_PER_HOUR = get_env_int("RATE_LIMIT_PER_HOUR", 60)
+RATE_LIMIT_PER_HOUR = get_env_int("RATE_LIMIT_PER_HOUR", 30)
 
 # Token quota (default monthly limit per user, -1 = unlimited)
-DEFAULT_TOKEN_LIMIT = get_env_int("DEFAULT_TOKEN_LIMIT", 100000)
+DEFAULT_TOKEN_LIMIT = get_env_int("DEFAULT_TOKEN_LIMIT", 30000)
+
+# Token limits per plan
+PLAN_FREE_TOKEN_LIMIT   = get_env_int("PLAN_FREE_TOKEN_LIMIT",   30000)
+PLAN_PRO_TOKEN_LIMIT    = get_env_int("PLAN_PRO_TOKEN_LIMIT",    300000)
+PLAN_SCHOOL_TOKEN_LIMIT = get_env_int("PLAN_SCHOOL_TOKEN_LIMIT", 1500000)

@@ -10,7 +10,7 @@ from apps.auth.models import User
 from apps.payments.models import UserPayment, UserSubscription
 from apps.payments.schemas import (
     InitiatePaymentRequest, InitiatePaymentResponse,
-    PaymentStatusResponse, SubscriptionResponse,
+    PaymentStatusResponse,
     PaymeWebhookRequest,
     ClickPrepareRequest, ClickCompleteRequest, ClickBaseResponse,
 )
@@ -47,6 +47,18 @@ PLAN_PRICES_TIYIN: dict[str, int] = {
     "school": get_env_int("PLAN_SCHOOL_PRICE_TIYIN", "62000000"),
 }
 
+PLAN_TOKEN_LIMITS: dict[str, int] = {
+    "free":   30_000,
+    "pro":    300_000,
+    "school": 1_500_000,
+}
+
+BOOK_DAILY_LIMITS: dict[str, int] = {
+    "free":   2,
+    "pro":    10,
+    "school": 50,
+}
+
 SUBSCRIPTION_DAYS = 30
 
 
@@ -66,6 +78,13 @@ def _activate_subscription(db: Session, user_id: int, plan: str, payment_id: int
             expires_at=expires, payment_id=payment_id,
         )
         db.add(sub)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.tokens_limit = PLAN_TOKEN_LIMITS.get(plan, 30_000)
+        user.tokens_used_this_month = 0
+        user.tokens_reset_at = datetime.utcnow()
+
     db.commit()
 
 
@@ -129,22 +148,43 @@ def initiate_payment(
 
 # ── Subscription status ────────────────────────────────────────
 
-@router.get("/subscription/me", response_model=Optional[SubscriptionResponse])
+@router.get("/subscription/me")
 def get_my_subscription(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     sub = db.query(UserSubscription).filter(UserSubscription.user_id == current_user.id).first()
-    if not sub:
-        return None
 
-    is_active = sub.expires_at > datetime.utcnow()
-    return SubscriptionResponse(
-        id=sub.id,
-        plan=sub.plan,
-        expires_at=sub.expires_at,
-        is_active=is_active
-    )
+    plan = "free"
+    expires_at = None
+    is_active = False
+
+    if sub:
+        is_active = sub.expires_at > datetime.utcnow() if sub.expires_at else False
+        if is_active:
+            plan = sub.plan
+        expires_at = sub.expires_at.isoformat() if sub.expires_at else None
+
+        if not is_active and current_user.tokens_limit and current_user.tokens_limit > PLAN_TOKEN_LIMITS["free"]:
+            current_user.tokens_limit = PLAN_TOKEN_LIMITS["free"]
+            db.commit()
+
+    tokens_limit = current_user.tokens_limit or PLAN_TOKEN_LIMITS["free"]
+    tokens_used = current_user.tokens_used_this_month or 0
+
+    return {
+        "plan": plan,
+        "expires_at": expires_at,
+        "is_active": is_active,
+        "tokens_used": tokens_used,
+        "tokens_limit": tokens_limit,
+        "tokens_remaining": max(0, tokens_limit - tokens_used),
+        "reset_at": current_user.tokens_reset_at.isoformat() if current_user.tokens_reset_at else None,
+        "limits": {
+            "books_per_day": BOOK_DAILY_LIMITS.get(plan, 2),
+            "generations_per_month": tokens_limit,
+        },
+    }
 
 
 # ── Payment status ─────────────────────────────────────────────
@@ -332,3 +372,65 @@ def click_complete(body: ClickCompleteRequest, db: Session = Depends(get_db)):
     db.commit()
     _activate_subscription(db, payment.user_id, payment.plan, payment.id)
     return base
+
+
+# ── Admin: token stats ─────────────────────────────────────────
+
+@router.get("/admin/token-stats")
+def get_token_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    import time
+    from services.gemini_service import key_manager
+    from apps.generator.models import TokenUsage
+    from sqlalchemy import func
+
+    now = time.time()
+    keys_status = []
+    for key in key_manager.keys:
+        until = key_manager.cooldowns.get(key, 0)
+        keys_status.append({
+            "key_preview": key[:8] + "...",
+            "available": now >= until,
+            "cooldown_seconds_left": max(0, int(until - now)),
+        })
+
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    active_today = db.query(func.count(func.distinct(TokenUsage.user_id))).filter(
+        TokenUsage.created_at >= today
+    ).scalar() or 0
+
+    top_users = db.query(
+        User.email, User.tokens_used_this_month, User.tokens_limit
+    ).order_by(User.tokens_used_this_month.desc()).limit(10).all()
+
+    plan_stats = db.execute(
+        """
+        SELECT COALESCE(us.plan, 'free') as plan,
+               COUNT(DISTINCT u.id) as users,
+               COALESCE(SUM(u.tokens_used_this_month), 0) as total_tokens
+        FROM users u
+        LEFT JOIN user_subscriptions us ON us.user_id = u.id AND us.expires_at > NOW()
+        GROUP BY COALESCE(us.plan, 'free')
+        """
+    ).fetchall()
+
+    return {
+        "gemini_keys": keys_status,
+        "available_keys_count": sum(1 for k in keys_status if k["available"]),
+        "global_rpm_used": len(key_manager._rpm_window),
+        "global_rpm_limit": key_manager.GLOBAL_RPM_LIMIT,
+        "active_users_today": active_today,
+        "top_consumers": [
+            {"email": u.email, "used": u.tokens_used_this_month, "limit": u.tokens_limit}
+            for u in top_users
+        ],
+        "by_plan": [
+            {"plan": r.plan, "users": r.users, "total_tokens": r.total_tokens}
+            for r in plan_stats
+        ],
+    }

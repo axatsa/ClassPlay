@@ -19,7 +19,7 @@ class User(Base):
 
     # Token quota tracking
     tokens_used_this_month = Column(Integer, default=0)
-    tokens_limit = Column(Integer, default=100000)  # -1 = unlimited
+    tokens_limit = Column(Integer, default=30000)  # -1 = unlimited
     tokens_reset_at = Column(DateTime, nullable=True)  # when quota was last reset
 
     # Relationships are handled via strings to avoid circular imports.

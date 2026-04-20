@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from datetime import datetime
 from database import get_db
 from apps.auth.models import User
 from apps.auth.dependencies import get_current_user
@@ -7,11 +8,34 @@ from services import gemini_service, openai_service
 from config import GEMINI_API_KEYS_LIST, OPENAI_API_KEY
 from apps.library.schemas import StorybookRequest, SavedResourceCreate, SavedResourceResponse, BookResponse
 from apps.library.models import SavedResource, GeneratedBook
+from apps.generator.services import check_token_quota, increment_token_usage, priority_guard, get_user_plan, get_org_gemini_key
+from apps.generator.models import TokenUsage
 from typing import List
 import traceback
 import logging
 import json
 import random
+
+BOOK_DAILY_LIMITS = {"free": 2, "pro": 10, "school": 50}
+
+
+def check_book_daily_limit(user: User, db: Session) -> None:
+    plan = get_user_plan(user, db)
+    limit = BOOK_DAILY_LIMITS.get(plan, 2)
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    books_today = db.query(TokenUsage).filter(
+        TokenUsage.user_id == user.id,
+        TokenUsage.feature_name == "storybook",
+        TokenUsage.created_at >= today_start,
+    ).count()
+    if books_today >= limit:
+        raise HTTPException(status_code=429, detail={
+            "error": "book_daily_limit",
+            "message": f"Лимит книг на сегодня: {limit}. Сбрасывается завтра.",
+            "books_today": books_today,
+            "limit": limit,
+            "upgrade_url": "/checkout" if plan == "free" else None,
+        })
 
 logger = logging.getLogger(__name__)
 
@@ -25,19 +49,25 @@ async def gen_storybook(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    await priority_guard(user, db)
+    check_token_quota(user, db)
+    check_book_daily_limit(user, db)
+
     result = None
     provider = None
+    custom_key = get_org_gemini_key(user, db)
 
     # ── Попытка 1: Gemini ────────────────────────────────────────────────────
-    if GEMINI_API_KEYS_LIST:
+    if custom_key or GEMINI_API_KEYS_LIST:
         try:
-            logger.info("Trying Gemini for storybook generation...")
+            logger.info("Trying Gemini for storybook generation%s...", " (org custom key)" if custom_key else "")
             result = await gemini_service.generate_storybook(
                 title=req.title,
                 topic=req.topic,
                 age_group=req.age_group,
                 language=req.language,
                 genre=req.genre,
+                custom_api_key=custom_key,
             )
             if result:
                 provider = "gemini"
@@ -89,6 +119,14 @@ async def gen_storybook(
     db.add(book)
     db.commit()
     db.refresh(book)
+
+    # Log storybook usage (for daily limit tracking + token quota)
+    pages_count = len(result.get("pages", []))
+    image_penalty = pages_count * 500  # each image = separate Gemini request
+    estimated_tokens = 2000 + image_penalty
+    usage = TokenUsage(user_id=user.id, feature_name="storybook", tokens_total=estimated_tokens)
+    db.add(usage)
+    increment_token_usage(user, estimated_tokens, db)
 
     book.pages = result["pages"]
     return book

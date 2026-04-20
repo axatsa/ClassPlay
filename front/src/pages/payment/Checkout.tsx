@@ -28,7 +28,7 @@ const PLANS: Record<string, {
         planKey: "pro",
         accent: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
         features: [
-            "Безлимитные ИИ-генерации",
+            "до 430 ИИ-генераций в месяц",
             "Все 6 интерактивных игр",
             "ИИ-книги с именем ученика",
             "Аналитика класса",
@@ -42,7 +42,7 @@ const PLANS: Record<string, {
         planKey: "school",
         accent: `linear-gradient(135deg, #F97316, #FBBF24)`,
         features: [
-            "Все функции Pro",
+            "2 100 генераций/месяц на всю школу",
             "До 10 учителей",
             "Админ-панель",
             "CSV-импорт пользователей",
@@ -336,7 +336,7 @@ export default function Checkout() {
 
                 {/* Footer note */}
                 <p style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 12, marginTop: 24, lineHeight: 1.6 }}>
-                    Безопасная оплата через Payme и Click · Отменить можно в любой момент
+                    Безопасная оплата через Payme и Click · Подписка на 30 дней
                 </p>
             </div>
         </div>

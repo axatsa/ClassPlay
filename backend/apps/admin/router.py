@@ -564,3 +564,42 @@ def impersonate_user(user_id: int, db: Session = Depends(get_db), admin: User = 
             "full_name": user.full_name
         }
     }
+
+
+@router.get("/organizations/{org_id}/gemini-key")
+def get_org_gemini_key_endpoint(org_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return {
+        "org_id": org_id,
+        "has_custom_key": bool(org.custom_gemini_key),
+        "key_preview": (org.custom_gemini_key[:8] + "..." + org.custom_gemini_key[-4:]) if org.custom_gemini_key else None,
+    }
+
+
+@router.put("/organizations/{org_id}/gemini-key")
+def set_org_gemini_key_endpoint(
+    org_id: int,
+    body: dict,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    api_key = (body.get("api_key") or "").strip() or None
+    org.custom_gemini_key = api_key
+    log = AuditLog(
+        action="Set Org Gemini Key",
+        target=f"org:{org.name}",
+        user_id=admin.id,
+        log_type="info",
+    )
+    db.add(log)
+    db.commit()
+    return {
+        "org_id": org_id,
+        "has_custom_key": bool(org.custom_gemini_key),
+        "message": "Gemini API key updated" if api_key else "Gemini API key removed",
+    }

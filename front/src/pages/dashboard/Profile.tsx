@@ -33,8 +33,16 @@ interface UserProfile {
 
 interface SubscriptionData {
   plan: string;
-  expires_at: string;
+  expires_at: string | null;
   is_active: boolean;
+  tokens_used: number;
+  tokens_limit: number;
+  tokens_remaining: number;
+  reset_at: string | null;
+  limits: {
+    books_per_day: number;
+    generations_per_month: number;
+  };
 }
 
 interface Stats {
@@ -243,13 +251,18 @@ export default function Profile() {
               <p className="text-sm font-bold text-gray-900 dark:text-white capitalize">
                 {subscription?.is_active ? `План ${subscription.plan}` : "Бесплатный план"}
               </p>
-              {subscription?.is_active ? (
+              {subscription?.is_active && subscription.expires_at ? (
                 <p className="text-xs text-gray-500">
                   Активен до {new Date(subscription.expires_at).toLocaleDateString()}
                 </p>
               ) : (
                 <p className="text-xs text-gray-500">
                   Доступны базовые функции
+                </p>
+              )}
+              {subscription && (
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Книг в день: {subscription.limits?.books_per_day ?? 2} · Генераций: {(subscription.limits?.generations_per_month ?? 30000).toLocaleString()}/мес
                 </p>
               )}
             </div>
