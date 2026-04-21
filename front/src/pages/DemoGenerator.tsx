@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
+import {
   Sparkles, Calculator, BookOpen, UserPlus, FileText, LayoutGrid, Brain, Globe
 } from "lucide-react";
+import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -55,6 +56,7 @@ const DemoGenerator = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-sky-50 font-sans text-slate-900 overflow-x-hidden pt-20">
+      <AIGeneratingOverlay isGenerating={isGenerating} />
       
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 h-20 bg-white/70 backdrop-blur-xl border-b border-black/5 z-50 px-6">

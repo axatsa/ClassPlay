@@ -5,6 +5,7 @@ import {
     BookOpen, Plus, ArrowLeft, Sparkles, ChevronLeft, ChevronRight,
     X, Loader2, BookMarked, Globe, Users, Wand2, Trash2, BookText, Info
 } from "lucide-react";
+import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -100,6 +101,8 @@ const GenerateForm = ({
     };
 
     return (
+        <>
+        <AIGeneratingOverlay isGenerating={loading} />
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
@@ -207,6 +210,7 @@ const GenerateForm = ({
                 </button>
             </motion.div>
         </motion.div>
+        </>
     );
 };
 

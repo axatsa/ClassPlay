@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import GameShell from "./GameShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RotateCcw, LogOut, Loader2 } from "lucide-react";
+import { RotateCcw, LogOut } from "lucide-react";
+import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
 import { useClass } from "@/context/ClassContext";
 import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
@@ -85,13 +86,12 @@ const WordSearch = () => {
     setStatus("loading");
     try {
       const isRu = language === "ru";
-      const topicPrompt = `${topicInput} (${isRu ? "Russian" : "Uzbek"})`;
+      const langLabel = isRu ? "Russian" : "Uzbek";
       const wordCount = difficulty === "Легко" || difficulty === "Easy" ? 6 : difficulty === "Средне" || difficulty === "Medium" ? 10 : 12;
-      // FIX #6: бэкенд ожидает word_count и language, а не count
       const res = await api.post("/generate/crossword", {
-        topic: topicPrompt,
+        topic: topicInput,
         word_count: wordCount,
-        language: isRu ? "Русский" : "O'zbekcha",
+        language: langLabel,
         class_id: activeClassId
       });
 
@@ -173,6 +173,7 @@ const WordSearch = () => {
 
   return (
     <GameShell title={t('game_word_search_title')} onBack="/games" onRestart={startGame} howToPlay={howToPlay}>
+      <AIGeneratingOverlay isGenerating={status === "loading"} />
       <AnimatePresence mode="wait">
         {status === "setup" && (
           <motion.div key="setup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

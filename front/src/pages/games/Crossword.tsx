@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import GameShell from "./GameShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RotateCcw, LogOut, Loader2, CheckCircle2 } from "lucide-react";
+import { RotateCcw, LogOut, CheckCircle2 } from "lucide-react";
+import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
 import { useClass } from "@/context/ClassContext";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -227,14 +228,7 @@ const Crossword = () => {
         )}
 
         {/* ── Loading ── */}
-        {status === "loading" && (
-          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center h-full gap-4 bg-white"
-          >
-            <Loader2 className="w-12 h-12 text-purple-600 animate-spin" />
-            <p className="text-gray-600 font-sans text-lg">Генерируем кроссворд…</p>
-          </motion.div>
-        )}
+        {status === "loading" && <AIGeneratingOverlay isGenerating={true} />}
 
         {/* ── Finished ── */}
         {status === "finished" && (

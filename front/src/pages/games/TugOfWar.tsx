@@ -10,8 +10,8 @@ import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { handleAIError } from "@/lib/errorUtils";
-import { Loader2 } from "lucide-react";
 import { RichTextRenderer } from "@/components/common/RichTextRenderer";
+import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
 
 type GameStatus = "setup" | "loading" | "playing" | "finished";
 
@@ -109,12 +109,13 @@ const TugOfWar = () => {
   }, [status]);
 
   const startGame = async () => {
-    const langStr = selectedLang === "uz" ? "in Uzbek language" : selectedLang === "en" ? "in English language" : "in Russian language";
-    const searchTopic = topic.trim() ? `${topic} (${langStr})` : `General Knowledge (${langStr})`;
+    const langLabel = selectedLang === "uz" ? "Uzbek" : selectedLang === "en" ? "English" : "Russian";
+    const searchTopic = topic.trim() ? topic : "General Knowledge";
     setStatus("loading");
     try {
       const res = await api.post("/generate/quiz", {
         topic: searchTopic,
+        language: langLabel,
         count: 40, // Генерируем много, чтобы разделить на два пула
         class_id: activeClassId
       });
@@ -259,14 +260,7 @@ const TugOfWar = () => {
           </motion.div>
         )}
 
-        {status === "loading" && (
-          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center h-full gap-4 bg-white"
-          >
-            <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-            <p className="text-gray-500 font-sans text-lg">{t('game_preparing')}</p>
-          </motion.div>
-        )}
+        {status === "loading" && <AIGeneratingOverlay isGenerating={true} />}
 
         {status === "playing" && blueQ && redQ && (
           <motion.div key="playing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

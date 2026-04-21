@@ -4,13 +4,14 @@ import GameShell from "./GameShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, X, Loader2, Sparkles } from "lucide-react";
+import { Plus, X, Sparkles } from "lucide-react";
 import { useClass } from "@/context/ClassContext";
 import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { handleAIError } from "@/lib/errorUtils";
 import { RichTextRenderer } from "@/components/common/RichTextRenderer";
+import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
 
 const POINTS = [100, 200, 300, 400, 500];
 
@@ -53,10 +54,10 @@ const Jeopardy = () => {
 
     setStatus("loading");
     try {
-      // FIX #4: добавляем инструкцию по языку в тему
-      const langStr = selectedLang === "uz" ? "in Uzbek language" : selectedLang === "en" ? "in English language" : "in Russian language";
+      const langLabel = selectedLang === "uz" ? "Uzbek" : selectedLang === "en" ? "English" : "Russian";
       const res = await api.post("/generate/jeopardy", {
-        topic: `${topic} (${langStr})`,
+        topic: topic,
+        language: langLabel,
         class_id: activeClassId
       });
 
@@ -173,14 +174,7 @@ const Jeopardy = () => {
           </motion.div>
         )}
 
-        {status === "loading" && (
-          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center h-full gap-4 bg-white"
-          >
-            <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-            <p className="text-gray-500 font-sans text-lg">{t('game_preparing')}</p>
-          </motion.div>
-        )}
+        {status === "loading" && <AIGeneratingOverlay isGenerating={true} />}
 
         {status === "playing" && (
           <motion.div key="playing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

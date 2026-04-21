@@ -1,23 +1,12 @@
 import { useState, useEffect } from "react";
 import {
-  User, Mail, Phone, School, Lock, Edit3, Save, X,
-  Zap, BookOpen, BarChart2, Clock, QrCode, Copy, Check, LogOut,
+  Mail, Phone, School, Lock, Edit3, Save, X,
+  Zap, BookOpen, BarChart2, Copy, Check, LogOut,
   Star, ChevronRight
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell 
-} from "recharts";
-import { BarChart3 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
 interface UserProfile {
   id: number;
@@ -49,8 +38,6 @@ interface Stats {
   total_resources: number;
   total_tokens: number;
   active_classes: number;
-  activity_by_day?: { date: string; count: number }[];
-  top_features?: { name: string; count: number }[];
 }
 
 export default function Profile() {
@@ -93,18 +80,15 @@ export default function Profile() {
 
   const loadStats = async () => {
     try {
-      const [res, classRes, historyRes, fullStatsRes] = await Promise.allSettled([
+      const [res, classRes, historyRes] = await Promise.allSettled([
         api.get("/generator/usage-stats"),
         api.get("/classes/"),
         api.get("/history/"),
-        api.get("/generate/stats/me"),
       ]);
       setStats({
         total_resources: historyRes.status === "fulfilled" ? (historyRes.value.data?.items?.length || historyRes.value.data?.length || 0) : 0,
         total_tokens: res.status === "fulfilled" ? (res.value.data?.tokens_used_this_month || 0) : 0,
         active_classes: classRes.status === "fulfilled" ? (classRes.value.data?.length || 0) : 0,
-        activity_by_day: fullStatsRes.status === "fulfilled" ? fullStatsRes.value.data?.activity_by_day : [],
-        top_features: fullStatsRes.status === "fulfilled" ? fullStatsRes.value.data?.top_features : [],
       });
     } catch {}
   };
@@ -112,12 +96,12 @@ export default function Profile() {
   const saveProfile = async () => {
     setSavingProfile(true);
     try {
-      const res = await api.patch("/auth/me", editForm);
+      await api.patch("/auth/me", editForm);
       setProfile(p => p ? { ...p, ...editForm } : p);
       setEditing(false);
-      flash("Profile updated", "success");
+      flash("Профиль обновлён", "success");
     } catch {
-      flash("Failed to update profile", "error");
+      flash("Ошибка при сохранении", "error");
     } finally {
       setSavingProfile(false);
     }
@@ -125,7 +109,7 @@ export default function Profile() {
 
   const changePassword = async () => {
     if (pwdForm.new_password !== pwdForm.confirm) {
-      flash("Passwords do not match", "error");
+      flash("Пароли не совпадают", "error");
       return;
     }
     setSavingPwd(true);
@@ -135,9 +119,9 @@ export default function Profile() {
         new_password: pwdForm.new_password,
       });
       setPwdForm({ old_password: "", new_password: "", confirm: "" });
-      flash("Password changed", "success");
+      flash("Пароль изменён", "success");
     } catch (e: any) {
-      flash(e?.response?.data?.detail || "Failed to change password", "error");
+      flash(e?.response?.data?.detail || "Ошибка смены пароля", "error");
     } finally {
       setSavingPwd(false);
     }
@@ -169,7 +153,7 @@ export default function Profile() {
   );
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="max-w-xl mx-auto p-4">
       {msg && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-lg ${
           msg.type === "success" ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
@@ -178,100 +162,80 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Profile Card */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-500 to-sky-500 p-6 text-white">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-2xl font-bold">
+        {/* Header row */}
+        <div className="bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-3 text-white">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-lg font-bold flex-shrink-0">
               {(profile.full_name || profile.email)[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold truncate">{profile.full_name || "—"}</h1>
-              <div className="flex items-center gap-2 mt-1 opacity-90">
-                <span className="text-sm">{profile.email}</span>
-                <button onClick={copyEmail} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
-                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <h1 className="text-base font-bold truncate leading-tight">{profile.full_name || "—"}</h1>
+              <div className="flex items-center gap-1.5 opacity-90">
+                <span className="text-xs truncate">{profile.email}</span>
+                <button onClick={copyEmail} className="p-0.5 hover:bg-white/20 rounded transition-colors flex-shrink-0">
+                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 </button>
               </div>
-              {profile.created_at && (
-                <p className="text-xs opacity-70 mt-1">
-                  С нами с {new Date(profile.created_at).toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}
-                </p>
-              )}
             </div>
             <button
               onClick={() => setEditing(!editing)}
-              className="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors"
+              className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
             >
-              <Edit3 className="w-5 h-5" />
+              {editing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={logout}
+              className="p-1.5 bg-white/20 hover:bg-red-400/40 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 divide-x divide-black/5 dark:divide-white/10 border-b border-black/5 dark:border-white/10">
+        {/* Stats + token bar in one row */}
+        <div className="px-4 py-3 border-b border-black/5 dark:border-white/10 flex items-center gap-4">
           {[
             { icon: BookOpen, label: "Материалы", value: stats?.total_resources ?? "—" },
             { icon: BarChart2, label: "Классы", value: stats?.active_classes ?? "—" },
-            { icon: Zap, label: "Токены/мес", value: profile.tokens_used_this_month?.toLocaleString() ?? 0 },
+            { icon: Zap, label: "Токены", value: profile.tokens_used_this_month?.toLocaleString() ?? 0 },
           ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex flex-col items-center py-4 gap-1">
-              <Icon className="w-4 h-4 text-gray-400" />
-              <span className="text-lg font-bold text-gray-900 dark:text-white">{value}</span>
-              <span className="text-xs text-gray-500">{label}</span>
+            <div key={label} className="flex items-center gap-1.5">
+              <Icon className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-sm font-bold text-gray-900 dark:text-white">{value}</span>
+              <span className="text-xs text-gray-400">{label}</span>
             </div>
           ))}
+          <div className="flex-1 ml-2">
+            <div className="flex justify-between text-xs text-gray-400 mb-1">
+              <span>Лимит</span>
+              <span style={{ color: usageColor }}>{usagePercent}%</span>
+            </div>
+            <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${usagePercent}%`, background: usageColor }} />
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {profile.tokens_used_this_month?.toLocaleString()} / {profile.tokens_limit === -1 ? "∞" : profile.tokens_limit?.toLocaleString()}
+            </p>
+          </div>
         </div>
 
-        {/* Token Usage Bar */}
-        <div className="p-4 border-b border-black/5 dark:border-white/10">
-          <div className="flex justify-between text-xs text-gray-500 mb-2">
-            <span>AI лимит месяца</span>
-            <span style={{ color: usageColor }}>{usagePercent}%</span>
-          </div>
-          <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${usagePercent}%`, background: usageColor }}
-            />
-          </div>
-          <p className="text-xs text-gray-400 mt-1">
-            {profile.tokens_used_this_month?.toLocaleString()} / {profile.tokens_limit === -1 ? "∞" : profile.tokens_limit?.toLocaleString()}
-          </p>
-        </div>
-
-        {/* Subscription Status */}
-        <div className="p-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${subscription?.is_active ? 'bg-amber-100 text-amber-500' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'}`}>
-              <Star className="w-5 h-5 fill-current" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900 dark:text-white capitalize">
-                {subscription?.is_active ? `План ${subscription.plan}` : "Бесплатный план"}
-              </p>
-              {subscription?.is_active && subscription.expires_at ? (
-                <p className="text-xs text-gray-500">
-                  Активен до {new Date(subscription.expires_at).toLocaleDateString()}
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500">
-                  Доступны базовые функции
-                </p>
-              )}
-              {subscription && (
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Книг в день: {subscription.limits?.books_per_day ?? 2} · Генераций: {(subscription.limits?.generations_per_month ?? 30000).toLocaleString()}/мес
-                </p>
-              )}
-            </div>
+        {/* Subscription compact row */}
+        <div className="px-4 py-2.5 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Star className={`w-4 h-4 ${subscription?.is_active ? 'text-amber-500 fill-amber-500' : 'text-gray-400'}`} />
+            <span className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
+              {subscription?.is_active ? `План ${subscription.plan}` : "Бесплатный план"}
+            </span>
+            {subscription?.is_active && subscription.expires_at && (
+              <span className="text-xs text-gray-400">· до {new Date(subscription.expires_at).toLocaleDateString("ru-RU")}</span>
+            )}
           </div>
           <Link
             to="/checkout"
-            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
-              subscription?.is_active 
-                ? "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600" 
+            className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${
+              subscription?.is_active
+                ? "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
                 : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400"
             }`}
           >
@@ -280,155 +244,94 @@ export default function Profile() {
           </Link>
         </div>
 
-        {/* Profile Fields */}
-        <div className="p-4 space-y-3">
+        {/* Profile fields */}
+        <div className="px-4 py-3 border-b border-black/5 dark:border-white/10">
           {editing ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="text-xs text-gray-400">Имя</span>
+                  <input
+                    className="mt-0.5 w-full px-2.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-gray-700 text-sm"
+                    value={editForm.full_name}
+                    onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))}
+                    placeholder="Иван Иванов"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs text-gray-400">Телефон</span>
+                  <input
+                    className="mt-0.5 w-full px-2.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-gray-700 text-sm"
+                    value={editForm.phone}
+                    onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="+7 900 000 00 00"
+                  />
+                </label>
+              </div>
               <label className="block">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Имя</span>
+                <span className="text-xs text-gray-400">Школа</span>
                 <input
-                  className="mt-1 w-full px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-gray-700 text-sm"
-                  value={editForm.full_name}
-                  onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))}
-                  placeholder="Иван Иванов"
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Телефон</span>
-                <input
-                  className="mt-1 w-full px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-gray-700 text-sm"
-                  value={editForm.phone}
-                  onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
-                  placeholder="+7 900 000 00 00"
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Школа</span>
-                <input
-                  className="mt-1 w-full px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-gray-700 text-sm"
+                  className="mt-0.5 w-full px-2.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-gray-700 text-sm"
                   value={editForm.school}
                   onChange={e => setEditForm(f => ({ ...f, school: e.target.value }))}
                   placeholder="Школа №1"
                 />
               </label>
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={saveProfile}
-                  disabled={savingProfile}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-medium transition-colors"
-                >
-                  <Save className="w-4 h-4" />
-                  {savingProfile ? "Сохраняем..." : "Сохранить"}
-                </button>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-xl text-sm transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={saveProfile}
+                disabled={savingProfile}
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {savingProfile ? "Сохраняем..." : "Сохранить"}
+              </button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-2">
               {[
                 { icon: Mail, label: profile.email },
                 { icon: Phone, label: profile.phone || "—" },
                 { icon: School, label: profile.school || "—" },
               ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
-                  <Icon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span>{label}</span>
+                <div key={label} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 truncate">
+                  <Icon className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <span className="truncate">{label}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </div>
 
-      {/* Analytics Chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 p-6">
-        <h3 className="text-sm font-bold flex items-center gap-3 mb-6">
-          <BarChart3 className="w-4 h-4 text-emerald-500" /> Активность за 2 недели
-        </h3>
-        <div className="h-[200px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={stats?.activity_by_day || []}>
-                 <XAxis dataKey="date" hide />
-                 <YAxis hide />
-                 <Tooltip 
-                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                   labelStyle={{ display: 'none' }}
-                 />
-                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                   {(stats?.activity_by_day || []).map((entry, index) => (
-                     <Cell key={`cell-${index}`} fill={index === (stats?.activity_by_day?.length || 0) - 1 ? '#10b981' : '#10b98140'} />
-                   ))}
-                 </Bar>
-               </BarChart>
-            </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Popular Features */}
-      {stats?.top_features && stats.top_features.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 p-6">
-           <h3 className="text-sm font-bold mb-6">Популярное у вас</h3>
-           <div className="space-y-3">
-              {stats.top_features.map((feat, i) => (
-                <div key={feat.name} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-black/5 dark:border-white/5">
-                   <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-600 flex items-center justify-center font-bold text-emerald-500 text-xs shadow-sm">
-                        {i + 1}
-                     </div>
-                     <span className="font-bold capitalize text-sm">{feat.name}</span>
-                   </div>
-                   <span className="text-xs font-medium text-gray-500">{feat.count} раз</span>
-                </div>
-              ))}
-           </div>
-        </div>
-      )}
-
-      {/* Change Password Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 p-4">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <Lock className="w-4 h-4 text-gray-400" />
-          Сменить пароль
-        </h2>
-        <div className="space-y-2">
-          {[
-            { key: "old_password", placeholder: "Текущий пароль" },
-            { key: "new_password", placeholder: "Новый пароль" },
-            { key: "confirm", placeholder: "Подтвердить пароль" },
-          ].map(({ key, placeholder }) => (
-            <input
-              key={key}
-              type="password"
-              placeholder={placeholder}
-              className="w-full px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-gray-700 text-sm"
-              value={pwdForm[key as keyof typeof pwdForm]}
-              onChange={e => setPwdForm(f => ({ ...f, [key]: e.target.value }))}
-            />
-          ))}
+        {/* Change password */}
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Lock className="w-3.5 h-3.5 text-gray-400" />
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Сменить пароль</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {[
+              { key: "old_password", placeholder: "Текущий" },
+              { key: "new_password", placeholder: "Новый" },
+              { key: "confirm", placeholder: "Повторить" },
+            ].map(({ key, placeholder }) => (
+              <input
+                key={key}
+                type="password"
+                placeholder={placeholder}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-gray-700 text-xs"
+                value={pwdForm[key as keyof typeof pwdForm]}
+                onChange={e => setPwdForm(f => ({ ...f, [key]: e.target.value }))}
+              />
+            ))}
+          </div>
           <button
             onClick={changePassword}
             disabled={savingPwd || !pwdForm.old_password || !pwdForm.new_password}
-            className="w-full py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors"
+            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors"
           >
             {savingPwd ? "Меняем..." : "Изменить пароль"}
           </button>
         </div>
-      </div>
-
-      {/* Logout Action */}
-      <div className="pt-4">
-        <button
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-2xl text-sm font-semibold transition-colors border border-red-200"
-        >
-          <LogOut className="w-4 h-4" />
-          Выйти из аккаунта
-        </button>
       </div>
     </div>
   );
