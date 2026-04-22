@@ -32,6 +32,7 @@ import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import DemoGenerator from "./pages/DemoGenerator";
 import Checkout from "./pages/payment/Checkout";
+import ShareResource from "./pages/ShareResource";
 import PaymentSuccess from "./pages/payment/PaymentSuccess";
 import PaymentFail from "./pages/payment/PaymentFail";
 
@@ -112,6 +113,9 @@ const App = () => (
                 <Route path="/games/scales" element={<ProtectedRoute allowedRoles={["teacher"]}><ErrorBoundary fallbackTitle="Balance scales error"><BalanceScales /></ErrorBoundary></ProtectedRoute>} />
                 <Route path="/games/word-search" element={<ProtectedRoute allowedRoles={["teacher"]}><ErrorBoundary fallbackTitle="Word search error"><WordSearch /></ErrorBoundary></ProtectedRoute>} />
                 <Route path="/games/crossword" element={<ProtectedRoute allowedRoles={["teacher"]}><ErrorBoundary fallbackTitle="Crossword error"><Crossword /></ErrorBoundary></ProtectedRoute>} />
+
+                {/* Public share route — no auth */}
+                <Route path="/share/:logId" element={<ShareResource />} />
 
                 {/* Payment Routes */}
                 <Route path="/checkout" element={<Checkout />} />

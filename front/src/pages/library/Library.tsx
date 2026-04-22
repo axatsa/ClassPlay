@@ -229,7 +229,7 @@ const Library = () => {
                 createdAt: new Date(b.created_at),
                 pages: []
             })));
-        }).catch(console.error);
+        }).catch(() => toast.error("Не удалось загрузить книги. Попробуйте обновить страницу."));
     }, []);
 
     const handleGenerated = (book: Book) => {

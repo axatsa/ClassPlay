@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import {
   Mail, Phone, School, Lock, Edit3, Save, X,
   Zap, BookOpen, BarChart2, Copy, Check, LogOut,
@@ -47,7 +48,6 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", school: "" });
   const [pwdForm, setPwdForm] = useState({ old_password: "", new_password: "", confirm: "" });
-  const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [copied, setCopied] = useState(false);
   const { logout } = useAuth();
   const [savingProfile, setSavingProfile] = useState(false);
@@ -128,8 +128,8 @@ export default function Profile() {
   };
 
   const flash = (text: string, type: "success" | "error") => {
-    setMsg({ text, type });
-    setTimeout(() => setMsg(null), 3000);
+    if (type === "success") toast.success(text);
+    else toast.error(text);
   };
 
   const copyEmail = () => {
@@ -154,15 +154,7 @@ export default function Profile() {
 
   return (
     <div className="max-w-xl mx-auto p-4">
-      {msg && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-lg ${
-          msg.type === "success" ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
-        }`}>
-          {msg.text}
-        </div>
-      )}
-
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+<div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
         {/* Header row */}
         <div className="bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-3 text-white">
           <div className="flex items-center gap-3">

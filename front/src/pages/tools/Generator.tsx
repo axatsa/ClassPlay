@@ -76,6 +76,7 @@ const Generator = () => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const [showClassPicker, setShowClassPicker] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
   const [genType, setGenType] = useState<GeneratorType>("math");
   const [targetLang, setTargetLang] = useState(lang === "uz" ? "Uzbek" : lang === "en" ? "English" : "Russian");
 
@@ -239,6 +240,7 @@ const Generator = () => {
         setCrosswordData(layout);
       }
       setGenerated(true);
+      setMobileTab("preview");
       toast.success("Content generated successfully!");
     } catch (error) {
       handleAIError(error, t);
@@ -741,11 +743,27 @@ const Generator = () => {
       {/* ── AI LOADING OVERLAY ── */}
       <AIGeneratingOverlay isGenerating={isGenerating} />
 
+      {/* Mobile tab bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border flex print:hidden">
+        <button
+          onClick={() => setMobileTab("form")}
+          className={`flex-1 py-3 text-sm font-semibold transition-colors ${mobileTab === "form" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
+        >
+          Настройки
+        </button>
+        <button
+          onClick={() => setMobileTab("preview")}
+          className={`flex-1 py-3 text-sm font-semibold transition-colors ${mobileTab === "preview" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
+        >
+          Результат
+        </button>
+      </div>
+
       {/* Left Settings Panel */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="w-full md:w-[400px] bg-card border-r border-border flex flex-col print:hidden"
+        className={`w-full md:w-[400px] bg-card border-r border-border flex flex-col print:hidden pb-16 md:pb-0 ${mobileTab === "preview" ? "hidden md:flex" : "flex"}`}
       >
         {/* Header */}
         <div className="p-6 border-b border-border">
@@ -1183,7 +1201,7 @@ const Generator = () => {
       </motion.div>
 
       {/* Right Preview */}
-      <div className="hidden md:flex flex-1 bg-muted/50 items-center justify-center p-10 relative print:p-0 print:block print:bg-white inset-0 print:absolute print:z-[9999]">
+      <div className={`flex-1 bg-muted/50 items-center justify-center p-6 md:p-10 relative print:p-0 print:block print:bg-white inset-0 print:absolute print:z-[9999] pb-16 md:pb-10 ${mobileTab === "form" ? "hidden md:flex" : "flex"}`}>
         <style>{`
           @media print {
             body * { visibility: hidden; }

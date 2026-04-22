@@ -122,6 +122,26 @@ export default function ClassManager() {
           </p>
         </motion.div>
 
+        {/* Empty state */}
+        {classes.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center py-20 text-center"
+          >
+            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
+              <GraduationCap className="w-10 h-10 text-primary" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground font-serif mb-2">{t("noClassesYet", "Пока нет классов")}</h2>
+            <p className="text-muted-foreground font-sans text-sm max-w-xs mb-6">
+              {t("noClassesDesc", "Создайте свой первый класс, чтобы начать генерировать материалы для учеников.")}
+            </p>
+            <Button onClick={openAdd} className="gap-2 rounded-xl">
+              <Plus className="w-4 h-4" /> {t("addClass")}
+            </Button>
+          </motion.div>
+        )}
+
         {/* Class cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {classes.map((cls, i) => (

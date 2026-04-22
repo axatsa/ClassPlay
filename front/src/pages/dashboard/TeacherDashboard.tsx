@@ -13,6 +13,7 @@ import { useTheme } from "@/context/ThemeContext";
 import OnboardingModal from "@/components/Onboarding/OnboardingModal";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { toast } from "sonner";
 import { 
   BarChart, 
   Bar, 
@@ -54,6 +55,7 @@ const TeacherDashboard = () => {
         setStats(res.data);
       } catch (error) {
         console.error("Failed to fetch stats", error);
+        toast.error("Не удалось загрузить статистику");
       } finally {
         setIsLoadingStats(false);
       }
