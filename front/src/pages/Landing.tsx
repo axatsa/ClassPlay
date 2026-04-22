@@ -1,906 +1,658 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
 import {
-  ArrowRight, Sparkles, BookOpen, Users, Gamepad2,
-  CheckCircle2, Star, Zap, Globe, LogOut, User, Settings,
-  ChevronDown, Play, Brain, Layers, Rocket,
+  Trophy, Star, Coins, Zap, Sparkles, BookOpen, Users, BarChart3,
+  ChevronRight, Play, Shield, BrainCircuit, ArrowRight, Check,
+  Menu, X, Globe, LogOut, Settings, User, ChevronDown,
+  Gamepad2, CheckCircle2, Rocket, Brain, Layers,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
 
-const DARK = "#07101F";
-const BLUE = "#0EA5E9";
-const ORANGE = "#FF5722";
-const CYAN = "#06D6A0";
-const YELLOW = "#FBBF24";
-const CORAL = "#FF3D68";
-const LIGHT = "#EFF8FF";
-const INK = "#0C1828";
+const FEATURES = [
+  {
+    icon: Sparkles,
+    colorClass: "text-primary",
+    bg: "bg-primary/5 border-primary/10",
+    iconBg: "bg-primary/10",
+    title: "ИИ-Генераторы",
+    desc: "Создавайте тесты, карточки и задания за секунды с помощью ИИ.",
+  },
+  {
+    icon: Gamepad2,
+    colorClass: "text-accent",
+    bg: "bg-accent/5 border-accent/10",
+    iconBg: "bg-accent/10",
+    title: "Интерактивные Игры",
+    desc: "6 игр для живого урока — Jeopardy, Memory, Word Search и другие.",
+  },
+  {
+    icon: BookOpen,
+    colorClass: "text-secondary",
+    bg: "bg-secondary/10 border-secondary/20",
+    iconBg: "bg-secondary/20",
+    title: "Персональные Книги",
+    desc: "ИИ пишет книгу с именем ученика как главным героем.",
+  },
+  {
+    icon: BarChart3,
+    colorClass: "text-emerald-600",
+    bg: "bg-emerald-50 border-emerald-100",
+    iconBg: "bg-emerald-100",
+    title: "Аналитика Класса",
+    desc: "XP-тренды, использование монет и выполнение заданий в одном месте.",
+  },
+  {
+    icon: Trophy,
+    colorClass: "text-primary",
+    bg: "bg-primary/5 border-primary/10",
+    iconBg: "bg-primary/10",
+    title: "Лидерборды",
+    desc: "Живые рейтинги класса мотивируют учеников улучшаться каждый день.",
+  },
+  {
+    icon: Shield,
+    colorClass: "text-sky-500",
+    bg: "bg-sky-50 border-sky-100",
+    iconBg: "bg-sky-100",
+    title: "Безопасность",
+    desc: "Ролевой доступ, управление организацией и конфиденциальность с первого дня.",
+  },
+];
 
-const testimGradients = [
-  "linear-gradient(135deg, #60A5FA, #818CF8)",
-  "linear-gradient(135deg, #A78BFA, #EC4899)",
-  "linear-gradient(135deg, #FBBF24, #F97316)",
-  "linear-gradient(135deg, #34D399, #06B6D4)",
+const STEPS = [
+  {
+    step: "01",
+    icon: Zap,
+    colorClass: "text-secondary",
+    iconBg: "bg-secondary/20",
+    title: "Создайте класс",
+    desc: "Настройте организацию и пригласите учеников за несколько минут.",
+  },
+  {
+    step: "02",
+    icon: Brain,
+    colorClass: "text-primary",
+    iconBg: "bg-primary/10",
+    title: "ИИ создаёт за вас",
+    desc: "Введите тему — ИИ напишет задания, вопросы или книгу за секунды.",
+  },
+  {
+    step: "03",
+    icon: Rocket,
+    colorClass: "text-accent",
+    iconBg: "bg-accent/10",
+    title: "Запустите на уроке",
+    desc: "Игры запускаются в один клик прямо на проекторе. Ученики конкурируют.",
+  },
+];
+
+const LEADERBOARD_DEMO = [
+  { name: "Aisha K.", level: 12, xp: 3240, rank: 1 },
+  { name: "Marcus T.", level: 11, xp: 2980, rank: 2 },
+  { name: "Sofia L.", level: 10, xp: 2710, rank: 3 },
+  { name: "James R.", level: 9, xp: 2490, rank: 4 },
+  { name: "Priya M.", level: 9, xp: 2301, rank: 5 },
+];
+
+const GAMES = [
+  { name: "Jeopardy", emoji: "🎯", desc: "Командные вопросы", tag: "TEAM" },
+  { name: "Memory Matrix", emoji: "🧠", desc: "Тренировка памяти", tag: "SOLO" },
+  { name: "Word Search", emoji: "🔍", desc: "Поиск слов", tag: "SOLO" },
+  { name: "Tug of War", emoji: "🏆", desc: "Командная битва", tag: "TEAM" },
+  { name: "Balance Scales", emoji: "⚖️", desc: "Математика", tag: "SOLO" },
+  { name: "Crossword", emoji: "✏️", desc: "Кроссворды", tag: "SOLO" },
+];
+
+const STATS = [
+  { value: "12k+", label: "Учеников", icon: Users },
+  { value: "6+", label: "Мини-игр", icon: Gamepad2 },
+  { value: "AI", label: "Генератор", icon: BrainCircuit },
+  { value: "∞", label: "Контента", icon: Layers },
+];
+
+const FAQS = [
+  { q: "Это бесплатно?", a: "Базовый план полностью бесплатен для одного учителя и одного класса без ограничений по времени." },
+  { q: "Нужна ли карта для регистрации?", a: "Нет. Вы можете зарегистрироваться и начать работу без банковской карты." },
+  { q: "Какие игры доступны?", a: "Jeopardy, Memory Matrix, Word Search, Tug of War, Balance Scales и Crossword — всего 6 режимов." },
+  { q: "Можно ли использовать на мобильных?", a: "Да, платформа полностью адаптирована для мобильных устройств и планшетов." },
+  { q: "Как работает ИИ-генератор?", a: "Вы вводите тему или загружаете текст — ИИ создаёт тест, карточки или персональную книгу автоматически." },
 ];
 
 export default function Landing() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { t, i18n } = useTranslation();
-  const [navScrolled, setNavScrolled] = useState(false);
+  const { i18n } = useTranslation();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    const id = "classplay-fonts";
-    if (!document.getElementById(id)) {
-      const link = document.createElement("link");
-      link.id = id;
-      link.rel = "stylesheet";
-      link.href =
-        "https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap";
-      document.head.appendChild(link);
-    }
-  }, []);
-
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === "ru" ? "uz" : "ru");
-  };
-
-  const features = [
-    {
-      icon: Sparkles,
-      title: t("land_f1_title", "ИИ-Генераторы"),
-      desc: t("land_f1_desc", "Создавайте тесты, карточки и задания за секунды"),
-      color: CYAN,
-      bg: "rgba(34,211,238,0.1)",
-      num: "01",
-    },
-    {
-      icon: Gamepad2,
-      title: t("land_f2_title", "Интерактивные Игры"),
-      desc: t("land_f2_desc", "6 игр для живого урока — Jeopardy, Memory, Word Search и другие"),
-      color: BLUE,
-      bg: "rgba(14,165,233,0.1)",
-      num: "02",
-    },
-    {
-      icon: BookOpen,
-      title: t("land_f3_title", "Персональные Книги"),
-      desc: t("land_f3_desc", "ИИ пишет книгу с именем ученика как главным героем"),
-      color: YELLOW,
-      bg: "rgba(250,204,21,0.1)",
-      num: "03",
-    },
-    {
-      icon: Users,
-      title: t("land_f6_title", "Управление Классами"),
-      desc: t("land_f6_desc", "Ведите несколько групп, отслеживайте прогресс и активность"),
-      color: CORAL,
-      bg: "rgba(255,61,104,0.1)",
-      num: "04",
-    },
-  ];
-
-  const stats = [
-    { value: "6+", label: t("land_stat_games", "Мини-игр"), icon: Gamepad2, color: CYAN },
-    { value: "10k+", label: t("land_stat_gen", "Создано материалов"), icon: Sparkles, color: YELLOW },
-    { value: "AI", label: t("land_stat_ai", "Умный генератор"), icon: Brain, color: CORAL },
-    { value: "∞", label: t("land_stat_content", "Контента"), icon: Layers, color: ORANGE },
-  ];
-
-  const faqs = [
-    { q: t("faq_1_q"), a: t("faq_1_a") },
-    { q: t("faq_2_q"), a: t("faq_2_a") },
-    { q: t("faq_3_q"), a: t("faq_3_a") },
-    { q: t("faq_4_q"), a: t("faq_4_a") },
-    { q: t("faq_5_q"), a: t("faq_5_a") },
-    { q: t("faq_6_q"), a: t("faq_6_a") },
-  ];
-
-  const testimonials = [
-    { name: t("testim_1_name"), role: t("testim_1_role"), school: t("testim_1_school"), text: t("testim_1_text") },
-    { name: t("testim_2_name"), role: t("testim_2_role"), school: t("testim_2_school"), text: t("testim_2_text") },
-    { name: t("testim_3_name"), role: t("testim_3_role"), school: t("testim_3_school"), text: t("testim_3_text") },
-    { name: t("testim_4_name"), role: t("testim_4_role"), school: t("testim_4_school"), text: t("testim_4_text") },
-  ];
-
-  const gameCards = [
-    { name: "Jeopardy", emoji: "🎯" },
-    { name: "Memory", emoji: "🧠" },
-    { name: "Word Search", emoji: "🔍" },
-    { name: "Tug of War", emoji: "🏆" },
-  ];
-
-  const games = [
-    { name: "Jeopardy", emoji: "🎯", desc: t("land_game_jeopardy", "Командные вопросы"), tag: "TEAM", grad: "linear-gradient(135deg, #2563EB, #7C3AED)" },
-    { name: "Memory Matrix", emoji: "🧠", desc: t("land_game_memory", "Тренировка памяти"), tag: "SOLO", grad: "linear-gradient(135deg, #7C3AED, #EC4899)" },
-    { name: "Word Search", emoji: "🔍", desc: t("land_game_wordsearch", "Поиск слов"), tag: "SOLO", grad: "linear-gradient(135deg, #059669, #22D3EE)" },
-    { name: "Tug of War", emoji: "🏆", desc: t("land_game_tug", "Командная битва"), tag: "TEAM", grad: "linear-gradient(135deg, #F97316, #FACC15)" },
-    { name: "Balance Scales", emoji: "⚖️", desc: t("land_game_scales", "Математика"), tag: "SOLO", grad: "linear-gradient(135deg, #06B6D4, #3B82F6)" },
-    { name: "Crossword", emoji: "✏️", desc: t("land_game_crossword", "Кроссворды"), tag: "SOLO", grad: "linear-gradient(135deg, #EC4899, #F97316)" },
-  ];
-
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: "#fff", color: INK }}>
+    <div className="min-h-screen bg-background font-sans">
 
-      {/* ── NAVBAR ── */}
-      <nav
-        style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-          padding: navScrolled ? "12px clamp(16px, 5vw, 48px)" : "20px clamp(16px, 5vw, 48px)",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          transition: "all 0.3s",
-          background: navScrolled ? "rgba(255,255,255,0.96)" : "transparent",
-          backdropFilter: navScrolled ? "blur(12px)" : "none",
-          borderBottom: navScrolled ? "1px solid rgba(0,0,0,0.06)" : "none",
-        }}
-      >
-        <button onClick={() => navigate(user ? "/teacher" : "/")} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer" }}>
-          <img src="/logo_sticker.webp" alt="ClassPlay" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "contain" }} />
-          <span style={{
-            fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em",
-            fontFamily: "'Syne', sans-serif",
-            color: navScrolled ? INK : "#fff",
-          }}>ClassPlay</span>
-        </button>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* ── Navbar ── */}
+      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
           <button
-            onClick={toggleLanguage}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "6px 14px", borderRadius: 100,
-              fontSize: 13, fontWeight: 600, cursor: "pointer",
-              color: navScrolled ? "#777" : "rgba(255,255,255,0.65)",
-              background: "none", border: "none",
-            }}
+            onClick={() => navigate(user ? "/teacher" : "/")}
+            className="flex items-center gap-2.5 bg-transparent border-none cursor-pointer"
           >
-            <Globe size={14} />
-            {i18n.language === "ru" ? "RU" : "UZ"}
+            <div className="w-9 h-9 rounded-xl bg-sidebar flex items-center justify-center overflow-hidden shrink-0">
+              <img src="/logo-sticker.webp" alt="ClassPlay" className="w-full h-full object-cover" />
+            </div>
+            <span className="text-lg font-bold text-foreground font-serif tracking-tight">ClassPlay</span>
           </button>
 
-          {user ? (
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setShowProfile(v => !v)}
-                style={{
-                  width: 36, height: 36, borderRadius: "50%",
-                  background: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  border: "none", cursor: "pointer",
-                  boxShadow: `0 4px 12px rgba(14,165,233,0.4)`,
-                }}
+          <nav className="hidden md:flex items-center gap-6">
+            {["#features", "#how-it-works", "#games", "#pricing"].map((href) => (
+              <a
+                key={href}
+                href={href}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium capitalize"
               >
-                <User size={14} color="#fff" />
-              </button>
-              <AnimatePresence>
-                {showProfile && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                    style={{
-                      position: "absolute", right: 0, top: 48,
-                      width: 216, background: "#fff", borderRadius: 16,
-                      boxShadow: "0 24px 60px rgba(0,0,0,0.14)", border: "1px solid rgba(0,0,0,0.06)",
-                      padding: 8,
-                    }}
-                  >
-                    <div style={{ padding: "8px 12px 10px", borderBottom: "1px solid rgba(0,0,0,0.06)", marginBottom: 4 }}>
-                      <p style={{ fontWeight: 700, fontSize: 14, color: INK }}>{user.full_name || user.email}</p>
-                      <p style={{ fontSize: 12, color: "#aaa", marginTop: 2 }}>{user.email}</p>
-                    </div>
-                    <button
-                      onClick={() => navigate(user.role === "super_admin" ? "/admin" : "/teacher")}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, fontSize: 14, color: "#444", background: "none", border: "none", cursor: "pointer" }}
-                    >
-                      <Settings size={14} style={{ opacity: 0.4 }} /> {t("land_dashboard")}
-                    </button>
-                    <button
-                      onClick={logout}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, fontSize: 14, color: "#EF4444", background: "none", border: "none", cursor: "pointer" }}
-                    >
-                      <LogOut size={14} /> {t("logout")}
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={() => navigate("/demo")}
-                style={{
-                  padding: "8px 18px", borderRadius: 100, fontSize: 13, fontWeight: 600,
-                  color: navScrolled ? "#666" : "rgba(255,255,255,0.75)",
-                  background: "transparent", border: "none", cursor: "pointer",
-                }}
-                className="hidden sm:block"
-              >
-                {t("land_hero_demo", "Демо")}
-              </button>
-              <button
-                onClick={() => navigate("/login")}
-                style={{
-                  padding: "9px 22px", borderRadius: 100, fontSize: 13, fontWeight: 700,
-                  background: navScrolled ? `linear-gradient(135deg, ${BLUE}, ${CORAL})` : "#fff",
-                  color: navScrolled ? "#fff" : INK,
-                  border: "none", cursor: "pointer",
-                  boxShadow: navScrolled ? `0 4px 16px rgba(14,165,233,0.35)` : "0 2px 12px rgba(0,0,0,0.2)",
-                  transition: "all 0.2s",
-                }}
-              >
-                {t("land_login", "Войти")}
-              </button>
-            </>
-          )}
-        </div>
-      </nav>
+                {href.replace("#", "").replace("-", " ")}
+              </a>
+            ))}
+          </nav>
 
-      {/* ── HERO ── */}
-      <section style={{ background: DARK, minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
-
-        {/* Glow blobs */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: "-15%", left: "-10%", width: "55%", height: "60%", background: `radial-gradient(circle, ${BLUE}40 0%, transparent 70%)`, borderRadius: "50%" }} />
-          <div style={{ position: "absolute", bottom: "-10%", right: "-10%", width: "45%", height: "55%", background: `radial-gradient(circle, ${CORAL}30 0%, transparent 70%)`, borderRadius: "50%" }} />
-          <div style={{ position: "absolute", top: "35%", right: "20%", width: "30%", height: "35%", background: `radial-gradient(circle, ${CYAN}20 0%, transparent 70%)`, borderRadius: "50%" }} />
-        </div>
-
-        {/* Dot grid overlay */}
-        <div style={{ position: "absolute", inset: 0, opacity: 0.06, pointerEvents: "none" }}>
-          <svg width="100%" height="100%">
-            <defs>
-              <pattern id="dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-                <circle cx="1.5" cy="1.5" r="1.5" fill="white" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#dots)" />
-          </svg>
-        </div>
-
-        {/* Floating game cards */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }} className="hidden lg:block">
-          {gameCards.map((card, i) => (
-            <motion.div
-              key={card.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 0.9, y: [0, -12, 0] }}
-              transition={{
-                opacity: { delay: 0.7 + i * 0.15, duration: 0.5 },
-                y: { delay: i * 0.4, duration: 3.5 + i * 0.5, repeat: Infinity, ease: "easeInOut" },
-              }}
-              style={{
-                position: "absolute",
-                background: "rgba(255,255,255,0.06)",
-                backdropFilter: "blur(12px)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 20,
-                padding: "16px 18px",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                width: 94,
-                ...(i === 0 ? { top: "22%", right: "9%" } : {}),
-                ...(i === 1 ? { top: "56%", right: "5%" } : {}),
-                ...(i === 2 ? { top: "25%", left: "5%" } : {}),
-                ...(i === 3 ? { top: "60%", left: "8%" } : {}),
-              }}
+          <div className="hidden md:flex items-center gap-2">
+            <button
+              onClick={() => i18n.changeLanguage(i18n.language === "ru" ? "uz" : "ru")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer bg-transparent border-none"
             >
-              <span style={{ fontSize: 28 }}>{card.emoji}</span>
-              <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: 700, textAlign: "center", lineHeight: 1.3 }}>{card.name}</span>
-            </motion.div>
-          ))}
+              <Globe className="w-3.5 h-3.5" />
+              {i18n.language === "ru" ? "RU" : "UZ"}
+            </button>
+
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowProfile(v => !v)}
+                  className="w-9 h-9 rounded-full bg-primary flex items-center justify-center border-none cursor-pointer"
+                >
+                  <User className="w-4 h-4 text-white" />
+                </button>
+                <AnimatePresence>
+                  {showProfile && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      className="absolute right-0 top-12 w-52 bg-card rounded-2xl border border-border shadow-xl p-2 z-50"
+                    >
+                      <div className="px-3 py-2 border-b border-border mb-1">
+                        <p className="font-bold text-sm text-foreground">{user.full_name || user.email}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={() => navigate(user.role === "super_admin" ? "/admin" : "/teacher")}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-foreground hover:bg-muted transition-colors bg-transparent border-none cursor-pointer"
+                      >
+                        <Settings className="w-4 h-4 opacity-50" /> Дашборд
+                      </button>
+                      <button
+                        onClick={logout}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-destructive hover:bg-destructive/10 transition-colors bg-transparent border-none cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4" /> Выйти
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <>
+                <Button variant="ghost" className="text-sm rounded-xl" onClick={() => navigate("/demo")}>Демо</Button>
+                <Button className="rounded-xl text-sm gap-1.5" onClick={() => navigate("/login")}>
+                  Войти <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
+
+          <button
+            className="md:hidden p-2 rounded-xl hover:bg-muted transition-colors bg-transparent border-none cursor-pointer"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
 
-        {/* Hero content */}
-        <div style={{
-          flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          padding: "110px clamp(16px, 5vw, 48px) 56px",
-          position: "relative", zIndex: 10,
-        }}>
+        {mobileOpen && (
+          <div className="md:hidden border-t border-border bg-card px-6 py-4 space-y-3">
+            {["#features", "#how-it-works", "#games", "#pricing"].map((href) => (
+              <a key={href} href={href} className="block text-sm font-medium text-muted-foreground hover:text-foreground capitalize" onClick={() => setMobileOpen(false)}>
+                {href.replace("#", "").replace("-", " ")}
+              </a>
+            ))}
+            <div className="pt-2 flex gap-3">
+              <Button variant="outline" className="flex-1 rounded-xl text-sm" onClick={() => navigate("/demo")}>Демо</Button>
+              <Button className="flex-1 rounded-xl text-sm" onClick={() => navigate("/login")}>Войти</Button>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 -left-48 w-[500px] h-[500px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-secondary/10 blur-3xl pointer-events-none" />
+
+        <div className="max-w-6xl mx-auto px-6 pt-20 pb-24 text-center relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "7px 18px", borderRadius: 100,
-              background: `rgba(14,165,233,0.2)`,
-              border: `1px solid rgba(14,165,233,0.45)`,
-              color: "#C4B5FD", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em",
-              textTransform: "uppercase", marginBottom: 32,
-            }}
+            className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 rounded-full px-4 py-1.5 text-sm font-medium mb-8"
           >
-            <Sparkles size={12} />
-            {t("land_hero_badge", "ИИ-платформа для учителей")}
+            <Sparkles className="w-3.5 h-3.5" />
+            ИИ-платформа для учителей нового поколения
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "clamp(48px, 9vw, 96px)",
-              fontWeight: 800,
-              color: "#fff",
-              lineHeight: 0.95,
-              letterSpacing: "-0.03em",
-              textAlign: "center",
-              marginBottom: 28,
-              maxWidth: 900,
-            }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-5xl md:text-7xl font-bold text-foreground font-serif leading-tight tracking-tight mb-6 max-w-4xl mx-auto"
           >
-            {t("land_hero_title1", "Уроки,")}{" "}
-            <span style={{
-              background: `linear-gradient(135deg, ${CYAN}, ${BLUE}, ${CORAL})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}>
-              {t("land_hero_title2", "которые не забудут")}
+            Уроки,{" "}
+            <span className="text-primary relative inline-block">
+              которые не забудут
+              <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 400 12" fill="none" preserveAspectRatio="none">
+                <path d="M2 9 Q100 2 200 9 Q300 16 398 9" stroke="hsl(217 91% 60%)" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.5" />
+              </svg>
             </span>
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            style={{
-              fontSize: "clamp(15px, 2vw, 19px)", color: "rgba(255,255,255,0.5)",
-              maxWidth: 520, textAlign: "center", lineHeight: 1.7,
-              marginBottom: 44, fontWeight: 400,
-            }}
+            className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            {t("land_hero_sub", "Создавайте материалы, запускайте игры и вовлекайте учеников — всё в одном месте. Хватит тратить часы на подготовку.")}
+            Создавайте материалы, запускайте игры и вовлекайте учеников — всё в одном месте. Хватит тратить часы на подготовку.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <motion.button
-              onClick={() => navigate("/login")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                padding: "15px 34px", borderRadius: 100,
-                background: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
-                color: "#fff", fontSize: 15, fontWeight: 700,
-                border: "none", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 8,
-                boxShadow: `0 8px 32px rgba(14,165,233,0.5)`,
-              }}
-            >
-              {t("land_hero_cta", "Начать бесплатно")} <ArrowRight size={16} />
-            </motion.button>
-            <motion.button
-              onClick={() => navigate("/demo")}
-              whileHover={{ scale: 1.04, background: "rgba(255,255,255,0.15)" }}
-              style={{
-                padding: "15px 34px", borderRadius: 100,
-                background: "rgba(255,255,255,0.08)", color: "#fff",
-                fontSize: 15, fontWeight: 600,
-                border: "1px solid rgba(255,255,255,0.18)", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 8,
-                backdropFilter: "blur(8px)",
-              }}
-            >
-              <Play size={14} style={{ fill: "currentColor" }} /> {t("land_hero_demo", "Смотреть демо")}
-            </motion.button>
+            <Button size="lg" className="rounded-2xl px-8 gap-2 text-base" onClick={() => navigate("/login")}>
+              Начать бесплатно <ArrowRight className="w-4 h-4" />
+            </Button>
+            <Button size="lg" variant="outline" className="rounded-2xl px-8 gap-2 text-base border-border" onClick={() => navigate("/demo")}>
+              <Play className="w-4 h-4 fill-current" /> Смотреть демо
+            </Button>
+          </motion.div>
+
+          <p className="mt-4 text-xs text-muted-foreground">Без карточки · Бесплатно для 1 класса</p>
+
+          {/* Dashboard preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.45 }}
+            className="mt-16 bg-card rounded-3xl border border-border shadow-xl p-6 md:p-8 text-left max-w-4xl mx-auto relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-10 opacity-[0.04]">
+              <Trophy className="w-64 h-64 text-primary" />
+            </div>
+
+            <div className="flex items-center justify-between mb-6 relative z-10">
+              <div>
+                <h2 className="text-2xl font-bold font-serif text-foreground">Добро пожаловать, Алекс 👋</h2>
+                <p className="text-muted-foreground text-sm mt-0.5">Продолжайте серию — вы в ударе!</p>
+              </div>
+              <div className="bg-primary text-primary-foreground rounded-2xl px-4 py-2 flex items-center gap-2 text-sm font-semibold shrink-0">
+                <Coins className="w-4 h-4" /> 480 монет
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6 mb-6 relative z-10">
+              <div className="w-16 h-16 rounded-full bg-primary/10 border-4 border-primary/20 flex items-center justify-center shrink-0 relative">
+                <span className="text-2xl font-black text-primary font-serif">8</span>
+                <div className="absolute -bottom-2 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
+                  Ур.
+                </div>
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex justify-between text-sm font-medium">
+                  <span className="text-primary">1 840 XP</span>
+                  <span className="text-muted-foreground">240 XP до Уровня 9</span>
+                </div>
+                <div className="h-4 rounded-full bg-secondary/20 overflow-hidden">
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: "76%" }} />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 relative z-10">
+              {[
+                { label: "Дневной XP", value: "320 / 500", icon: Sparkles, color: "text-primary" },
+                { label: "Монеты", value: "60 / 100", icon: Coins, color: "text-secondary" },
+                { label: "Серия", value: "7 дней 🔥", icon: Zap, color: "text-yellow-500" },
+                { label: "Рейтинг", value: "#3 в классе", icon: Trophy, color: "text-primary" },
+              ].map((s) => (
+                <div key={s.label} className="bg-muted/50 rounded-2xl border border-border p-4 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{s.label}</span>
+                    <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
+                  </div>
+                  <p className="font-black font-serif text-lg text-foreground">{s.value}</p>
+                </div>
+              ))}
+            </div>
           </motion.div>
         </div>
+      </section>
 
-        {/* Stats strip */}
-        <div style={{
-          background: "rgba(255,255,255,0.04)",
-          backdropFilter: "blur(10px)",
-          borderTop: "1px solid rgba(255,255,255,0.07)",
-          padding: "28px clamp(16px, 5vw, 48px)",
-          display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-          position: "relative", zIndex: 10,
-        }}>
-          {stats.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 + i * 0.1 }}
-              style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
-            >
-              <span style={{
-                fontFamily: "'Syne', sans-serif",
-                fontSize: "clamp(22px, 4vw, 40px)", fontWeight: 800,
-                letterSpacing: "-0.03em", color: s.color,
-              }}>
-                {s.value}
+      {/* ── Stats strip ── */}
+      <div className="border-y border-border bg-muted/30">
+        <div className="max-w-6xl mx-auto px-6 py-5 grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
+          {STATS.map((s) => (
+            <div key={s.label} className="flex flex-col items-center gap-1 py-2">
+              <span className="text-3xl font-black font-serif text-primary">{s.value}</span>
+              <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+                <s.icon className="w-3 h-3" /> {s.label}
               </span>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Features ── */}
+      <section id="features" className="max-w-6xl mx-auto px-6 py-24">
+        <div className="mb-14">
+          <div className="inline-flex items-center gap-2 bg-accent/10 text-accent border border-accent/20 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+            <Star className="w-3.5 h-3.5 fill-current" />
+            Возможности
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4 max-w-lg">
+            Всё для современного учителя
+          </h2>
+          <p className="text-muted-foreground max-w-xl">
+            От ИИ-генераторов до живых игр — ClassPlay полный комплект для вовлечённого класса.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {FEATURES.map((f, i) => (
+            <motion.div
+              key={f.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.07 }}
+              className={`rounded-3xl border p-6 space-y-4 ${f.bg}`}
+            >
+              <div className={`w-11 h-11 rounded-2xl ${f.iconBg} flex items-center justify-center`}>
+                <f.icon className={`w-5 h-5 ${f.colorClass}`} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold font-serif text-foreground mb-1">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
             </motion.div>
           ))}
         </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          style={{ position: "absolute", bottom: 90, left: "50%", transform: "translateX(-50%)", zIndex: 10 }}
-        >
-          <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-            <ChevronDown size={20} color="rgba(255,255,255,0.2)" />
-          </motion.div>
-        </motion.div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section style={{ background: "#fff", padding: "clamp(56px, 8vw, 96px) clamp(16px, 5vw, 48px)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ marginBottom: 56 }}
-          >
-            <span style={{
-              display: "inline-block", padding: "5px 16px", borderRadius: 100,
-              background: `rgba(14,165,233,0.1)`, color: BLUE,
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
-              border: `1px solid rgba(14,165,233,0.2)`,
-            }}>
-              {t("land_features_badge", "Возможности")}
-            </span>
-            <h2 style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 800,
-              color: INK, lineHeight: 1.1, letterSpacing: "-0.03em",
-              maxWidth: 560,
-            }}>
-              {t("land_features_title", "Всё для современного учителя")}
-            </h2>
-          </motion.div>
+      {/* ── Leaderboard ── */}
+      <section className="bg-sidebar py-24 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute -bottom-32 -right-32 w-[400px] h-[400px] rounded-full bg-accent/5 blur-3xl" />
+        </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
-            {features.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                whileHover={{ y: -5, boxShadow: `0 20px 48px rgba(0,0,0,0.1)` }}
-                style={{
-                  background: LIGHT,
-                  borderRadius: 20,
-                  padding: 28,
-                  borderTop: `3px solid ${f.color}`,
-                  position: "relative",
-                  transition: "box-shadow 0.2s",
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{
-                  position: "absolute", top: 16, right: 20,
-                  fontSize: 56, fontWeight: 900, color: f.color, opacity: 0.07,
-                  fontFamily: "'Syne', sans-serif", lineHeight: 1, userSelect: "none",
-                }}>{f.num}</div>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 14,
-                  background: f.bg, border: `1px solid ${f.color}30`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  marginBottom: 20,
-                }}>
-                  <f.icon size={22} color={f.color} />
-                </div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, color: INK, marginBottom: 10, lineHeight: 1.3 }}>{f.title}</h3>
-                <p style={{ fontSize: 14, color: "#666", lineHeight: 1.7 }}>{f.desc}</p>
-              </motion.div>
-            ))}
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="text-sidebar-foreground">
+              <div className="inline-flex items-center gap-2 bg-sidebar-primary/20 text-sidebar-primary border border-sidebar-primary/30 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+                <Trophy className="w-3.5 h-3.5" />
+                Живые лидерборды
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold font-serif mb-5 leading-tight">
+                Соревнование, которое действительно мотивирует
+              </h2>
+              <p className="text-sidebar-foreground/70 text-lg leading-relaxed mb-8">
+                Ученики постоянно проверяют свой рейтинг. Это любопытство превращается в обучение. Обновления в реальном времени означают, что каждое задание — шанс подняться выше.
+              </p>
+              <Button className="rounded-2xl px-6 gap-2" onClick={() => navigate("/login")}>
+                Попробовать <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-2xl">
+              <div className="px-6 py-4 border-b border-border flex items-center gap-3">
+                <Trophy className="w-5 h-5 text-primary" />
+                <span className="font-bold font-serif text-foreground">Класс 7Б — Эта неделя</span>
+              </div>
+              <div className="divide-y divide-border">
+                {LEADERBOARD_DEMO.map((item) => (
+                  <div key={item.rank} className={`flex items-center gap-4 px-6 py-4 ${item.rank === 1 ? "bg-primary/5" : ""}`}>
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${
+                      item.rank === 1 ? "bg-yellow-400 text-white" :
+                      item.rank === 2 ? "bg-gray-300 text-gray-700" :
+                      item.rank === 3 ? "bg-orange-400 text-white" : "bg-muted text-muted-foreground"
+                    }`}>
+                      {item.rank}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-foreground">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">Уровень {item.level}</p>
+                    </div>
+                    <span className="text-sm font-mono font-bold text-primary">{item.xp.toLocaleString()} XP</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section style={{ background: DARK, padding: "clamp(56px, 8vw, 96px) clamp(16px, 5vw, 48px)" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ textAlign: "center", marginBottom: 56 }}
-          >
-            <span style={{
-              display: "inline-block", padding: "5px 16px", borderRadius: 100,
-              background: `rgba(250,204,21,0.12)`, color: YELLOW,
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
-              border: `1px solid rgba(250,204,21,0.25)`,
-            }}>
-              {t("land_hiw_badge", "Как это работает")}
-            </span>
-            <h2 style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 800,
-              color: "#fff", lineHeight: 1.1, letterSpacing: "-0.03em",
-            }}>
-              {t("land_res_title1", "Три шага")}{" "}
-              <span style={{ color: CYAN }}>{t("land_res_title2", "до результата")}</span>
-            </h2>
-          </motion.div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
-            {[
-              { n: "01", icon: Zap, title: t("land_hiw_1_title", "Выберите инструмент"), desc: t("land_res_acc_desc", "Генератор, игра или библиотека — всё доступно сразу после входа."), color: CYAN },
-              { n: "02", icon: Brain, title: t("land_hiw_2_title", "ИИ создаёт за вас"), desc: t("land_res_print_desc", "Введите тему — ИИ напишет задания, вопросы или целую книгу за секунды."), color: BLUE },
-              { n: "03", icon: Rocket, title: t("land_hiw_3_title", "Запустите на уроке"), desc: t("land_org_desc", "Распечатайте или откройте прямо на проекторе. Игры запускаются в один клик."), color: ORANGE },
-            ].map((step, i) => (
-              <motion.div
-                key={step.n}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.12 }}
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: `1px solid rgba(255,255,255,0.08)`,
-                  borderRadius: 24,
-                  padding: "40px 32px",
-                  textAlign: "center",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{
-                  position: "absolute", top: 12, right: 20,
-                  fontFamily: "'Syne', sans-serif",
-                  fontSize: 72, fontWeight: 800, color: step.color, opacity: 0.08,
-                  lineHeight: 1, userSelect: "none",
-                }}>{step.n}</div>
-                <div style={{
-                  width: 60, height: 60, borderRadius: 18,
-                  background: `${step.color}18`,
-                  border: `1px solid ${step.color}30`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  margin: "0 auto 24px",
-                }}>
-                  <step.icon size={26} color={step.color} />
-                </div>
-                <h3 style={{ fontSize: 19, fontWeight: 700, color: "#fff", marginBottom: 12 }}>{step.title}</h3>
-                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>{step.desc}</p>
-              </motion.div>
-            ))}
+      {/* ── How it works ── */}
+      <section id="how-it-works" className="max-w-6xl mx-auto px-6 py-24">
+        <div className="text-center mb-14">
+          <div className="inline-flex items-center gap-2 bg-secondary/20 text-amber-700 border border-secondary/30 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+            <BookOpen className="w-3.5 h-3.5" />
+            Как это работает
           </div>
+          <h2 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4">
+            Три шага до результата
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Никаких звонков по онбордингу. Никаких IT-заявок. Создайте аккаунт и начните прямо сегодня.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {STEPS.map((s, i) => (
+            <motion.div
+              key={s.step}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-card rounded-3xl border border-border p-8 space-y-4 relative overflow-hidden"
+            >
+              <div className="absolute top-4 right-6 text-6xl font-black font-serif text-muted/30 leading-none select-none">
+                {s.step}
+              </div>
+              <div className={`w-12 h-12 rounded-2xl ${s.iconBg} flex items-center justify-center`}>
+                <s.icon className={`w-6 h-6 ${s.colorClass}`} />
+              </div>
+              <h3 className="text-xl font-bold font-serif text-foreground">{s.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+            </motion.div>
+          ))}
         </div>
       </section>
 
-      {/* ── GAMES SHOWCASE ── */}
-      <section style={{ background: "#fff", padding: "clamp(56px, 8vw, 96px) clamp(16px, 5vw, 48px)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ textAlign: "center", marginBottom: 48 }}
-          >
-            <span style={{
-              display: "inline-block", padding: "5px 16px", borderRadius: 100,
-              background: `rgba(249,115,22,0.1)`, color: ORANGE,
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
-              border: `1px solid rgba(249,115,22,0.25)`,
-            }}>
-              {t("land_games_badge", "Игры")}
-            </span>
-            <h2 style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 800,
-              color: INK, lineHeight: 1.1, letterSpacing: "-0.03em",
-              marginBottom: 12,
-            }}>
-              {t("land_games_title", "6 игр для живого урока")}
+      {/* ── Games ── */}
+      <section id="games" className="bg-muted/30 border-y border-border py-24">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+              <Gamepad2 className="w-3.5 h-3.5" />
+              Игры
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4">
+              6 игр для живого урока
             </h2>
-            <p style={{ fontSize: 16, color: "#888", maxWidth: 480, margin: "0 auto" }}>
-              {t("land_games_sub", "Запускайте прямо на проекторе. Ученики играют — учитель управляет.")}
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Запускайте прямо на проекторе. Ученики играют — учитель управляет.
             </p>
-          </motion.div>
+          </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(175px, 1fr))", gap: 16, marginBottom: 40 }}>
-            {games.map((game, i) => (
-              <motion.div
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+            {GAMES.map((game, i) => (
+              <motion.button
                 key={game.name}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: i * 0.07 }}
+                transition={{ delay: i * 0.06 }}
                 onClick={() => navigate("/login")}
-                whileHover={{ y: -6, boxShadow: "0 24px 48px rgba(0,0,0,0.15)" }}
-                style={{
-                  background: game.grad,
-                  borderRadius: 20,
-                  padding: "28px 16px",
-                  display: "flex", flexDirection: "column", alignItems: "center",
-                  gap: 12, textAlign: "center",
-                  cursor: "pointer",
-                  transition: "box-shadow 0.2s",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
+                className="bg-card rounded-3xl border border-border p-5 flex flex-col items-center gap-3 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer text-center group"
               >
-                <div style={{
-                  position: "absolute", inset: 0, opacity: 0.06,
-                  background: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='2' fill='white'/%3E%3C/svg%3E\")",
-                }} />
-                <span style={{ fontSize: 38, position: "relative", zIndex: 1 }}>{game.emoji}</span>
-                <div style={{ position: "relative", zIndex: 1 }}>
-                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{game.name}</div>
-                  <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>{game.desc}</div>
+                <span className="text-4xl">{game.emoji}</span>
+                <div>
+                  <p className="font-bold text-sm text-foreground">{game.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{game.desc}</p>
                 </div>
-                <span style={{
-                  padding: "3px 10px", borderRadius: 100,
-                  background: "rgba(255,255,255,0.18)",
-                  color: "#fff",
-                  fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
-                  position: "relative", zIndex: 1,
-                }}>
+                <span className="text-[10px] font-bold uppercase tracking-widest bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                   {game.tag}
                 </span>
-              </motion.div>
+              </motion.button>
             ))}
           </div>
 
-          <div style={{ textAlign: "center" }}>
-            <motion.button
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              onClick={() => navigate("/login")}
-              whileHover={{ scale: 1.04 }}
-              style={{
-                padding: "14px 36px", borderRadius: 100,
-                background: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
-                color: "#fff", fontSize: 15, fontWeight: 700,
-                border: "none", cursor: "pointer",
-                display: "inline-flex", alignItems: "center", gap: 8,
-                boxShadow: `0 8px 32px rgba(14,165,233,0.35)`,
-              }}
-            >
-              {t("land_games_cta", "Попробовать все игры")} <ArrowRight size={16} />
-            </motion.button>
+          <div className="text-center">
+            <Button size="lg" className="rounded-2xl px-8 gap-2" onClick={() => navigate("/login")}>
+              Попробовать все игры <ArrowRight className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* ── PRICING ── */}
-      <section style={{ background: LIGHT, padding: "clamp(56px, 8vw, 96px) clamp(16px, 5vw, 48px)" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ textAlign: "center", marginBottom: 56 }}
-          >
-            <span style={{
-              display: "inline-block", padding: "5px 16px", borderRadius: 100,
-              background: `rgba(250,204,21,0.15)`, color: "#A16207",
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
-              border: `1px solid rgba(250,204,21,0.3)`,
-            }}>
-              {t("land_price_badge", "Тарифы")}
-            </span>
-            <h2 style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 800,
-              color: INK, lineHeight: 1.1, letterSpacing: "-0.03em",
-            }}>
-              {t("land_price_title", "Для любого масштаба")}
-            </h2>
-          </motion.div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, alignItems: "center" }}>
-            {/* Free */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              style={{ background: "#fff", borderRadius: 24, padding: 32, border: "1px solid rgba(0,0,0,0.07)" }}
-            >
-              <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, color: INK, marginBottom: 4 }}>{t("land_p1_title", "Бесплатно")}</h3>
-              <p style={{ fontSize: 13, color: "#aaa", marginBottom: 20 }}>{t("land_p1_sub", "Попробуйте без риска")}</p>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 44, fontWeight: 800, color: INK, marginBottom: 24 }}>
-                $0<span style={{ fontSize: 16, fontWeight: 500, color: "#bbb" }}> / мес</span>
-              </div>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px", display: "flex", flexDirection: "column", gap: 12 }}>
-                {[t("land_p1_f1", "10 ИИ-генераций"), t("land_p1_f2", "Базовые игры"), t("land_p1_f3", "Поддержка"), t("land_p1_f4", "1 учитель")].map((f, j) => (
-                  <li key={j} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#555" }}>
-                    <CheckCircle2 size={16} color="#10B981" style={{ flexShrink: 0 }} /> {f}
-                  </li>
-                ))}
-              </ul>
-              <button onClick={() => navigate("/checkout?plan=free")} style={{ width: "100%", padding: 14, borderRadius: 14, border: "2px solid rgba(0,0,0,0.12)", background: "transparent", color: INK, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                {t("land_start", "Начать бесплатно")}
-              </button>
-            </motion.div>
-
-            {/* Pro */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              style={{
-                background: `linear-gradient(160deg, #1E0A3C, #2D1060)`,
-                borderRadius: 24, padding: 32,
-                position: "relative", overflow: "hidden",
-                transform: "scale(1.04)",
-                boxShadow: `0 32px 80px rgba(14,165,233,0.4)`,
-                border: `1px solid rgba(14,165,233,0.3)`,
-              }}
-            >
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${CYAN}, ${BLUE}, ${CORAL})` }} />
-              <div style={{ position: "absolute", top: 18, right: 20 }}>
-                <span style={{ background: `linear-gradient(135deg, ${BLUE}, ${CORAL})`, color: "#fff", fontSize: 10, fontWeight: 800, padding: "4px 12px", borderRadius: 100, letterSpacing: "0.08em", textTransform: "uppercase" }}>Popular</span>
-              </div>
-              <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{t("land_p2_title", "Pro Учитель")}</h3>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>{t("land_p2_sub", "Всё без ограничений")}</p>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 44, fontWeight: 800, color: "#fff", marginBottom: 24 }}>
-                $15<span style={{ fontSize: 16, fontWeight: 500, color: "rgba(255,255,255,0.35)" }}> / мес</span>
-              </div>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px", display: "flex", flexDirection: "column", gap: 12 }}>
-                {[t("land_p2_f1", "Безлимитные генерации"), t("land_p2_f2", "Все 6 игр"), t("land_p2_f3", "ИИ-книги"), t("land_p2_f4", "Аналитика класса"), t("land_p2_f5", "Приоритетная поддержка")].map((f, j) => (
-                  <li key={j} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "rgba(255,255,255,0.75)" }}>
-                    <CheckCircle2 size={16} color={CYAN} style={{ flexShrink: 0 }} /> {f}
-                  </li>
-                ))}
-              </ul>
-              <button onClick={() => navigate("/checkout?plan=pro")} style={{ width: "100%", padding: 14, borderRadius: 14, background: `linear-gradient(135deg, ${BLUE}, ${CORAL})`, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", border: "none", boxShadow: `0 8px 24px rgba(14,165,233,0.45)` }}>
-                {t("land_start", "Начать сейчас")}
-              </button>
-            </motion.div>
-
-            {/* Schools */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              style={{ background: "#fff", borderRadius: 24, padding: 32, border: "1px solid rgba(0,0,0,0.07)" }}
-            >
-              <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, color: INK, marginBottom: 4 }}>{t("land_p3_title", "Для Школ")}</h3>
-              <p style={{ fontSize: 13, color: "#aaa", marginBottom: 20 }}>{t("land_p3_sub", "Полное решение для учреждений")}</p>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 44, fontWeight: 800, color: INK, marginBottom: 24 }}>
-                {t("land_p3_price", "$49")}<span style={{ fontSize: 16, fontWeight: 500, color: "#bbb" }}> / мес</span>
-              </div>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px", display: "flex", flexDirection: "column", gap: 12 }}>
-                {[t("land_p3_f1", "Все функции Pro"), t("land_p3_f2", "До 10 учителей"), t("land_p3_f3", "Админ-панель"), t("land_p3_f4", "CSV-импорт"), t("land_p3_f6", "Договор")].map((f, j) => (
-                  <li key={j} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#555" }}>
-                    <CheckCircle2 size={16} color={ORANGE} style={{ flexShrink: 0 }} /> {f}
-                  </li>
-                ))}
-              </ul>
-              <button onClick={() => navigate("/checkout?plan=school")} style={{ width: "100%", padding: 14, borderRadius: 14, border: `2px solid rgba(14,165,233,0.25)`, background: "transparent", color: BLUE, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                {t("land_cta_btn", "Оформить")}
-              </button>
-            </motion.div>
+      {/* ── Pricing ── */}
+      <section id="pricing" className="max-w-6xl mx-auto px-6 py-24">
+        <div className="text-center mb-14">
+          <div className="inline-flex items-center gap-2 bg-secondary/20 text-amber-700 border border-secondary/30 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+            <Coins className="w-3.5 h-3.5" />
+            Тарифы
           </div>
+          <h2 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4">
+            Для любого масштаба
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Начните бесплатно. Масштабируйтесь только тогда, когда будете готовы.
+          </p>
         </div>
-      </section>
 
-      {/* ── TESTIMONIALS ── */}
-      <section style={{ background: "#fff", padding: "clamp(56px, 8vw, 96px) clamp(16px, 5vw, 48px)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ textAlign: "center", marginBottom: 48 }}
-          >
-            <span style={{
-              display: "inline-block", padding: "5px 16px", borderRadius: 100,
-              background: "rgba(16,185,129,0.1)", color: "#059669",
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
-              border: "1px solid rgba(16,185,129,0.2)",
-            }}>
-              {t("land_testimonials_badge", "Отзывы")}
-            </span>
-            <h2 style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 800,
-              color: INK, lineHeight: 1.1, letterSpacing: "-0.03em",
-            }}>
-              {t("land_testimonials_title", "Что говорят учителя")}
-            </h2>
-          </motion.div>
+        <div className="grid md:grid-cols-3 gap-5 items-start">
+          {/* Free */}
+          <div className="bg-card rounded-3xl border border-border p-8 space-y-6">
+            <div>
+              <div className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Бесплатно</div>
+              <div className="flex items-end gap-1.5">
+                <span className="text-5xl font-black font-serif text-foreground">$0</span>
+                <span className="text-sm text-muted-foreground pb-2">/ мес</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">Попробуйте без риска</p>
+            </div>
+            <ul className="space-y-3">
+              {["10 ИИ-генераций", "Базовые игры", "Поддержка", "1 учитель"].map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm">
+                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-primary" />
+                  </div>
+                  <span className="text-foreground/80">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Button variant="outline" className="w-full rounded-2xl" onClick={() => navigate("/checkout?plan=free")}>
+              Начать бесплатно
+            </Button>
+          </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
-            {testimonials.map((tm, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                style={{
-                  background: LIGHT, borderRadius: 20, padding: 28,
-                  border: "1px solid rgba(14,165,233,0.08)",
-                }}
-              >
-                <div style={{ display: "flex", gap: 3, marginBottom: 16 }}>
-                  {[...Array(5)].map((_, j) => (
-                    <Star key={j} size={14} style={{ fill: YELLOW, color: YELLOW }} />
-                  ))}
-                </div>
-                <p style={{ color: "#444", lineHeight: 1.75, marginBottom: 20, fontSize: 14, fontStyle: "italic" }}>"{tm.text}"</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 16, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: "50%",
-                    background: testimGradients[i % 4],
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontWeight: 700, color: "#fff", fontSize: 15, flexShrink: 0,
-                  }}>
-                    {tm.name[0]}
+          {/* Pro */}
+          <div className="bg-sidebar rounded-3xl border border-sidebar-primary/30 p-8 space-y-6 shadow-2xl scale-[1.02] relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-secondary" />
+            <div className="absolute top-4 right-4 bg-secondary text-secondary-foreground text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+              Популярный
+            </div>
+            <div>
+              <div className="text-sm font-bold uppercase tracking-widest text-sidebar-primary mb-1">Pro Учитель</div>
+              <div className="flex items-end gap-1.5">
+                <span className="text-5xl font-black font-serif text-sidebar-foreground">$15</span>
+                <span className="text-sm text-sidebar-foreground/50 pb-2">/ мес</span>
+              </div>
+              <p className="text-sm text-sidebar-foreground/60 mt-2">Всё без ограничений</p>
+            </div>
+            <ul className="space-y-3">
+              {["Безлимитные генерации", "Все 6 игр", "ИИ-книги", "Аналитика класса", "Приоритетная поддержка"].map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm">
+                  <div className="w-5 h-5 rounded-full bg-sidebar-primary/20 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-sidebar-primary" />
                   </div>
-                  <div>
-                    <p style={{ fontWeight: 700, color: INK, fontSize: 14 }}>{tm.name}</p>
-                    <p style={{ fontSize: 12, color: "#999" }}>{tm.role} · {tm.school}</p>
+                  <span className="text-sidebar-foreground/80">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Button className="w-full rounded-2xl bg-sidebar-primary hover:bg-sidebar-primary/90" onClick={() => navigate("/checkout?plan=pro")}>
+              Начать сейчас
+            </Button>
+          </div>
+
+          {/* School */}
+          <div className="bg-card rounded-3xl border border-border p-8 space-y-6">
+            <div>
+              <div className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Для Школ</div>
+              <div className="flex items-end gap-1.5">
+                <span className="text-5xl font-black font-serif text-foreground">$49</span>
+                <span className="text-sm text-muted-foreground pb-2">/ мес</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">Полное решение для учреждений</p>
+            </div>
+            <ul className="space-y-3">
+              {["Все функции Pro", "До 10 учителей", "Админ-панель", "CSV-импорт", "Договор"].map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm">
+                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-primary" />
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                  <span className="text-foreground/80">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Button variant="outline" className="w-full rounded-2xl border-primary/30 text-primary hover:bg-primary/5" onClick={() => navigate("/checkout?plan=school")}>
+              Оформить
+            </Button>
           </div>
         </div>
       </section>
 
       {/* ── FAQ ── */}
-      <section style={{ background: LIGHT, padding: "clamp(56px, 8vw, 96px) clamp(16px, 5vw, 48px)" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ textAlign: "center", marginBottom: 48 }}
-          >
-            <h2 style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 800,
-              color: INK, lineHeight: 1.1, letterSpacing: "-0.03em",
-            }}>
-              {t("land_faq_title", "Частые вопросы")}
-            </h2>
-          </motion.div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {faqs.map((faq, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}
-              >
+      <section className="bg-muted/30 border-y border-border py-24">
+        <div className="max-w-2xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold font-serif text-foreground">Частые вопросы</h2>
+          </div>
+          <div className="space-y-3">
+            {FAQS.map((faq, i) => (
+              <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  style={{
-                    width: "100%", padding: "18px 24px",
-                    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
-                    background: "none", border: "none", cursor: "pointer", textAlign: "left",
-                  }}
+                  className="w-full flex items-center justify-between gap-4 px-6 py-5 bg-transparent border-none cursor-pointer text-left"
                 >
-                  <span style={{ fontSize: 15, fontWeight: 600, color: INK, lineHeight: 1.4 }}>{faq.q}</span>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                    background: openFaq === i ? `linear-gradient(135deg, ${BLUE}, ${CORAL})` : "rgba(0,0,0,0.06)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    transition: "background 0.2s",
-                  }}>
-                    <ChevronDown size={14} color={openFaq === i ? "#fff" : "#666"} style={{ transform: openFaq === i ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+                  <span className="text-sm font-semibold text-foreground leading-snug">{faq.q}</span>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${openFaq === i ? "bg-primary" : "bg-muted"}`}>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${openFaq === i ? "rotate-180 text-white" : "text-muted-foreground"}`} />
                   </div>
                 </button>
                 <AnimatePresence>
@@ -910,103 +662,83 @@ export default function Landing() {
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      style={{ overflow: "hidden" }}
+                      className="overflow-hidden"
                     >
-                      <div style={{ padding: "0 24px 20px", paddingTop: 16, fontSize: 14, color: "#666", lineHeight: 1.7, borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+                      <div className="px-6 pb-5 text-sm text-muted-foreground leading-relaxed border-t border-border pt-4">
                         {faq.a}
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section style={{ background: DARK, padding: "clamp(72px, 10vw, 112px) clamp(16px, 5vw, 48px)", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: "-20%", right: "-5%", width: "50%", height: "80%", background: `radial-gradient(circle, ${BLUE}35 0%, transparent 70%)`, borderRadius: "50%" }} />
-          <div style={{ position: "absolute", bottom: "-15%", left: "-5%", width: "40%", height: "60%", background: `radial-gradient(circle, ${CYAN}20 0%, transparent 70%)`, borderRadius: "50%" }} />
-        </div>
-
-        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h2 style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "clamp(36px, 7vw, 72px)", fontWeight: 800,
-              color: "#fff", lineHeight: 0.95, letterSpacing: "-0.03em",
-              marginBottom: 24,
-            }}>
-              {t("land_ready_to_change", "Готовы изменить свой урок?")}
-            </h2>
-            <p style={{ fontSize: 18, color: "rgba(255,255,255,0.4)", maxWidth: 480, margin: "0 auto 44px" }}>
-              {t("land_cta_sub", "Тысячи учителей уже используют ClassPlay каждый день.")}
-            </p>
-
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 40 }}>
-              <motion.button
-                onClick={() => navigate("/login")}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.97 }}
-                style={{
-                  padding: "16px 40px", borderRadius: 100,
-                  background: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
-                  color: "#fff", fontSize: 16, fontWeight: 700,
-                  border: "none", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 10,
-                  boxShadow: `0 12px 40px rgba(14,165,233,0.5)`,
-                }}
-              >
-                {t("land_cta_try", "Попробовать бесплатно")} <ArrowRight size={18} />
-              </motion.button>
-              <motion.button
-                onClick={() => navigate("/demo")}
-                whileHover={{ scale: 1.04, background: "rgba(255,255,255,0.15)" }}
-                style={{
-                  padding: "16px 40px", borderRadius: 100,
-                  background: "rgba(255,255,255,0.08)", color: "#fff",
-                  fontSize: 16, fontWeight: 600,
-                  border: "1px solid rgba(255,255,255,0.18)", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 10,
-                }}
-              >
-                <Play size={15} style={{ fill: "currentColor" }} /> {t("land_hero_demo", "Демо")}
-              </motion.button>
+      {/* ── Final CTA ── */}
+      <section className="max-w-6xl mx-auto px-6 py-24">
+        <div className="bg-primary rounded-3xl p-12 md:p-16 text-center text-primary-foreground relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-10 opacity-[0.08]">
+            <Trophy className="w-64 h-64" />
+          </div>
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+              <Users className="w-3.5 h-3.5" />
+              Более 12 000 учеников уже используют ClassPlay
             </div>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 24, justifyContent: "center" }}>
-              {[t("land_cta_free", "Бесплатный старт"), t("land_cta_nocard", "Без карточки"), t("land_cta_cancel", "Отмена в любой момент")].map((item, i) => (
-                <span key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>
-                  <CheckCircle2 size={14} color="#10B981" /> {item}
+            <h2 className="text-4xl md:text-5xl font-bold font-serif mb-5 leading-tight">
+              Готовы сделать ваш класс<br />лучшей игрой в школе?
+            </h2>
+            <p className="text-primary-foreground/80 text-lg mb-10 max-w-xl mx-auto">
+              Настройте первый геймифицированный класс за несколько минут. Бесплатно для учителей — навсегда.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <Button
+                size="lg"
+                className="rounded-2xl px-10 bg-white text-primary hover:bg-white/90 font-semibold gap-2"
+                onClick={() => navigate("/login")}
+              >
+                Создать бесплатный аккаунт <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button
+                size="lg"
+                variant="ghost"
+                className="rounded-2xl px-10 text-primary-foreground hover:bg-white/10 border border-white/20"
+                onClick={() => navigate("/demo")}
+              >
+                <Play className="w-4 h-4 fill-current" /> Смотреть демо
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-6 justify-center">
+              {["Бесплатный старт", "Без карточки", "Отмена в любой момент"].map((item) => (
+                <span key={item} className="flex items-center gap-2 text-sm text-primary-foreground/60">
+                  <CheckCircle2 className="w-4 h-4 text-primary-foreground/40" /> {item}
                 </span>
               ))}
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer style={{ background: "#080514", borderTop: "1px solid rgba(255,255,255,0.05)", padding: "28px clamp(16px, 5vw, 48px)" }}>
-        <div style={{
-          maxWidth: 1200, margin: "0 auto",
-          display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 16,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img src="/logo_sticker.webp" alt="ClassPlay" style={{ width: 28, height: 28, borderRadius: 8, objectFit: "contain", opacity: 0.45 }} />
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "rgba(255,255,255,0.3)", fontSize: 15 }}>ClassPlay</span>
+      {/* ── Footer ── */}
+      <footer className="border-t border-border bg-card">
+        <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-sidebar flex items-center justify-center overflow-hidden shrink-0">
+              <img src="/logo-sticker.webp" alt="ClassPlay" className="w-full h-full object-cover" />
+            </div>
+            <span className="font-bold font-serif text-foreground">ClassPlay</span>
           </div>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.2)", textAlign: "center" }}>
-            {t("land_foot_desc", "ИИ-платформа для учителей нового поколения.")}
-          </p>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.15)" }}>
-            {t("land_copy", "© 2026 ClassPlay. Все права защищены.")}
-          </p>
+          <p className="text-sm text-muted-foreground">ИИ-платформа для учителей нового поколения.</p>
+          <div className="flex gap-5 text-sm text-muted-foreground">
+            <a href="#" className="hover:text-foreground transition-colors">Конфиденциальность</a>
+            <a href="#" className="hover:text-foreground transition-colors">Условия</a>
+            <a href="#" className="hover:text-foreground transition-colors">Контакты</a>
+          </div>
+        </div>
+        <div className="border-t border-border">
+          <p className="text-center text-xs text-muted-foreground py-4">© {new Date().getFullYear()} ClassPlay. Все права защищены.</p>
         </div>
       </footer>
     </div>
