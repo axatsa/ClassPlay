@@ -231,7 +231,7 @@ const AssignmentPrintView = ({
         sections: [{
           properties: {},
           children: [
-            new Paragraph({ text: "Thompson International", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+            new Paragraph({ text: orgName || "ClassPlay", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
             new Paragraph({ text: assignment.title, heading: HeadingLevel.HEADING_2, alignment: AlignmentType.CENTER }),
             new Paragraph({ text: `${assignment.subject} • ${assignment.grade}`, alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
             new Paragraph({ text: `Date: ${assignment.date}`, alignment: AlignmentType.RIGHT, spacing: { after: 400 } }),
@@ -447,12 +447,15 @@ const AssignmentPrintView = ({
 };
 
 // ──────────────── Assignment Generator (inner component) ────────────────
+const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
 const AssignmentGenerator = () => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GeneratedAssignment | null>(null);
+  const [orgName] = useState(() => localStorage.getItem("orgName") || "");
   const { activeClassId } = useClass();
 
   const detectSubject = (p: string) => {
@@ -518,7 +521,7 @@ const AssignmentGenerator = () => {
         />
 
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground font-sans">Ctrl+Enter — {t("generating")}</p>
+          <p className="text-xs text-muted-foreground font-sans">{isMac ? "⌘+Enter" : "Ctrl+Enter"} — {t("generating")}</p>
           <Button
             onClick={generate}
             disabled={!prompt.trim() || loading}

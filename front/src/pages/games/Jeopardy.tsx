@@ -48,7 +48,7 @@ const Jeopardy = () => {
 
   const startGame = async () => {
     if (!topic.trim()) {
-      toast.error("Please enter a topic");
+      toast.error("Введите тему для генерации");
       return;
     }
 

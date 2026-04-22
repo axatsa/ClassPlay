@@ -77,6 +77,7 @@ const Generator = () => {
   const lang = i18n.language;
   const [showClassPicker, setShowClassPicker] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
+  const [orgName, setOrgName] = useState(() => localStorage.getItem("orgName") || "");
   const [genType, setGenType] = useState<GeneratorType>("math");
   const [targetLang, setTargetLang] = useState(lang === "uz" ? "Uzbek" : lang === "en" ? "English" : "Russian");
 
@@ -350,7 +351,7 @@ const Generator = () => {
             page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } }
           },
           children: [
-            new Paragraph({ text: "Thompson International", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+            new Paragraph({ text: orgName || "ClassPlay", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
             new Paragraph({ text: `${mathTopic} - ${difficulty}`, alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
             new Paragraph({ text: "Name: _______________________ Date: ______________", spacing: { before: 200, after: 600 } }),
 
@@ -419,7 +420,7 @@ const Generator = () => {
             page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } }
           },
           children: [
-            new Paragraph({ text: "Thompson International", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+            new Paragraph({ text: orgName || "ClassPlay", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
             new Paragraph({ text: `Quiz: ${quizTopic}`, alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
             new Paragraph({ text: "Name: _______________________ Date: ______________", spacing: { before: 200, after: 600 } }),
 
@@ -492,7 +493,7 @@ const Generator = () => {
         sections.push({
           properties: {},
           children: [
-            new Paragraph({ text: "Thompson International", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+            new Paragraph({ text: orgName || "ClassPlay", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
             new Paragraph({ text: `${assignmentData.title}`, heading: HeadingLevel.HEADING_2, alignment: AlignmentType.CENTER }),
             new Paragraph({ text: `${assignmentData.subject} • ${assignmentData.grade}`, alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
             ...(assignmentData.intro ? [new Paragraph({ children: [new TextRun({ text: assignmentData.intro, italics: true })], spacing: { after: 400 } })] : []),
@@ -562,7 +563,7 @@ const Generator = () => {
           },
           children: [
             new Paragraph({
-              text: "Thompson International",
+              text: orgName || "ClassPlay",
               heading: HeadingLevel.HEADING_1,
               alignment: AlignmentType.CENTER,
               spacing: { after: 200 }
@@ -659,7 +660,7 @@ const Generator = () => {
       }
 
       const doc = new Document({
-        creator: "Thompson International",
+        creator: orgName || "ClassPlay",
         title: "Generated Content",
         description: "AI Generated Educational Material",
         sections: sections
@@ -786,6 +787,15 @@ const Generator = () => {
           </div>
 
           <div className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Название организации</Label>
+              <Input
+                placeholder="Ваша школа или учебный центр"
+                value={orgName}
+                onChange={e => { setOrgName(e.target.value); localStorage.setItem("orgName", e.target.value); }}
+                className="rounded-xl font-sans"
+              />
+            </div>
             <div className="space-y-2">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("activeClass")}</Label>
               {classes.length > 0 ? (
@@ -1256,7 +1266,7 @@ const Generator = () => {
                         <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-200">
                           <div className="flex items-center gap-2">
                             <img src="/logo-sticker.webp" alt="Logo" className="w-6 h-6 rounded object-contain" />
-                            <span style={{ fontSize: "11px" }} className="font-bold font-serif text-gray-800">Thompson International</span>
+                            <span style={{ fontSize: "11px" }} className="font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
                           </div>
                           <span style={{ fontSize: "9px" }} className="text-gray-500 font-sans">Answer Key • {quizTopic}</span>
                         </div>
@@ -1294,7 +1304,7 @@ const Generator = () => {
                               <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
                                 <div className="flex items-center gap-1.5">
                                   <img src="/logo-sticker.webp" alt="Logo" className="w-6 h-6 rounded object-contain" />
-                                  <span style={{ fontSize: "11px" }} className="font-bold font-serif text-gray-800">Thompson International</span>
+                                  <span style={{ fontSize: "11px" }} className="font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
                                 </div>
                                 <span style={{ fontSize: "9px" }} className="text-gray-500 font-sans">{quizTopic}</span>
                               </div>
@@ -1335,7 +1345,7 @@ const Generator = () => {
                         <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
                           <div className="flex items-center gap-1.5">
                             <img src="/logo-sticker.webp" alt="Logo" className="w-6 h-6 rounded object-contain" />
-                            <span style={{ fontSize: "11px" }} className="font-bold font-serif text-gray-800">Thompson International</span>
+                            <span style={{ fontSize: "11px" }} className="font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
                           </div>
                           <span style={{ fontSize: "9px" }} className="text-gray-500 font-sans">Answer Key • {quizTopic}</span>
                         </div>
@@ -1364,7 +1374,7 @@ const Generator = () => {
                       <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
                         <div className="flex items-center gap-2">
                           <img src="/logo-sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">Thompson International</span>
+                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
                         </div>
                         <span className="text-xs text-gray-500 font-sans">Answer Key • {assignmentData.title}</span>
                       </div>
@@ -1429,7 +1439,7 @@ const Generator = () => {
                       <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
                         <div className="flex items-center gap-2">
                           <img src="/logo-sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">Thompson International</span>
+                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
                         </div>
                         <span className="text-xs text-gray-500 font-sans">Answer Key • {mathTopic}</span>
                       </div>
@@ -1457,7 +1467,7 @@ const Generator = () => {
                       <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
                         <div className="flex items-center gap-2">
                           <img src="/logo-sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">Thompson International</span>
+                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-gray-500 font-sans uppercase tracking-widest">{mathTopic}</p>
@@ -1504,7 +1514,7 @@ const Generator = () => {
                       <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
                         <div className="flex items-center gap-2">
                           <img src="/logo-sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">Thompson International</span>
+                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
                         </div>
                         <span className="text-xs text-gray-500 font-sans">Answer Key • {crosswordTopic}</span>
                       </div>
@@ -1546,7 +1556,7 @@ const Generator = () => {
                       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                         <div className="flex items-center gap-2">
                           <img src="/logo-sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">Thompson International</span>
+                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-gray-500 font-sans uppercase tracking-widest">{crosswordTopic}</p>

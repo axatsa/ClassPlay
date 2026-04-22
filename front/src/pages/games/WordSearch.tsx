@@ -79,7 +79,7 @@ const WordSearch = () => {
 
   const startGame = async () => {
     if (!topicInput.trim()) {
-      toast.error("Please enter a topic");
+      toast.error("Введите тему для генерации");
       return;
     }
 
