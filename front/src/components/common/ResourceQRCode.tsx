@@ -4,6 +4,8 @@ import { Download, Check, Loader2, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, BorderStyle, WidthType, AlignmentType } from "docx";
+import { saveAs } from "file-saver";
 
 interface ResourceQRCodeProps {
   logId: number;
@@ -20,91 +22,109 @@ export const ResourceQRCode = ({ logId, topic, generatorType, content }: Resourc
 
   const shareUrl = `${window.location.origin}/share/${logId}`;
 
-  const generateHtmlContent = (data: any, topic: string, type: string) => {
+  const generateDocxContent = async (data: any, topic: string, type: string) => {
     const contentStr = typeof data === "string" ? data : JSON.stringify(data);
-    let bodyContent = "";
+    const paragraphs: any[] = [];
+
+    // Title
+    paragraphs.push(
+      new Paragraph({
+        text: topic,
+        heading: "Heading1",
+        bold: true,
+        size: 32,
+      })
+    );
+
+    // Type and Date
+    paragraphs.push(
+      new Paragraph({
+        text: `${type} • ${new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}`,
+        italics: true,
+        color: "666666",
+        spacing: { after: 400 },
+      })
+    );
 
     try {
       const parsed = JSON.parse(contentStr);
+
       if (Array.isArray(parsed)) {
-        bodyContent = parsed.map((item: any, i: number) => `
-          <div style="margin: 20px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <p style="font-weight: bold; font-size: 16px; margin: 0 0 10px 0;">
-              ${i + 1}. ${item.question || item.task || item.text || ""}
-            </p>
-            ${item.options ? `
-              <ul style="margin: 10px 0; padding-left: 30px;">
-                ${item.options.map((opt: string, j: number) => `
-                  <li style="margin: 5px 0; color: #333;">${String.fromCharCode(65 + j)}. ${opt}</li>
-                `).join("")}
-              </ul>
-            ` : ""}
-            ${item.answer !== undefined ? `
-              <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f0; color: #27ae60; font-size: 14px; font-weight: 500;">
-                Ответ: ${item.answer}
-              </p>
-            ` : ""}
-          </div>
-        `).join("");
+        parsed.forEach((item: any, i: number) => {
+          // Question/Task
+          paragraphs.push(
+            new Paragraph({
+              text: `${i + 1}. ${item.question || item.task || item.text || ""}`,
+              bold: true,
+              spacing: { after: 200 },
+            })
+          );
+
+          // Options
+          if (item.options && Array.isArray(item.options)) {
+            item.options.forEach((opt: string, j: number) => {
+              paragraphs.push(
+                new Paragraph({
+                  text: `${String.fromCharCode(65 + j)}. ${opt}`,
+                  spacing: { after: 100 },
+                  indent: { left: 720 },
+                })
+              );
+            });
+          }
+
+          // Answer
+          if (item.answer !== undefined) {
+            paragraphs.push(
+              new Paragraph({
+                text: `Ответ: ${item.answer}`,
+                bold: true,
+                color: "27ae60",
+                spacing: { after: 300 },
+                indent: { left: 720 },
+              })
+            );
+          }
+
+          paragraphs.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+        });
       }
     } catch {
-      bodyContent = `<pre style="white-space: pre-wrap; word-wrap: break-word;">${contentStr}</pre>`;
+      paragraphs.push(
+        new Paragraph({
+          text: contentStr,
+          spacing: { after: 200 },
+        })
+      );
     }
 
-    return `
-      <!DOCTYPE html>
-      <html lang="ru">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${topic}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #333; background: #f5f5f5; }
-          .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; }
-          .header { border-bottom: 3px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px; }
-          .type-badge { display: inline-block; background: #e0e7ff; color: #4f46e5; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 20px; margin-bottom: 12px; }
-          .title { font-size: 32px; font-weight: bold; color: #1f2937; margin: 15px 0; }
-          .date { color: #9ca3af; font-size: 14px; }
-          .content { margin-top: 30px; line-height: 1.8; }
-          .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="type-badge">${type}</div>
-            <h1 class="title">${topic}</h1>
-            <p class="date">${new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}</p>
-          </div>
-          <div class="content">
-            ${bodyContent}
-          </div>
-          <div class="footer">
-            <p>Создано с помощью ClassPlay · classplay.uz</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    // Footer
+    paragraphs.push(
+      new Paragraph({
+        text: "Создано с помощью ClassPlay · classplay.uz",
+        italics: true,
+        color: "999999",
+        spacing: { before: 400 },
+        alignment: AlignmentType.CENTER,
+      })
+    );
+
+    const doc = new Document({ sections: [{ children: paragraphs }] });
+    return doc;
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setDownloading(true);
     try {
-      const htmlContent = generateHtmlContent(content, topic, generatorType || "Материал");
-      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${topic || "материал"}.html`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const doc = await generateDocxContent(content, topic, generatorType || "Материал");
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${topic || "материал"}.docx`);
 
       setDownloaded(true);
       toast.success("Материал скачан!");
       setTimeout(() => setDownloaded(false), 3000);
     } catch (e) {
+      console.error(e);
       toast.error("Ошибка при скачивании");
     } finally {
       setDownloading(false);
@@ -168,7 +188,7 @@ export const ResourceQRCode = ({ logId, topic, generatorType, content }: Resourc
           ) : (
             <Download className="w-4 h-4" />
           )}
-          {downloaded ? "Скачано" : "Скачать сейчас"}
+          {downloaded ? "Скачано" : "Скачать .docx"}
         </Button>
 
         <Button
