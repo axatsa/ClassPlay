@@ -567,8 +567,26 @@ const TeachersView = ({
     }
   };
 
+  const blockedCount = filtered.filter(t => t.status === "blocked").length;
+  const expiringCount = filtered.filter(t => {
+    if (!t.expires_at) return false;
+    const daysLeft = Math.ceil((new Date(t.expires_at).getTime() - Date.now()) / 86400000);
+    return daysLeft > 0 && daysLeft <= 7;
+  }).length;
+  const expiredCount = filtered.filter(t => {
+    if (!t.expires_at) return false;
+    return new Date(t.expires_at).getTime() < Date.now();
+  }).length;
+
   return (
     <div className="space-y-4">
+      {(blockedCount > 0 || expiringCount > 0 || expiredCount > 0) && (
+        <div className="bg-card border border-border rounded-xl p-3 flex gap-4 text-xs font-sans">
+          {blockedCount > 0 && <div className="flex items-center gap-2"><Ban className="w-3.5 h-3.5 text-destructive" /><span>{blockedCount} заблокировано</span></div>}
+          {expiringCount > 0 && <div className="flex items-center gap-2"><AlertTriangle className="w-3.5 h-3.5 text-yellow-600" /><span>{expiringCount} истекают скоро</span></div>}
+          {expiredCount > 0 && <div className="flex items-center gap-2"><AlertTriangle className="w-3.5 h-3.5 text-destructive" /><span>{expiredCount} истёкших</span></div>}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -766,13 +784,13 @@ const TeachersView = ({
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="p-4">
-                    <TableSkeleton rows={5} columns={6} />
+                  <td colSpan={8} className="p-4">
+                    <TableSkeleton rows={5} columns={8} />
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={8}>
                     <EmptyState icon={Users} title={t("admin_teachers_not_found")} description={t("admin_no_teachers")} />
                   </td>
                 </tr>
