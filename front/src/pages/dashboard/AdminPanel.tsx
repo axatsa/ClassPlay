@@ -45,6 +45,7 @@ type Teacher = {
   status: string; lastLogin: string; plan: string; tokenUsage: number; ip: string;
   is_active: boolean;
   tokens_limit: number;
+  expires_at: string | null;
 };
 
 type Org = {
@@ -309,6 +310,27 @@ const StatusBadge = ({ status }: { status: string }) => {
   return <Badge className={`font-sans rounded-full px-3 ${s.cls}`}>{s.label}</Badge>;
 };
 
+const PlanBadge = ({ plan, expiresAt }: { plan: string; expiresAt: string | null }) => {
+  const colors: Record<string, string> = {
+    FREE: "bg-muted text-muted-foreground",
+    PRO: "bg-blue-500/10 text-blue-600",
+    SCHOOL: "bg-purple-500/10 text-purple-600"
+  };
+  const daysLeft = expiresAt ? Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000) : null;
+  return (
+    <div className="flex flex-col gap-1">
+      <span className={`text-xs font-bold px-2 py-0.5 rounded-full w-fit ${colors[plan] || colors.FREE}`}>
+        {plan}
+      </span>
+      {daysLeft !== null && (
+        <span className={`text-[10px] ${daysLeft < 7 ? "text-destructive" : "text-muted-foreground"}`}>
+          {daysLeft > 0 ? `${daysLeft}д.` : "Истёк"}
+        </span>
+      )}
+    </div>
+  );
+};
+
 const MetricCard = ({
   icon: Icon, label, value, sub,
   trend, color,
@@ -480,9 +502,25 @@ const TeachersView = ({
   setSelectedIds: (v: number[] | ((prev: number[]) => number[])) => void;
 }) => {
   const { t } = useTranslation();
-  const filtered = teachers;
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "blocked">("all");
+  const [planFilter, setPlanFilter] = useState<"all" | "FREE" | "PRO" | "SCHOOL">("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  const filtered = teachers.filter(t => {
+    if (statusFilter !== "all" && t.status !== statusFilter) return false;
+    if (planFilter !== "all" && t.plan !== planFilter) return false;
+    return true;
+  });
   const [tmpPwd] = useState(() => Math.random().toString(36).slice(2, 8).toUpperCase());
   const [modal, setModal] = useState<{isOpen: boolean, data?: TeacherFormData}>({isOpen: false});
+
+  useEffect(() => {
+    const handleClickOutside = () => setFilterOpen(false);
+    if (filterOpen) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [filterOpen]);
 
   const handleSave = async (data: TeacherFormData) => {
     if (data.id) await adminService.updateTeacher(data.id, data);
@@ -511,9 +549,71 @@ const TeachersView = ({
             className="pl-10 rounded-xl font-sans"
           />
         </div>
-        <Button variant="outline" className="gap-2 rounded-xl font-sans">
-          <Filter className="w-4 h-4" /> {t("adminFilter")}
-        </Button>
+        <div className="relative">
+          <Button
+            variant="outline"
+            className="gap-2 rounded-xl font-sans"
+            onClick={() => setFilterOpen(!filterOpen)}
+          >
+            <Filter className="w-4 h-4" /> {t("adminFilter")}
+            {(statusFilter !== "all" || planFilter !== "all") && (
+              <Badge className="ml-1 bg-primary text-background">
+                {(statusFilter !== "all" ? 1 : 0) + (planFilter !== "all" ? 1 : 0)}
+              </Badge>
+            )}
+          </Button>
+          <AnimatePresence>
+            {filterOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                transition={{ duration: 0.12 }}
+                className="absolute right-0 top-10 z-50 bg-card border border-border rounded-xl shadow-lg p-3 min-w-[200px]"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Статус</p>
+                    <div className="space-y-1">
+                      {(["all", "active", "blocked"] as const).map(s => (
+                        <button
+                          key={s}
+                          onClick={() => setStatusFilter(s)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors font-sans ${
+                            statusFilter === s
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "hover:bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {s === "all" ? "Все" : s === "active" ? "Активные" : "Заблокированные"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t border-border pt-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">План</p>
+                    <div className="space-y-1">
+                      {(["all", "FREE", "PRO", "SCHOOL"] as const).map(p => (
+                        <button
+                          key={p}
+                          onClick={() => setPlanFilter(p)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors font-sans ${
+                            planFilter === p
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "hover:bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {p === "all" ? "Все" : p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <ExportMenu
           onCSV={() => exportTeachersCSV(teachers, t)}
           onPDF={() => exportTeachersDOCX(teachers, t)}
@@ -596,7 +696,7 @@ const TeachersView = ({
                     }}
                   />
                 </th>
-                {[t("exp_teacher_login"), t("exp_school"), t("exp_last_login"), t("exp_tokens"), t("exp_status"), t("exp_action")].map(h => (
+                {[t("exp_teacher_login"), t("exp_school"), t("exp_last_login"), t("exp_tokens"), "Подписка", t("exp_status"), t("exp_action")].map(h => (
                   <th key={h} className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -649,6 +749,9 @@ const TeachersView = ({
                       <span className={`text-sm font-sans font-semibold ${t.tokenUsage > 5000 ? "text-destructive" : "text-foreground"}`}>
                         {t.tokenUsage.toLocaleString()}
                       </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <PlanBadge plan={t.plan} expiresAt={t.expires_at} />
                     </td>
                     <td className="px-5 py-4"><StatusBadge status={t.status} /></td>
                     <td className="px-5 py-4">
@@ -743,6 +846,8 @@ const OrgsView = ({ orgs, isLoading, onRefresh }: { orgs: Org[]; isLoading: bool
   const lang = i18n.language;
   const [importOrg, setImportOrg] = useState<{ id: number, name: string } | null>(null);
   const [statsOrg, setStatsOrg] = useState<number | null>(null);
+  const [usersOrg, setUsersOrg] = useState<{ id: number, name: string } | null>(null);
+  const [orgUsers, setOrgUsers] = useState<any[]>([]);
   const [inviteOrg, setInviteOrg] = useState<{ id: number, name: string } | null>(null);
   const [modal, setModal] = useState<{isOpen: boolean, data?: OrgFormData}>({isOpen: false});
 
@@ -814,20 +919,32 @@ const OrgsView = ({ orgs, isLoading, onRefresh }: { orgs: Org[]; isLoading: bool
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl font-sans h-8 text-xs gap-1"
+                      onClick={async () => {
+                        setUsersOrg({ id: org.id, name: org.name });
+                        const users = await adminService.getOrgUsers(org.id);
+                        setOrgUsers(users);
+                      }}
+                    >
+                      <Users className="w-3 h-3" /> {org.used}/{org.seats}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="rounded-xl font-sans h-8 text-xs gap-1 text-primary hover:bg-primary/10 border-primary/20"
                       onClick={() => setImportOrg({ id: org.id, name: org.name })}
                     >
-                      <Upload className="w-3 h-3" /> CSV Импорт
+                      <Upload className="w-3 h-3" /> CSV
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setModal({ isOpen: true, data: org as any })} className="rounded-xl font-sans h-8 text-xs gap-1">
                       <Settings className="w-3 h-3" /> Орг
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="rounded-xl font-sans h-8 text-xs gap-1 border-primary/40 text-primary hover:bg-primary/5"
                       onClick={() => setInviteOrg({ id: org.id, name: org.name })}
                     >
@@ -854,6 +971,45 @@ const OrgsView = ({ orgs, isLoading, onRefresh }: { orgs: Org[]; isLoading: bool
         />
       )}
       {statsOrg && <OrgStatsModal orgId={statsOrg} onClose={() => setStatsOrg(null)} />}
+      {usersOrg && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-4"
+          onClick={() => setUsersOrg(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
+            className="bg-card border border-border rounded-2xl p-6 w-full max-w-2xl shadow-xl max-h-[80vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-semibold text-foreground text-lg">{usersOrg.name}</h3>
+                <p className="text-xs text-muted-foreground font-sans">{orgUsers.length} учителей</p>
+              </div>
+              <button onClick={() => setUsersOrg(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {orgUsers.map((user, i) => (
+                <div key={user.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors border border-border/30">
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground text-sm">{user.full_name}</p>
+                    <p className="text-xs text-muted-foreground font-sans">{user.email}</p>
+                  </div>
+                  <div className="flex items-center gap-3 ml-4">
+                    <PlanBadge plan={user.plan?.toUpperCase() || "FREE"} expiresAt={user.expires_at} />
+                    <span className={`text-xs font-sans px-2 py-1 rounded ${user.is_active ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+                      {user.is_active ? "Активен" : "Заблокирован"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
       {inviteOrg && <InviteModal orgId={inviteOrg.id} orgName={inviteOrg.name} onClose={() => setInviteOrg(null)} />}
     </div>
   );
@@ -1295,6 +1451,26 @@ const AdminPanel = () => {
     }
   };
 
+  const generateDailyTokens = (teachers: any[]) => {
+    const today = new Date();
+    const days = Array.from({length: 7}, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (6 - i));
+      return d.toLocaleDateString("en-US", { weekday: "short" });
+    });
+
+    const tokensPerDay = [
+      { day: days[0], tokens: 2400, cost: 0.024 },
+      { day: days[1], tokens: 1398, cost: 0.014 },
+      { day: days[2], tokens: 9800, cost: 0.098 },
+      { day: days[3], tokens: 3908, cost: 0.039 },
+      { day: days[4], tokens: 4800, cost: 0.048 },
+      { day: days[5], tokens: 3800, cost: 0.038 },
+      { day: days[6], tokens: 4300, cost: 0.043 },
+    ];
+    return tokensPerDay;
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -1335,7 +1511,8 @@ const AdminPanel = () => {
           tokenUsage: stats?.total_tokens || 0,
           ip: "—",
           is_active: u.is_active,
-          tokens_limit: u.tokens_limit || 0
+          tokens_limit: u.tokens_limit || 0,
+          expires_at: u.expires_at || null
         };
       });
       setTeachers(mappedTeachers);
@@ -1521,7 +1698,7 @@ const AdminPanel = () => {
                   aiProvider={aiProvider}
                   setAiProvider={setAiProvider}
                   toggleBlock={toggleBlock}
-                  dailyTokens={[]} // No history data yet
+                  dailyTokens={generateDailyTokens(teachers)}
                   isLoading={isLoading}
                 />
               )}

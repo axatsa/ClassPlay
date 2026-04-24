@@ -100,6 +100,11 @@ export const adminService = {
         return response.data;
     },
 
+    getOrgUsers: async (orgId: number) => {
+        const response = await api.get(`/admin/organizations/${orgId}/users`);
+        return response.data;
+    },
+
     importCsv: async (orgId: number, formData: FormData) => {
         const response = await api.post(`/admin/organizations/${orgId}/import-csv`, formData, {
             headers: { "Content-Type": "multipart/form-data" },

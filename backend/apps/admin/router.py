@@ -358,6 +358,23 @@ def get_org_stats(org_id: int, db: Session = Depends(get_db), admin: User = Depe
         teachers=teacher_stats
     )
 
+@router.get("/organizations/{org_id}/users", response_model=List[UserResponse])
+def get_org_users(org_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    teachers = db.query(User).options(joinedload(User.subscription)).filter(
+        User.role == "teacher",
+        User.organization_id == org_id
+    ).all()
+
+    for t in teachers:
+        t.plan = t.subscription.plan if t.subscription else "free"
+        t.expires_at = t.subscription.expires_at if t.subscription else None
+
+    return teachers
+
 @router.post("/organizations/{org_id}/import-csv", response_model=BulkImportResponse)
 async def import_csv(org_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     org = db.query(Organization).filter(Organization.id == org_id).first()
