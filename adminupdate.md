@@ -19,50 +19,44 @@
 - ✅ Dashboard alerts for expiring/expired subscriptions
 - ✅ Seat usage button showing used/total seats
 
-## In Progress / To Do
+## Now Implementing — Final Push
 
-### 1. Finance & Payments
-- [ ] Show subscription plans per organization (Free/Pro/School)
-- [ ] Display next billing date for active subscriptions
-- [ ] Implement payment retry UI for failed payments
-- [ ] Add revenue forecast based on active subs
-- [ ] Show churn analysis (expiring subscriptions this month)
-
-### 2. Organization Management
-- [ ] Org activity timeline
-- [ ] Subscription history per org
-- [ ] Extended org statistics (token usage, activity patterns)
-
-### 3. Advanced Search & Filtering
-- [ ] Global search across teachers, orgs, payments
-- [ ] Save filter presets
-- [ ] Search by school, expiry date range, plan
-- [ ] Date range filtering
-
-### 4. System & Logs
-- [ ] Searchable/filterable audit logs with date range
-- [ ] Log export (PDF/CSV)
-- [ ] System health dashboard (DB, API, background jobs)
-- [ ] Admin activity timeline
-
-### 5. Export & Reporting
-- [ ] Export teachers with subscription info (CSV/DOCX with expires_at)
-- [ ] Export organizations with seat usage
-- [ ] Org billing report
-- [ ] Monthly financial summary
-
-### 6. Analytics & Insights
-- [ ] Daily active users chart
-- [ ] Plan distribution pie chart
+### 1. Finance View — Show Real Subscription Data
+- [ ] Add organization subscription plans to org list
+- [ ] Show next billing/expiry date
+- [ ] Color-coded status badges (Active/Expiring/Expired)
+- [ ] Payment status summary
 - [ ] Revenue per plan breakdown
-- [ ] Teacher churn rate
 
-## Priority Order
-1. AI Monitor real data (quick win, useful)
-2. Org seat visualization + users list
-3. Finance: subscription plans + next billing date
-4. Bulk operations for selected teachers
-5. Advanced search
+### 2. Export Improvements
+- [ ] Teachers export with subscription info (expires_at)
+- [ ] Orgs export with seat usage percentage
+- [ ] Payments with org subscription plans
+
+### 3. Audit Logs Enhancements
+- ✅ Add date range filter
+- ✅ Add action type filter
+- [ ] Add target filter (user/org/system)
+- [ ] Show counts per action type
+- [ ] Quick view modal for log details
+
+### 4. Quick Analytics
+- [ ] Plan distribution pie chart (Free/Pro/School counts)
+- [ ] Subscription status summary (Active/Expiring/Expired)
+- [ ] Payment status pie chart (Paid/Pending/Failed)
+- [ ] Organizations by status pie chart
+
+### 5. Teacher Search Improvements
+- ✅ Search by school name
+- ✅ Filter by expiry date range (Today, This week, This month, Expired)
+- ✅ Combined filters working together
+
+## Implementation Order (High → Low Impact)
+1. ✨ Finance: Org subscription info display
+2. 📊 Quick analytics charts (pie charts)
+3. 📅 Date range filter for logs
+4. 📤 Better exports (with subscription data)
+5. 🔍 Advanced teacher search (by school, date range)
 
 ## Backend Status
 - Teachers API ✅ returns plan, expires_at

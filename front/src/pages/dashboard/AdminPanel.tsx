@@ -51,6 +51,7 @@ type Teacher = {
 type Org = {
   id: number; name: string; contact: string; seats: number;
   used: number; expires: string; status: string;
+  plan?: string;
 };
 
 type Payment = {
@@ -103,8 +104,18 @@ const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
 const exportTeachersCSV = (teachers: Teacher[], t: any) => {
   downloadCSV(
     `classplay_teachers_${new Date().toISOString().slice(0, 10)}.csv`,
-    [t("exp_name"), t("exp_login"), t("exp_school"), t("exp_status"), t("exp_last_login"), t("exp_plan"), t("exp_tokens"), t("exp_ip")],
-    teachers.map(t_ => [t_.name, t_.login, t_.school, t_.status, t_.lastLogin, t_.plan, String(t_.tokenUsage), t_.ip])
+    [t("exp_name"), t("exp_login"), t("exp_school"), t("exp_status"), t("exp_last_login"), t("exp_plan"), "Истекает", t("exp_tokens"), t("exp_ip")],
+    teachers.map(t_ => [
+      t_.name,
+      t_.login,
+      t_.school,
+      t_.status,
+      t_.lastLogin,
+      t_.plan,
+      t_.expires_at ? new Date(t_.expires_at).toLocaleDateString("ru-RU") : "—",
+      String(t_.tokenUsage),
+      t_.ip
+    ])
   );
 };
 
@@ -147,7 +158,7 @@ const exportTeachersDOCX = async (teachers: Teacher[], t: any) => {
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [
               new TableRow({
-                children: [t("exp_teacher_login"), t("exp_school"), t("exp_last_login"), t("exp_tokens"), t("exp_status"), t("exp_plan")].map(h => new TableCell({
+                children: [t("exp_teacher_login"), t("exp_school"), t("exp_last_login"), t("exp_tokens"), t("exp_status"), t("exp_plan"), "Истекает"].map(h => new TableCell({
                   children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })],
                   shading: { fill: "f3f4f6" }
                 }))
@@ -159,7 +170,8 @@ const exportTeachersDOCX = async (teachers: Teacher[], t: any) => {
                   t_.lastLogin,
                   t_.tokenUsage.toLocaleString(),
                   t_.status,
-                  t_.plan
+                  t_.plan,
+                  t_.expires_at ? new Date(t_.expires_at).toLocaleDateString("ru-RU") : "—"
                 ].map(v => new TableCell({ children: [new Paragraph({ text: v })] }))
               }))
             ]
@@ -327,6 +339,54 @@ const PlanBadge = ({ plan, expiresAt }: { plan: string; expiresAt: string | null
           {daysLeft > 0 ? `${daysLeft}д.` : "Истёк"}
         </span>
       )}
+    </div>
+  );
+};
+
+const PieChart = ({ data, colors }: { data: { label: string; value: number }[]; colors: string[] }) => {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  if (total === 0) return <div className="text-center text-muted-foreground text-sm">Нет данных</div>;
+
+  let currentAngle = -90;
+  const slices = data.map((d, i) => {
+    const percentage = (d.value / total) * 100;
+    const sliceAngle = (percentage / 100) * 360;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + sliceAngle;
+    currentAngle = endAngle;
+
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+    const x1 = 50 + 45 * Math.cos(startRad);
+    const y1 = 50 + 45 * Math.sin(startRad);
+    const x2 = 50 + 45 * Math.cos(endRad);
+    const y2 = 50 + 45 * Math.sin(endRad);
+    const largeArc = sliceAngle > 180 ? 1 : 0;
+
+    return (
+      <path
+        key={i}
+        d={`M 50 50 L ${x1} ${y1} A 45 45 0 ${largeArc} 1 ${x2} ${y2} Z`}
+        fill={colors[i]}
+        stroke="white"
+        strokeWidth="2"
+      />
+    );
+  });
+
+  return (
+    <div className="flex gap-6 items-center">
+      <svg width="200" height="200" viewBox="0 0 100 100">
+        {slices}
+      </svg>
+      <div className="space-y-2">
+        {data.map((d, i) => (
+          <div key={i} className="flex items-center gap-2 text-xs">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[i] }} />
+            <span className="text-muted-foreground">{d.label}: <span className="font-bold text-foreground">{d.value}</span></span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -534,11 +594,36 @@ const TeachersView = ({
   const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "blocked">("all");
   const [planFilter, setPlanFilter] = useState<"all" | "FREE" | "PRO" | "SCHOOL">("all");
+  const [schoolFilter, setSchoolFilter] = useState<string>("");
+  const [expiryFilter, setExpiryFilter] = useState<"all" | "today" | "week" | "month" | "expired">("all");
   const [filterOpen, setFilterOpen] = useState(false);
 
   const filtered = teachers.filter(t => {
     if (statusFilter !== "all" && t.status !== statusFilter) return false;
     if (planFilter !== "all" && t.plan !== planFilter) return false;
+    if (schoolFilter && !t.school.toLowerCase().includes(schoolFilter.toLowerCase())) return false;
+
+    if (expiryFilter !== "all" && t.expires_at) {
+      const expiryDate = new Date(t.expires_at);
+      const now = new Date();
+      const daysLeft = Math.ceil((expiryDate.getTime() - now.getTime()) / 86400000);
+
+      if (expiryFilter === "expired") {
+        if (daysLeft >= 0) return false;
+      } else if (expiryFilter === "today") {
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        if (expiryDate < today) return false;
+        const tomorrow = new Date(today.getTime() + 86400000);
+        if (expiryDate >= tomorrow) return false;
+      } else if (expiryFilter === "week") {
+        if (daysLeft < 0 || daysLeft > 7) return false;
+      } else if (expiryFilter === "month") {
+        if (daysLeft < 0 || daysLeft > 30) return false;
+      }
+    } else if (expiryFilter !== "all") {
+      return false;
+    }
+
     return true;
   });
   const [tmpPwd] = useState(() => Math.random().toString(36).slice(2, 8).toUpperCase());
@@ -604,9 +689,9 @@ const TeachersView = ({
             onClick={() => setFilterOpen(!filterOpen)}
           >
             <Filter className="w-4 h-4" /> {t("adminFilter")}
-            {(statusFilter !== "all" || planFilter !== "all") && (
+            {(statusFilter !== "all" || planFilter !== "all" || schoolFilter || expiryFilter !== "all") && (
               <Badge className="ml-1 bg-primary text-background">
-                {(statusFilter !== "all" ? 1 : 0) + (planFilter !== "all" ? 1 : 0)}
+                {(statusFilter !== "all" ? 1 : 0) + (planFilter !== "all" ? 1 : 0) + (schoolFilter ? 1 : 0) + (expiryFilter !== "all" ? 1 : 0)}
               </Badge>
             )}
           </Button>
@@ -653,6 +738,33 @@ const TeachersView = ({
                           }`}
                         >
                           {p === "all" ? "Все" : p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t border-border pt-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Школа</p>
+                    <Input
+                      placeholder="Поиск по школе..."
+                      value={schoolFilter}
+                      onChange={e => setSchoolFilter(e.target.value)}
+                      className="h-8 text-xs rounded-lg font-sans"
+                    />
+                  </div>
+                  <div className="border-t border-border pt-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Истечение</p>
+                    <div className="space-y-1">
+                      {(["all", "today", "week", "month", "expired"] as const).map(e => (
+                        <button
+                          key={e}
+                          onClick={() => setExpiryFilter(e)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors font-sans ${
+                            expiryFilter === e
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "hover:bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {e === "all" ? "Все" : e === "today" ? "Сегодня" : e === "week" ? "На этой неделе" : e === "month" ? "В этом месяце" : "Истёкшие"}
                         </button>
                       ))}
                     </div>
@@ -1226,9 +1338,28 @@ const AiMonitorView = ({
   );
 };
 
-const FinancesView = ({ payments, financials, isLoading }: { payments: Payment[]; financials: FinancialStats; isLoading: boolean }) => {
+const FinancesView = ({ payments, financials, isLoading, orgs }: { payments: Payment[]; financials: FinancialStats; isLoading: boolean; orgs: Org[] }) => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+
+  const getOrgPlan = (seats: number): string => {
+    if (seats <= 10) return "FREE";
+    if (seats <= 50) return "PRO";
+    return "SCHOOL";
+  };
+
+  const paymentStatusData = [
+    { label: "Оплачено", value: payments.filter(p => p.status === "paid").length },
+    { label: "В ожидании", value: payments.filter(p => p.status === "pending").length },
+    { label: "Ошибка", value: payments.filter(p => p.status === "failed").length },
+  ];
+
+  const orgStatusData = [
+    { label: "Активные", value: orgs.filter(o => o.status === "active").length },
+    { label: "Истекают", value: orgs.filter(o => o.status === "expiring").length },
+    { label: "Истёкшие", value: orgs.filter(o => o.status === "expired").length },
+  ];
+
   const mrrData = [
     { month: "Aug", mrr: 1200 },
     { month: "Sep", mrr: 1900 },
@@ -1293,6 +1424,24 @@ const FinancesView = ({ payments, financials, isLoading }: { payments: Payment[]
             <p className="text-xs text-muted-foreground font-sans">{t("adminAvgLTV")}</p>
             <p className="text-lg font-bold text-foreground">$480</p>
           </div>
+        </div>
+      </div>
+
+      {/* Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card border border-border rounded-2xl p-5">
+          <h3 className="font-semibold text-foreground mb-4">Статус платежей</h3>
+          <PieChart
+            data={paymentStatusData}
+            colors={["#10b981", "#f59e0b", "#ef4444"]}
+          />
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-5">
+          <h3 className="font-semibold text-foreground mb-4">Статус организаций</h3>
+          <PieChart
+            data={orgStatusData}
+            colors={["#10b981", "#f59e0b", "#ef4444"]}
+          />
         </div>
       </div>
 
@@ -1377,6 +1526,29 @@ const SystemView = ({
   auditLogs: any[]; isLoading: boolean;
 }) => {
   const { t } = useTranslation();
+  const [logFilter, setLogFilter] = useState<"all" | "today" | "week" | "month">("all");
+  const [actionFilter, setActionFilter] = useState<string>("");
+
+  const filteredLogs = auditLogs.filter(log => {
+    const logDate = new Date(log.time);
+    const now = new Date();
+
+    if (logFilter === "today") {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (logDate < today) return false;
+    } else if (logFilter === "week") {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      if (logDate < weekAgo) return false;
+    } else if (logFilter === "month") {
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      if (logDate < monthAgo) return false;
+    }
+
+    if (actionFilter && !log.action.toLowerCase().includes(actionFilter.toLowerCase())) return false;
+
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       <div className="bg-card border border-border rounded-2xl p-6">
@@ -1443,13 +1615,36 @@ const SystemView = ({
       </div>
 
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-          <h3 className="font-bold text-foreground flex items-center gap-2">
-            <Shield className="w-4 h-4 text-primary" /> {t("adminAuditLogs")}
-          </h3>
-          <Button variant="outline" size="sm" className="rounded-xl h-8 px-3 text-xs gap-1.5" onClick={() => exportAuditLogDOCX(auditLogs, t)}>
-            <Download className="w-3.5 h-3.5" /> {t("admin_export")}
-          </Button>
+        <div className="px-6 py-4 border-b border-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-foreground flex items-center gap-2">
+              <Shield className="w-4 h-4 text-primary" /> {t("adminAuditLogs")}
+            </h3>
+            <Button variant="outline" size="sm" className="rounded-xl h-8 px-3 text-xs gap-1.5" onClick={() => exportAuditLogDOCX(filteredLogs, t)}>
+              <Download className="w-3.5 h-3.5" /> {t("admin_export")}
+            </Button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex gap-2">
+              {(["all", "today", "week", "month"] as const).map(f => (
+                <Button
+                  key={f}
+                  variant={logFilter === f ? "default" : "outline"}
+                  size="sm"
+                  className="rounded-lg h-8 text-xs font-sans"
+                  onClick={() => setLogFilter(f)}
+                >
+                  {f === "all" ? "Все" : f === "today" ? "Сегодня" : f === "week" ? "Неделя" : "Месяц"}
+                </Button>
+              ))}
+            </div>
+            <Input
+              placeholder="Поиск по действию..."
+              value={actionFilter}
+              onChange={e => setActionFilter(e.target.value)}
+              className="h-8 text-xs rounded-lg font-sans"
+            />
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -1467,14 +1662,14 @@ const SystemView = ({
                     <TableSkeleton rows={5} columns={3} />
                   </td>
                 </tr>
-              ) : auditLogs.length === 0 ? (
+              ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="py-20 text-center">
                     <EmptyState icon={Activity} title={t("adminNoLogs", "Нет логов")} description={t("adminNoLogsDesc", "История действий пуста")} />
                   </td>
                 </tr>
               ) : (
-                auditLogs.map((log, i) => (
+                filteredLogs.map((log, i) => (
                   <tr key={log.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-muted/10 h-10"}`}>
                     <td className="px-6 py-3 text-sm text-muted-foreground font-sans">{log.time}</td>
                     <td className="px-6 py-3">
@@ -1782,7 +1977,7 @@ const AdminPanel = () => {
                   isLoading={isLoading}
                 />
               )}
-              {activeSection === "finances" && <FinancesView payments={payments} financials={financials} isLoading={isLoading} />}
+              {activeSection === "finances" && <FinancesView payments={payments} financials={financials} isLoading={isLoading} orgs={orgs} />}
               {activeSection === "system" && (
                 <SystemView
                   aiProvider={aiProvider}
