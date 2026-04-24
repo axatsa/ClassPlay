@@ -435,24 +435,24 @@ const TugOfWar = () => {
                 </div>
               </div>
             </div>
-          </div>
           </motion.div>
         )}
 
-      {status === "finished" && (
-        <motion.div key="finished" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center justify-center h-full gap-6 bg-white"
-        >
-          <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ repeat: Infinity, duration: 1.8 }} className="text-8xl">🏆</motion.div>
-          <h2 className="text-5xl font-bold text-gray-800 font-serif">{winner} {t('game_won')}</h2>
-          <p className="text-gray-500 font-sans">{team1Name}: {blueScore} | {team2Name}: {redScore}</p>
-          <p className="text-gray-400 font-sans text-sm">{t('game_play_time')} {formatStopwatch(elapsed)}</p>
-          <Button onClick={startGame} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 text-lg rounded-2xl">
-            {t('game_playAgain')}
-          </Button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        {status === "finished" && (
+          <motion.div key="finished" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center h-full gap-6 bg-white"
+          >
+            <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ repeat: Infinity, duration: 1.8 }} className="text-8xl">🏆</motion.div>
+            <h2 className="text-5xl font-bold text-gray-800 font-serif">{winner} {t('game_won')}</h2>
+            <p className="text-gray-500 font-sans">{team1Name}: {blueScore} | {team2Name}: {redScore}</p>
+            <p className="text-gray-400 font-sans text-sm">{t('game_play_time')} {formatStopwatch(elapsed)}</p>
+            <Button onClick={startGame} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 text-lg rounded-2xl">
+              {t('game_playAgain')}
+            </Button>
+          </motion.div>
+        )
+        }
+      </AnimatePresence >
     </GameShell >
   );
 };
