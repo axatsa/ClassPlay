@@ -3,11 +3,12 @@ import { toast } from "sonner";
 import {
   Mail, Phone, School, Lock, Edit3, Save, X,
   Zap, BookOpen, BarChart2, Copy, Check, LogOut,
-  Star, ChevronRight, Calendar, User, Info, Shield, ArrowLeft, Camera
+  Star, ChevronRight, Calendar, User, Info, Shield, ArrowLeft, Camera, BarChart3, Settings as SettingsIcon
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
+import { AnalyticsPanel } from "./AnalyticsPage";
 
 interface UserProfile {
   id: number;
@@ -42,6 +43,8 @@ interface Stats {
   active_classes: number;
 }
 
+type ProfileTab = "settings" | "analytics";
+
 export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
@@ -54,6 +57,12 @@ export default function Profile() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
   const navigate = useNavigate();
+
+  // Read initial tab from query string (?tab=analytics) so links can deep-link
+  const [activeTab, setActiveTab] = useState<ProfileTab>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("tab") === "analytics" ? "analytics" : "settings";
+  });
 
   useEffect(() => {
     loadProfile();
@@ -194,10 +203,16 @@ export default function Profile() {
           <ArrowLeft className="w-4 h-4" /> Назад
         </button>
       </div>
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Настройки профиля</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Управляйте настройками вашего аккаунта и подпиской.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {activeTab === "analytics" ? "Аналитика" : "Настройки профиля"}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {activeTab === "analytics"
+              ? "Статистика использования платформы и популярные темы."
+              : "Управляйте настройками вашего аккаунта и подпиской."}
+          </p>
         </div>
         <button
           onClick={logout}
@@ -208,6 +223,37 @@ export default function Profile() {
         </button>
       </div>
 
+      {/* ── Tabs (компактно для электронных досок — без прокрутки) ── */}
+      <div className="mb-6 inline-flex bg-gray-100 dark:bg-gray-800 rounded-2xl p-1 gap-1">
+        <button
+          onClick={() => setActiveTab("settings")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === "settings"
+              ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+              : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          }`}
+        >
+          <SettingsIcon className="w-4 h-4" />
+          Настройки
+        </button>
+        <button
+          onClick={() => setActiveTab("analytics")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === "analytics"
+              ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+              : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          Аналитика
+        </button>
+      </div>
+
+      {activeTab === "analytics" && (
+        <AnalyticsPanel compact />
+      )}
+
+      {activeTab === "settings" && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
 
         {/* Left Column: Avatar & Quick Info & Usage */}
@@ -473,6 +519,7 @@ export default function Profile() {
 
         </div>
       </div>
+      )}
     </div>
   );
 }

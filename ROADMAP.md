@@ -2,6 +2,25 @@
 
 ---
 
+## ✅ ЗАВЕРШЕНО — Сессия 27.04.2026
+
+### UX / Навигация
+- ✅ Login — раздельные ошибки `user_not_found` / `wrong_password` / `account_blocked` с подсветкой поля
+- ✅ Generator — кнопка "Назад" ведёт на `/teacher` вместо `/`
+- ✅ TeacherNavbar — новый порядок: Generators → Tools → Games → Library → History → Materials (Analytics убрана)
+- ✅ Analytics перенесена в `/profile?tab=analytics` (compact-режим, минимум прокрутки)
+- ✅ TeacherDashboard — убраны дублирующие графики, оставлен welcome + bento-grid
+
+### Игры
+- ✅ Hangman — прогрессивные подсказки (до 4 штук на слово, бэкенд генерирует через OpenAI)
+- ✅ SpellingBee — 5 голосовых пресетов (Default / Female / Male / Robot / Child), localStorage
+- ✅ Jeopardy — все варианты правильного ответа отображаются чипами, `answers[]` в API
+
+### Библиотека книг
+- ✅ BookReaderFlip — прогресс-бар + кнопка % + автовосстановление позиции (`book-{id}-page`)
+
+---
+
 ## ✅ ЗАВЕРШЕНО — Сессия 26.04.2026
 
 ### Роль org_admin — B2B управление организациями

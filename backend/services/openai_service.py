@@ -304,23 +304,27 @@ async def generate_jeopardy(topic: str, grade: str = "", context: str = "", lang
     Target language: {language}
     {build_material_context_block(material_context)}
     {build_class_context_block(grade, context)}
-    
+
     STRICT RULES:
     1. For math: "q" must be a bare expression (e.g. "1/2 + [FRAC:1:4] = ?"). Use [FRAC:N:D] for fractions.
     2. Answer "a" MUST be factually correct and directly answer the question "q".
     3. NO introductory text in "q".
     4. CRITICAL: Ensure you do NOT mix up questions and answers. The "a" MUST match the "q" perfectly.
+    5. ALWAYS provide ALL valid answers in the "answers" array (synonyms, alternative phrasings,
+       different correct variants, etc.). The "a" field must be the most canonical answer
+       and ALSO be present as the first item of the "answers" array. If only one answer is
+       possible, the array should contain just that one item.
 
     Generate 5 distinct categories related to the topic.
     For each category, generate 5 questions with increasing difficulty exactly mapped to these points: 100, 200, 300, 400, 500.
-    
+
     Return ONLY a JSON object:
     {{
         "categories": [
             {{
                 "name": "Category Name",
                 "questions": [
-                    {{ "points": 100, "q": "Question or expression", "a": "Short Answer" }},
+                    {{ "points": 100, "q": "Question or expression", "a": "Short Answer", "answers": ["Short Answer", "Synonym 1", "Alternative phrasing"] }},
                     ...
                 ]
             }}
@@ -337,16 +341,24 @@ async def generate_hangman_words(topic: str, count: int, language: str = "Russia
     user_prompt = f"""
     Generate {count} words for a Hangman game.
     Topic: {topic}
+    Target language: {language}
     {build_material_context_block(material_context)}
 
     RULES:
     - Each word must be a single word (no spaces)
     - 4-12 characters long
     - Provide a short hint/clue (max 6 words) for each word
+    - Provide an array of 4 progressive leading sentences ("hints") in {language}, each 8-15 words long.
+      The hints should NOT contain the word itself or any direct form of it.
+      They should give increasingly revealing context, like a teacher giving clues.
+      Hint 1 = very general category context.
+      Hint 2 = describes a property or feature.
+      Hint 3 = describes how it's used or where it's found.
+      Hint 4 = nearly gives it away (synonym/related word).
     - Words must relate to the topic
 
     Return ONLY a JSON array:
-    [{{"word": "GRAVITY", "hint": "Force pulling objects to Earth"}}]
+    [{{"word": "GRAVITY", "hint": "Force pulling objects to Earth", "hints": ["This is a fundamental force in physics that affects all matter.", "It is what keeps planets in orbit around stars.", "When you drop something, this force makes it fall down.", "Isaac Newton famously discovered the law describing this attractive force."]}}]
     """
     return await _get_completion([
         {"role": "system", "content": get_system_prompt(language)},

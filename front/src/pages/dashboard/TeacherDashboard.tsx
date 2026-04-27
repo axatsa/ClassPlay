@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles, Dices, Gamepad2, GraduationCap, User, BookOpen,
-  ChevronDown, Plus, Check, Globe, BookMarked, Sun, Moon, Settings,
-  Zap, Calendar, BarChart3, TrendingUp
+  Sparkles, Gamepad2, GraduationCap, User, BookOpen,
+  ChevronDown, Check, BookMarked, Sun, Moon,
+  Zap
 } from "lucide-react";
 import { useClass } from "@/context/ClassContext";
 import { useTranslation } from "react-i18next";
@@ -13,24 +13,6 @@ import { useTheme } from "@/context/ThemeContext";
 import OnboardingModal from "@/components/Onboarding/OnboardingModal";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
-import { toast } from "sonner";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell 
-} from "recharts";
-
-interface Stats {
-  total_generations: number;
-  generations_this_month: number;
-  games_launched: number;
-  activity_by_day: { date: string; count: number }[];
-  top_features: { name: string; count: number }[];
-}
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
@@ -38,43 +20,32 @@ const TeacherDashboard = () => {
   const { classes, activeClass, setActiveClassId } = useClass();
   const { t, i18n } = useTranslation();
   const { isDark, toggle: toggleTheme } = useTheme();
-  const setLang = (l: string) => i18n.changeLanguage(l);
   const lang = i18n.language;
-  
+
   const [showClassPicker, setShowClassPicker] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(user?.onboarding_completed === false);
-  
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
   const [materialCount, setMaterialCount] = useState<number>(0);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchMaterials = async () => {
       try {
-        const [statsRes, matRes] = await Promise.all([
-          api.get("/generate/stats/me"),
-          api.get<{ id: number }[]>("/materials/").catch(() => ({ data: [] })),
-        ]);
-        setStats(statsRes.data);
+        const matRes = await api.get<{ id: number }[]>("/materials/").catch(() => ({ data: [] }));
         setMaterialCount(matRes.data.length);
       } catch (error) {
-        console.error("Failed to fetch stats", error);
-        toast.error("Не удалось загрузить статистику");
-      } finally {
-        setIsLoadingStats(false);
+        console.error("Failed to fetch materials", error);
       }
     };
-    fetchStats();
+    fetchMaterials();
   }, []);
 
   const navPills = [
     { key: "Generators", label: t("navGenerators"), route: "/generator" },
-    { key: "History",    label: lang === "ru" ? "История" : "Tarix",  route: "/history" },
-    { key: "Analytics",  label: lang === "ru" ? "Аналитика" : "Tahlil", route: "/analytics" },
     { key: "Tools",      label: t("navTools"),      route: "/tools" },
     { key: "Games",      label: t("navGames"),      route: "/games" },
     { key: "Library",    label: t("navLibrary"),    route: "/library" },
+    { key: "History",    label: lang === "ru" ? "История" : "Tarix",  route: "/history" },
     { key: "Materials",  label: lang === "ru" ? "Материалы" : "Materiallar", route: "/materials" },
   ] as const;
 
@@ -165,63 +136,30 @@ const TeacherDashboard = () => {
       {/* ── MAIN CONTENT ── */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 flex flex-col gap-6">
         
-        {/* Top Row: Welcome + Metrics */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-2 bg-card rounded-[32px] p-8 border border-border shadow-sm flex flex-col justify-between relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-500">
-               <Sparkles className="w-48 h-48 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">
-                {t("welcomeBack")} {" "}
-                <span className="bg-gradient-to-r from-violet-600 to-indigo-500 bg-clip-text text-transparent">
-                  {user?.full_name?.split(" ")[0] || t("teacher_placeholder")}
-                </span>
-              </h1>
-              <p className="text-muted-foreground mt-2 max-w-md">{t("welcome_back_detailed")}</p>
-            </div>
-            
-            <div className="flex flex-wrap gap-4 mt-8">
-               <Button onClick={() => navigate("/generator")} size="lg" className="rounded-2xl px-8 h-12 font-bold shadow-lg shadow-primary/20 gap-2">
-                 <Zap className="w-5 h-5" /> {t("create_lesson")}
-               </Button>
-               <Button onClick={() => navigate("/games")} variant="secondary" size="lg" className="rounded-2xl px-8 h-12 font-bold gap-2">
-                 <Gamepad2 className="w-5 h-5" /> {t("launch_game")}
-               </Button>
-            </div>
-          </motion.div>
-
-          <div className="grid grid-cols-2 gap-4">
-             <MetricCard 
-               icon={<Zap className="w-5 h-5 text-violet-600" />} 
-               value={stats?.total_generations || 0} 
-               label={t("stats_total_tasks")} 
-               color="bg-violet-500/10" 
-               delay={0.1}
-             />
-             <MetricCard 
-               icon={<Calendar className="w-5 h-5 text-emerald-600" />} 
-               value={stats?.generations_this_month || 0} 
-               label={t("stats_this_month")} 
-               color="bg-emerald-500/10" 
-               delay={0.2}
-             />
-             <MetricCard 
-               icon={<Gamepad2 className="w-5 h-5 text-orange-600" />} 
-               value={stats?.games_launched || 0} 
-               label={t("stats_games_launched")} 
-               color="bg-orange-500/10" 
-               delay={0.3}
-             />
-             <MetricCard 
-               icon={<TrendingUp className="w-5 h-5 text-blue-600" />} 
-               value={classes.length} 
-               label={t("stats_your_classes")} 
-               color="bg-blue-500/10" 
-               delay={0.4}
-             />
+        {/* Welcome Card — full width (analytics moved to /profile?tab=analytics) */}
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-[32px] p-8 border border-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-500">
+             <Sparkles className="w-48 h-48 text-primary" />
           </div>
-        </div>
+          <div className="relative z-10">
+            <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">
+              {t("welcomeBack")} {" "}
+              <span className="bg-gradient-to-r from-violet-600 to-indigo-500 bg-clip-text text-transparent">
+                {user?.full_name?.split(" ")[0] || t("teacher_placeholder")}
+              </span>
+            </h1>
+            <p className="text-muted-foreground mt-2 max-w-md">{t("welcome_back_detailed")}</p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 relative z-10">
+             <Button onClick={() => navigate("/generator")} size="lg" className="rounded-2xl px-6 h-12 font-bold shadow-lg shadow-primary/20 gap-2">
+               <Zap className="w-5 h-5" /> {t("create_lesson")}
+             </Button>
+             <Button onClick={() => navigate("/games")} variant="secondary" size="lg" className="rounded-2xl px-6 h-12 font-bold gap-2">
+               <Gamepad2 className="w-5 h-5" /> {t("launch_game")}
+             </Button>
+          </div>
+        </motion.div>
 
         {/* Second Row: Bento Grid Navigation */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
@@ -286,18 +224,6 @@ const TeacherDashboard = () => {
     </div>
   );
 };
-
-const MetricCard = ({ icon, value, label, color, delay }: any) => (
-  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay }} className="bg-card rounded-3xl p-5 border border-border shadow-sm flex flex-col justify-between">
-    <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center mb-3`}>
-      {icon}
-    </div>
-    <div>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mt-1">{label}</div>
-    </div>
-  </motion.div>
-);
 
 const cardsList = [
   {

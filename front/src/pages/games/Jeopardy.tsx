@@ -33,7 +33,7 @@ const Jeopardy = () => {
 
   // Dynamic Data
   const [categories, setCategories] = useState<string[]>([]);
-  const [questions, setQuestions] = useState<Record<string, { q: string; a: string }>>({});
+  const [questions, setQuestions] = useState<Record<string, { q: string; a: string; answers: string[] }>>({});
 
   const addTeam = () => {
     if (newTeam.trim() && teams.length < 4) {
@@ -67,7 +67,13 @@ const Jeopardy = () => {
       }
 
       const newCategories: string[] = [];
-      const newQuestions: Record<string, { q: string; a: string }> = {};
+      const newQuestions: Record<string, { q: string; a: string; answers: string[] }> = {};
+
+      const splitAnswers = (raw: string): string[] =>
+        String(raw)
+          .split(/\s*(?:[,;/]|\bили\b|\byoki\b|\bor\b)\s*/i)
+          .map((s) => s.trim())
+          .filter(Boolean);
 
       data.categories.forEach((cat: any) => {
         newCategories.push(cat.name);
@@ -75,7 +81,16 @@ const Jeopardy = () => {
           // Map backend points to closest available or just use backend logic if consistent
           // Backend returns 100, 200, 300... which matches POINTS
           const key = `${cat.name}-${q.points}`;
-          newQuestions[key] = { q: q.q, a: q.a };
+          // Support both new format (answers array) and legacy (single "a" string).
+          // If only "a" present, try to split common separators (comma, "or", "/").
+          let answers: string[] = [];
+          if (Array.isArray(q.answers) && q.answers.length > 0) {
+            answers = q.answers.map((s: any) => String(s).trim()).filter(Boolean);
+          } else if (q.a) {
+            answers = splitAnswers(q.a);
+          }
+          if (answers.length === 0 && q.a) answers = [String(q.a)];
+          newQuestions[key] = { q: q.q, a: q.a || answers[0] || "", answers };
         });
       });
 
@@ -258,11 +273,36 @@ const Jeopardy = () => {
                 </Button>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-green-50 border border-green-300 rounded-2xl p-4">
-                    <div className="text-green-700 font-bold text-2xl font-serif">
-                      <RichTextRenderer text={questions[`${activeCell.cat}-${activeCell.pts}`]?.a} />
-                    </div>
-                  </div>
+                  {(() => {
+                    const cellData = questions[`${activeCell.cat}-${activeCell.pts}`];
+                    const answers = cellData?.answers && cellData.answers.length > 0
+                      ? cellData.answers
+                      : (cellData?.a ? [cellData.a] : []);
+                    const isMulti = answers.length > 1;
+                    return (
+                      <div className="bg-green-50 border border-green-300 rounded-2xl p-4 space-y-2">
+                        {isMulti && (
+                          <div className="text-green-600 font-sans text-xs uppercase tracking-wider font-semibold">
+                            Принимаются ответы:
+                          </div>
+                        )}
+                        <div className={isMulti ? "flex flex-wrap gap-2 justify-center" : "text-green-700 font-bold text-2xl font-serif"}>
+                          {isMulti ? (
+                            answers.map((ans, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center bg-white border border-green-300 rounded-xl px-3 py-1.5 text-green-700 font-semibold font-serif text-lg shadow-sm"
+                              >
+                                <RichTextRenderer text={ans} />
+                              </span>
+                            ))
+                          ) : (
+                            <RichTextRenderer text={answers[0] || cellData?.a} />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <p className="text-gray-500 text-sm font-sans">{t('game_award_points_to')}</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {teams.map((team, i) => (

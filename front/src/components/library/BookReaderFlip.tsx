@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { X, ChevronLeft, ChevronRight, Download, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -151,12 +151,31 @@ export const BookReaderFlip = ({ book, onClose }: { book: Book; onClose: () => v
     const containerRef = useRef<HTMLDivElement>(null);
     const [pageNumber, setPageNumber] = useState(0);
     const [isExporting, setIsExporting] = useState(false);
-    
+
     // Config
     const colorIdx = (book.id - 1) % COVER_COLORS.length;
     const colorClass = COVER_COLORS[colorIdx];
     const totalFlips = book.pages.length * 2 + 2; // cover + (text+img) * 10 + backcover
-    
+
+    // Progress
+    const progressKey = `book-${book.id}-page`;
+    const currentContentPage = pageNumber === 0 ? 0 : Math.min(Math.ceil(pageNumber / 2), book.pages.length);
+    const progressPct = book.pages.length > 0 ? Math.round((currentContentPage / book.pages.length) * 100) : 0;
+
+    // Restore saved page on mount
+    useEffect(() => {
+        const saved = localStorage.getItem(progressKey);
+        if (saved) {
+            const savedPage = parseInt(saved, 10);
+            if (!isNaN(savedPage) && savedPage > 0) {
+                setTimeout(() => {
+                    bookRef.current?.pageFlip()?.turnToPage(savedPage);
+                }, 350);
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // Navigation
     const nextButtonClick = () => {
         if (bookRef.current) bookRef.current.pageFlip().turnToNextPage();
@@ -168,6 +187,7 @@ export const BookReaderFlip = ({ book, onClose }: { book: Book; onClose: () => v
 
     const onPage = (e: any) => {
         setPageNumber(e.data);
+        localStorage.setItem(progressKey, String(e.data));
     };
 
     // Export to PDF
@@ -343,12 +363,37 @@ export const BookReaderFlip = ({ book, onClose }: { book: Book; onClose: () => v
                 </div>
 
                 {/* Progress Footer */}
-                <div className="shrink-0 mt-6 text-center z-50 pb-2">
-                    <p className="text-white/60 text-sm font-sans tracking-widest font-medium">
-                        {pageNumber === 0 
-                            ? "ОБЛОЖКА" 
-                            : `СТРАНИЦА ${Math.ceil(pageNumber/2)} из ${book.pages.length}`
-                        }
+                <div className="shrink-0 mt-4 z-50 pb-2 flex flex-col items-center gap-2">
+                    {/* Progress bar row */}
+                    <div className="w-full max-w-sm flex items-center gap-3">
+                        <span className="text-[10px] font-bold text-white/40 w-6 text-right shrink-0">
+                            {currentContentPage}
+                        </span>
+                        <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full bg-white/70 rounded-full"
+                                animate={{ width: `${progressPct}%` }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            />
+                        </div>
+                        <button
+                            className="shrink-0 min-w-[42px] px-2 py-0.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white/70 hover:text-white text-xs font-bold backdrop-blur-sm border border-white/10"
+                            title="Прогресс чтения"
+                            onClick={() => {
+                                if (bookRef.current) bookRef.current.pageFlip().turnToPage(0);
+                            }}
+                        >
+                            {progressPct}%
+                        </button>
+                    </div>
+
+                    {/* Page label */}
+                    <p className="text-white/50 text-xs font-sans tracking-widest font-medium">
+                        {pageNumber === 0
+                            ? "ОБЛОЖКА"
+                            : pageNumber >= totalFlips - 1
+                            ? "КОНЕЦ"
+                            : `СТРАНИЦА ${currentContentPage} из ${book.pages.length}`}
                     </p>
                 </div>
             </div>

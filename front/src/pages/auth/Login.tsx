@@ -34,10 +34,14 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<"email" | "password" | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMsg(null);
+    setErrorField(null);
     try {
       const res = await api.post("/auth/login", { email, password });
       toast.success(t("loginSuccess"));
@@ -45,8 +49,28 @@ const Login = () => {
       login(res.data.access_token, res.data.user);
 
       // Navigation will be handled by the useEffect once user state is updated
-    } catch (error) {
-      toast.error(t("invalidCredits"));
+    } catch (error: any) {
+      const code = error?.response?.data?.detail || "";
+      let userMsg = t("invalidCredits");
+      let field: "email" | "password" | null = null;
+      if (code === "user_not_found") {
+        userMsg = lang === "uz"
+          ? "Bunday email bilan foydalanuvchi topilmadi"
+          : "Пользователь с таким email не найден";
+        field = "email";
+      } else if (code === "wrong_password") {
+        userMsg = lang === "uz"
+          ? "Noto'g'ri parol. Iltimos, qaytadan urinib ko'ring"
+          : "Неверный пароль. Пожалуйста, попробуйте ещё раз";
+        field = "password";
+      } else if (code === "account_blocked") {
+        userMsg = lang === "uz"
+          ? "Hisob bloklangan. Administrator bilan bog'laning"
+          : "Аккаунт заблокирован. Свяжитесь с администратором";
+      }
+      setErrorMsg(userMsg);
+      setErrorField(field);
+      toast.error(userMsg);
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -146,10 +170,14 @@ const Login = () => {
                 type="email"
                 placeholder="teacher@school.edu"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-13 text-base rounded-xl border-border"
+                onChange={(e) => { setEmail(e.target.value); if (errorField === "email") { setErrorMsg(null); setErrorField(null); } }}
+                className={`h-13 text-base rounded-xl border-border ${errorField === "email" ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                 disabled={isLoading}
+                aria-invalid={errorField === "email"}
               />
+              {errorField === "email" && errorMsg && (
+                <p className="text-sm text-red-500 font-sans">{errorMsg}</p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium font-sans text-foreground">{t("loginPassword")}</label>
@@ -157,11 +185,20 @@ const Login = () => {
                 type="password"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-13 text-base rounded-xl border-border"
+                onChange={(e) => { setPassword(e.target.value); if (errorField === "password") { setErrorMsg(null); setErrorField(null); } }}
+                className={`h-13 text-base rounded-xl border-border ${errorField === "password" ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                 disabled={isLoading}
+                aria-invalid={errorField === "password"}
               />
+              {errorField === "password" && errorMsg && (
+                <p className="text-sm text-red-500 font-sans">{errorMsg}</p>
+              )}
             </div>
+            {errorMsg && !errorField && (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-sans">
+                {errorMsg}
+              </div>
+            )}
             <div className="flex justify-end">
               <button
                 type="button"

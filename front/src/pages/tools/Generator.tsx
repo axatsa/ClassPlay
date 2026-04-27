@@ -784,7 +784,7 @@ const Generator = () => {
         {/* Header */}
         <div className="p-6 border-b border-border">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/teacher")}
             className="flex items-center gap-2 text-sm text-foreground/60 hover:text-foreground transition-colors mb-8 group"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />

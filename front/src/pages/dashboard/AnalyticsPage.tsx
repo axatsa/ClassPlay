@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   BarChart3, TrendingUp, Zap, BookOpen, ArrowLeft,
-  Flame, Target, Calendar, Star,
+  Flame, Target, Star,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  Cell, PieChart, Pie, Legend,
+  Cell, PieChart, Pie,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
@@ -70,6 +70,176 @@ function StatCard({
 interface SubscriptionData {
   tokens_used_this_month: number;
   tokens_limit: number;
+}
+
+// ── Reusable embeddable analytics panel (no header — for use inside Profile tabs etc.) ───
+export function AnalyticsPanel({ compact = false }: { compact?: boolean }) {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    Promise.all([
+      api.get<Stats>("/generate/stats/me"),
+      api.get<HistoryItem[]>("/generate/history?limit=100&offset=0"),
+      api.get<SubscriptionData>("/payments/subscription/me").catch(() => ({ data: null })),
+    ]).then(([s, h, sub]) => {
+      setStats(s.data);
+      setHistory(h.data);
+      setSubscription(sub.data);
+    }).catch(() => {}).finally(() => setIsLoading(false));
+  }, []);
+
+  // Token quota
+  const tokensUsed = subscription?.tokens_used_this_month ?? 0;
+  const tokensLimit = subscription?.tokens_limit ?? 30000;
+  const tokenPct = Math.min(100, Math.round((tokensUsed / tokensLimit) * 100));
+
+  // Top topics from history
+  const topicMap = new Map<string, number>();
+  history.forEach((h) => { if (h.topic) topicMap.set(h.topic, (topicMap.get(h.topic) ?? 0) + 1); });
+  const topTopics = [...topicMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, compact ? 5 : 8)
+    .map(([topic, count]) => ({ topic, count }));
+
+  // Activity: last 14 days
+  const activityData = (() => {
+    if (!stats) return [];
+    const map = new Map(stats.activity_by_day.map((d) => [d.date, d.count]));
+    const days = compact ? 7 : 14;
+    return Array.from({ length: days }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (days - 1 - i));
+      const key = d.toISOString().split("T")[0];
+      return { day: d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }), count: map.get(key) ?? 0 };
+    });
+  })();
+
+  // Streak
+  const streak = (() => {
+    if (!stats) return 0;
+    const today = new Date().toISOString().split("T")[0];
+    const activeDays = new Set(stats.activity_by_day.filter((d) => d.count > 0).map((d) => d.date));
+    let s = 0;
+    for (let i = 0; i <= 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split("T")[0];
+      if (!activeDays.has(key) && key !== today) break;
+      if (activeDays.has(key)) s++;
+    }
+    return s;
+  })();
+
+  const featureData = (stats?.top_features ?? []).map((f) => ({
+    name: GAME_LABELS[f.name] ?? f.name,
+    count: f.count,
+  }));
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="h-24 bg-muted rounded-2xl animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (stats?.total_generations === 0) {
+    return (
+      <div className="text-center py-12 space-y-3">
+        <Target className="w-10 h-10 text-muted-foreground mx-auto" />
+        <p className="text-foreground font-semibold font-sans">Данных пока нет</p>
+        <p className="text-muted-foreground text-sm font-sans">Начните генерировать материалы — статистика появится здесь</p>
+        <Button onClick={() => navigate("/generator")} className="rounded-xl">Открыть генератор</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Compact stat row — no scrolling needed */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard icon={BookOpen} label="Всего" value={String(stats?.total_generations ?? 0)} color="bg-primary/10 text-primary" />
+        <StatCard icon={TrendingUp} label="В этом месяце" value={String(stats?.generations_this_month ?? 0)} color="bg-emerald-500/10 text-emerald-600" />
+        <StatCard icon={Flame} label="Серия дней" value={String(streak)} color="bg-orange-500/10 text-orange-500" />
+        <StatCard icon={Zap} label="Токены" value={`${tokenPct}%`} sub={`${tokensUsed.toLocaleString()} / ${tokensLimit.toLocaleString()}`} color="bg-yellow-500/10 text-yellow-600" />
+      </div>
+
+      {/* Two-column layout to minimize scrolling on wide screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Activity chart */}
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <p className="font-semibold text-foreground font-sans mb-3 text-sm">Активность за {compact ? 7 : 14} дней</p>
+          <ResponsiveContainer width="100%" height={130}>
+            <BarChart data={activityData} barSize={12}>
+              <XAxis dataKey="day" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} interval={0} />
+              <YAxis hide allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12 }}
+                formatter={(v: number) => [`${v} генераций`, ""]}
+              />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                {activityData.map((entry, i) => (
+                  <Cell key={i} fill={entry.count > 0 ? "var(--primary)" : "var(--muted)"} fillOpacity={entry.count > 0 ? 0.85 : 0.4} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Game type breakdown */}
+        {featureData.length > 0 && (
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <p className="font-semibold text-foreground font-sans mb-3 text-sm">Используемые игры</p>
+            <ResponsiveContainer width="100%" height={130}>
+              <PieChart>
+                <Pie data={featureData} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={55} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                  {featureData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Top topics */}
+      {topTopics.length > 0 && (
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <p className="font-semibold text-foreground font-sans mb-3 text-sm">Популярные темы</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {topTopics.map((t, i) => {
+              const maxCount = topTopics[0].count;
+              return (
+                <div key={t.topic} className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-muted-foreground w-5 tabular-nums">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-sm font-sans text-foreground truncate">{t.topic}</span>
+                      <span className="text-xs text-muted-foreground ml-2 shrink-0">{t.count}×</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(t.count / maxCount) * 100}%` }}
+                        transition={{ delay: i * 0.04, duration: 0.4 }}
+                        className="h-full rounded-full bg-primary/60"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function AnalyticsPage() {

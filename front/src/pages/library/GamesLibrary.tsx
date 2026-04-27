@@ -9,6 +9,10 @@ import gameJeopardy from "@/assets/game-jeopardy.png";
 import gameMemory from "@/assets/game-memory.png";
 import gameScales from "@/assets/game-scales.png";
 import gameWordSearch from "@/assets/game-word-search.png";
+import gameHangman from "@/assets/game-hangman.jpeg";
+import gameSpelling from "@/assets/game-spelling.jpeg";
+import gameMathPuzzle from "@/assets/game-math-puzzle.jpeg";
+import gameWordTranslate from "@/assets/game-word-translate.jpeg";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 
@@ -19,6 +23,10 @@ const coverImages: Record<string, string> = {
   "scales": gameScales,
   "word-search": gameWordSearch,
   "crossword": gameWordSearch, // reuse word-search image
+  "hangman": gameHangman,
+  "spelling": gameSpelling,
+  "math-puzzle": gameMathPuzzle,
+  "word-translate": gameWordTranslate,
 };
 
 const GamesLibrary = () => {

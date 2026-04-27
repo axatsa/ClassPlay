@@ -32,18 +32,25 @@ def create_access_token(data: dict):
 @limiter.limit("5/minute")
 def login(request: Request, user_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_data.email).first()
-    
-    if not user or not pwd_context.verify(user_data.password, user.hashed_password):
+
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="user_not_found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not pwd_context.verify(user_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="wrong_password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not getattr(user, 'is_active', True):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is blocked. Contact your administrator.",
+            detail="account_blocked",
         )
         
     access_token = create_access_token(data={"sub": user.email})

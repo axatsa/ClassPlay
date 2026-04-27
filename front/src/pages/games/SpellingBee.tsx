@@ -10,13 +10,69 @@ import api from "@/lib/api";
 
 interface SpellingWord { word: string; definition: string; example: string }
 
-function speak(text: string, lang: string) {
+// ── Voice presets ─────────────────────────────────────────────────────────────
+type VoicePresetId = "female" | "male" | "robot" | "child" | "default";
+
+interface VoicePreset {
+  id: VoicePresetId;
+  label: string;
+  emoji: string;
+  // hint for picking a system voice by name
+  preferGender?: "female" | "male";
+  // overrides for utterance
+  rate: number;
+  pitch: number;
+}
+
+const VOICE_PRESETS: VoicePreset[] = [
+  { id: "default", label: "Обычный", emoji: "🔊", rate: 0.85, pitch: 1.0 },
+  { id: "female", label: "Женский", emoji: "👩", preferGender: "female", rate: 0.9, pitch: 1.15 },
+  { id: "male", label: "Мужской", emoji: "👨", preferGender: "male", rate: 0.85, pitch: 0.85 },
+  { id: "robot", label: "Робот", emoji: "🤖", rate: 0.7, pitch: 0.1 },
+  { id: "child", label: "Ребёнок", emoji: "🧒", preferGender: "female", rate: 1.0, pitch: 1.6 },
+];
+
+// Heuristic to identify a "female" or "male" voice by its name
+const FEMALE_HINTS = ["female", "женск", "samantha", "anna", "milena", "victoria", "veena", "zira", "tatyana", "alenka", "milana", "alice", "nicky", "karen", "moira", "fiona", "google русский", "google english (united states)"];
+const MALE_HINTS = ["male", "мужск", "alex", "yuri", "daniel", "fred", "george", "tom", "thomas", "diego", "luca", "george", "google english (united kingdom)"];
+
+function pickVoice(voices: SpeechSynthesisVoice[], lang: string, prefer?: "female" | "male"): SpeechSynthesisVoice | null {
+  if (!voices.length) return null;
+  const langCode = lang === "English" ? "en" : lang === "Uzbek" ? "uz" : "ru";
+  const matchingLang = voices.filter((v) => v.lang.toLowerCase().startsWith(langCode));
+  const pool = matchingLang.length > 0 ? matchingLang : voices;
+  if (!prefer) return pool[0];
+  const hints = prefer === "female" ? FEMALE_HINTS : MALE_HINTS;
+  const matched = pool.find((v) => hints.some((h) => v.name.toLowerCase().includes(h)));
+  return matched || pool[0];
+}
+
+function speak(text: string, lang: string, presetId: VoicePresetId = "default") {
   if (!window.speechSynthesis) return;
+  const preset = VOICE_PRESETS.find((p) => p.id === presetId) || VOICE_PRESETS[0];
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = lang === "English" ? "en-US" : lang === "Uzbek" ? "uz-UZ" : "ru-RU";
-  utt.rate = 0.85;
+  utt.rate = preset.rate;
+  utt.pitch = preset.pitch;
+  const voices = window.speechSynthesis.getVoices();
+  const v = pickVoice(voices, lang, preset.preferGender);
+  if (v) utt.voice = v;
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utt);
+}
+
+const VOICE_STORAGE_KEY = "spelling_voice_preset";
+
+function loadVoicePreference(): VoicePresetId {
+  try {
+    const v = localStorage.getItem(VOICE_STORAGE_KEY) as VoicePresetId | null;
+    if (v && VOICE_PRESETS.some((p) => p.id === v)) return v;
+  } catch {}
+  return "default";
+}
+
+function saveVoicePreference(id: VoicePresetId) {
+  try { localStorage.setItem(VOICE_STORAGE_KEY, id); } catch {}
 }
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
@@ -106,15 +162,36 @@ function SpellingGame({ words, lang, onBack }: { words: SpellingWord[]; lang: st
   const [correct, setCorrect] = useState(0);
   const [wrong, setWrong] = useState(0);
   const [checking, setChecking] = useState(false);
+  const [voicePreset, setVoicePreset] = useState<VoicePresetId>(() => loadVoicePreference());
+  const [voicesReady, setVoicesReady] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const current = words[index];
 
+  // Ensure system voices are loaded (Chrome loads them async)
+  useEffect(() => {
+    const handle = () => setVoicesReady(true);
+    if (window.speechSynthesis) {
+      if (window.speechSynthesis.getVoices().length > 0) setVoicesReady(true);
+      window.speechSynthesis.onvoiceschanged = handle;
+    }
+    return () => {
+      if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
+
   useEffect(() => {
     // auto-speak when new word appears
-    speak(current.word, lang);
+    if (voicesReady) speak(current.word, lang, voicePreset);
     inputRef.current?.focus();
-  }, [index]);
+  }, [index, voicesReady]);
+
+  const changeVoice = (id: VoicePresetId) => {
+    setVoicePreset(id);
+    saveVoicePreference(id);
+    // Demo the new voice immediately
+    speak(current.word, lang, id);
+  };
 
   const check = () => {
     if (!input.trim()) return;
@@ -146,9 +223,31 @@ function SpellingGame({ words, lang, onBack }: { words: SpellingWord[]; lang: st
 
       {/* Card */}
       <div className="w-full max-w-sm bg-white rounded-2xl border shadow-md p-6 space-y-4">
+        {/* Voice selector */}
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Голос диктора</Label>
+          <div className="grid grid-cols-5 gap-1.5">
+            {VOICE_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => changeVoice(p.id)}
+                title={p.label}
+                className={`flex flex-col items-center justify-center py-2 rounded-lg border text-[10px] font-medium transition-all ${
+                  voicePreset === p.id
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-white hover:bg-primary/5 border-input"
+                }`}
+              >
+                <span className="text-lg leading-none">{p.emoji}</span>
+                <span className="mt-0.5">{p.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Listen button */}
         <button
-          onClick={() => speak(current.word, lang)}
+          onClick={() => speak(current.word, lang, voicePreset)}
           className="w-full h-20 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex flex-col items-center justify-center gap-1 transition-colors"
         >
           <Volume2 className="w-8 h-8" />
@@ -212,7 +311,7 @@ export default function SpellingBee() {
       title="Орфография"
       onBack="/games"
       onRestart={words ? () => setWords(null) : undefined}
-      howToPlay="Нажмите на кнопку с динамиком, чтобы услышать слово. Напишите его правильно в поле и нажмите «Проверить». Прочитайте определение как подсказку."
+      howToPlay="Выберите голос диктора (женский, мужской, робот и др.), нажмите на кнопку с динамиком, чтобы услышать слово. Напишите его правильно в поле и нажмите «Проверить». Прочитайте определение как подсказку."
     >
       {!words ? (
         <SetupForm onStart={(w, l) => { setWords(w); setLang(l); }} />

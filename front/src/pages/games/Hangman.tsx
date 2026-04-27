@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, RotateCcw } from "lucide-react";
+import { Loader2, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import GameShell from "./GameShell";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ const MAX_WRONG = HANGMAN_PARTS.length - 3; // 7 wrong guesses allowed (after ga
 const ALPHABET_RU = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split("");
 const ALPHABET_EN = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-interface WordEntry { word: string; hint: string }
+interface WordEntry { word: string; hint: string; hints?: string[] }
 
 type Phase = "setup" | "playing" | "result";
 
@@ -112,8 +112,9 @@ function HangmanGame({ words, lang, onBack }: { words: WordEntry[]; lang: string
   const [guessed, setGuessed] = useState<Set<string>>(new Set());
   const [phase, setPhase] = useState<"playing" | "won" | "lost">("playing");
   const [score, setScore] = useState(0);
+  const [hintsShown, setHintsShown] = useState(0); // how many additional hints shown for current word
 
-  const { word, hint } = words[wordIndex];
+  const { word, hint, hints = [] } = words[wordIndex];
   const upper = word.toUpperCase();
   const alphabet = lang === "English" ? ALPHABET_EN : ALPHABET_RU;
 
@@ -143,6 +144,15 @@ function HangmanGame({ words, lang, onBack }: { words: WordEntry[]; lang: string
     setWordIndex((i) => i + 1);
     setGuessed(new Set());
     setPhase("playing");
+    setHintsShown(0);
+  };
+
+  const showNextHint = () => {
+    if (hintsShown < hints.length) {
+      setHintsShown((n) => n + 1);
+    } else {
+      toast.info("Больше подсказок нет 😊");
+    }
   };
 
   return (
@@ -157,6 +167,36 @@ function HangmanGame({ words, lang, onBack }: { words: WordEntry[]; lang: string
       <p className="text-sm bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-amber-800 text-center max-w-xs">
         💡 {hint}
       </p>
+
+      {/* Additional progressive hints */}
+      {hints.length > 0 && (
+        <div className="w-full max-w-md flex flex-col gap-2">
+          <AnimatePresence>
+            {hints.slice(0, hintsShown).map((h, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-sm bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 text-blue-800 text-center"
+              >
+                <span className="font-semibold mr-1">Подсказка {i + 1}:</span>{h}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {phase === "playing" && hintsShown < hints.length && (
+            <Button
+              onClick={showNextHint}
+              variant="outline"
+              size="sm"
+              className="self-center gap-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              <Lightbulb className="w-4 h-4" />
+              Получить подсказку ({hintsShown + 1}/{hints.length})
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* SVG gallows */}
       <svg viewBox="0 0 140 140" width="140" height="140">
@@ -246,7 +286,7 @@ export default function Hangman() {
       title="Виселица"
       onBack="/games"
       onRestart={words ? restart : undefined}
-      howToPlay="Угадайте скрытое слово, называя буквы по одной. После 7 неверных попыток игра заканчивается. Используйте подсказку к слову."
+      howToPlay="Угадайте скрытое слово, называя буквы по одной. После 7 неверных попыток игра заканчивается. Используйте подсказку к слову, а если сложно — нажмите «Получить подсказку», чтобы открыть наводящие предложения."
     >
       {!words ? (
         <SetupForm onStart={start} />
