@@ -4,18 +4,9 @@ import { motion } from "framer-motion";
 import { Printer, Download, Loader2, AlertCircle, GraduationCap, FileText, Image } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { useTranslation } from "react-i18next";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api/v1";
-
-const TYPE_LABELS: Record<string, string> = {
-    math: "Математика",
-    quiz: "Тест / Викторина",
-    crossword: "Кроссворд",
-    assignment: "Задание",
-    jeopardy: "Своя игра",
-    word_search: "Поиск слов",
-    book: "Книга",
-};
 
 function formatContent(content: any): string {
     if (!content) return "";
@@ -30,7 +21,7 @@ function formatContent(content: any): string {
     return JSON.stringify(content, null, 2);
 }
 
-function renderContent(raw: string, generatorType?: string) {
+function renderContent(raw: string, generatorType: string | undefined, t: (key: string) => string) {
     // Try to parse and render as structured content
     try {
         const parsed = JSON.parse(raw);
@@ -45,7 +36,7 @@ function renderContent(raw: string, generatorType?: string) {
                                 <img src={page.image_base64} alt={`Page ${page.page_number}`} className="w-full h-auto" loading="lazy" />
                             )}
                             <div className="p-4 bg-gray-50 space-y-2">
-                                <p className="text-xs font-semibold text-gray-400">Страница {page.page_number}</p>
+                                <p className="text-xs font-semibold text-gray-400">{t("sharePageNum")} {page.page_number}</p>
                                 <p className="text-gray-700 leading-relaxed text-sm">{page.text}</p>
                             </div>
                         </div>
@@ -74,7 +65,7 @@ function renderContent(raw: string, generatorType?: string) {
                             )}
                             {item.answer !== undefined && (
                                 <p className="mt-3 text-xs text-emerald-600 font-medium border-t border-gray-100 pt-2">
-                                    Ответ: {item.answer}
+                                    {t("shareAnswer")} {item.answer}
                                 </p>
                             )}
                         </div>
@@ -106,11 +97,22 @@ function renderContent(raw: string, generatorType?: string) {
 
 export default function ShareResource() {
     const { logId } = useParams<{ logId: string }>();
+    const { t } = useTranslation();
     const contentRef = useRef<HTMLDivElement>(null);
     const [data, setData] = useState<{ topic: string; generator_type: string; content: any; created_at: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [downloading, setDownloading] = useState(false);
+
+    const TYPE_LABELS: Record<string, string> = {
+        math: t("typeLabels_math"),
+        quiz: t("typeLabels_quiz"),
+        crossword: t("typeLabels_crossword"),
+        assignment: t("typeLabels_assignment"),
+        jeopardy: t("typeLabels_jeopardy"),
+        word_search: t("typeLabels_word_search"),
+        book: t("typeLabels_book"),
+    };
 
     useEffect(() => {
         fetch(`${API_BASE}/generate/public/history/${logId}`)
@@ -119,7 +121,7 @@ export default function ShareResource() {
                 return r.json();
             })
             .then(setData)
-            .catch(() => setError("Материал не найден или ссылка устарела"))
+            .catch(() => setError(t("shareNotFound")))
             .finally(() => setLoading(false));
     }, [logId]);
 
@@ -238,7 +240,7 @@ export default function ShareResource() {
 
                     // Add page number
                     pdf.setFontSize(10);
-                    pdf.text(`Стр. ${page.page_number}`, pdfWidth - 20, pdfHeight - 10);
+                    pdf.text(`${t("sharePageAbbr")} ${page.page_number}`, pdfWidth - 20, pdfHeight - 10);
 
                     // Add image if available
                     if (page.image_base64) {
@@ -328,7 +330,7 @@ export default function ShareResource() {
                                 onClick={handleDownloadHtml}
                                 disabled={downloading}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
-                                title="Скачать как HTML"
+                                title={t("shareDownloadHtml")}
                             >
                                 {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                                 HTML
@@ -337,7 +339,7 @@ export default function ShareResource() {
                                 onClick={handleDownloadPdf}
                                 disabled={downloading}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
-                                title="Скачать как PDF"
+                                title={t("shareDownloadPdf")}
                             >
                                 {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4" />}
                                 PDF
@@ -347,7 +349,7 @@ export default function ShareResource() {
                             onClick={handlePrint}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
                         >
-                            <Printer className="w-4 h-4" /> Печать
+                            <Printer className="w-4 h-4" /> {t("sharePrint")}
                         </button>
                     </div>
                 </div>
@@ -373,11 +375,11 @@ export default function ShareResource() {
 
                 {/* Material */}
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                    {renderContent(contentStr, data!.generator_type)}
+                    {renderContent(contentStr, data!.generator_type, t)}
                 </div>
 
                 <p className="no-print text-center text-xs text-gray-400 mt-8">
-                    Создано с помощью ClassPlay · classplay.uz
+                    {t("shareCreatedBy")} · classplay.uz
                 </p>
             </motion.div>
         </div>

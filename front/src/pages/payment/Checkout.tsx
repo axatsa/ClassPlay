@@ -6,65 +6,13 @@ import { useAuth } from "@/context/AuthContext";
 import { paymentService, Plan, PaymentMethod } from "@/api/paymentService";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 const DARK = "#07101F";
 const BLUE = "#0EA5E9";
 const CORAL = "#FF3D68";
 const CYAN = "#06D6A0";
 const INK = "#0C1828";
-
-const PLANS: Record<string, {
-    name: string;
-    price: string;
-    period: string;
-    features: string[];
-    accent: string;
-    planKey: Plan;
-    free?: boolean;
-}> = {
-    free: {
-        name: "Бесплатный",
-        price: "$0",
-        period: "/ навсегда",
-        planKey: "pro" as Plan,
-        free: true,
-        accent: `linear-gradient(135deg, #10B981, #06D6A0)`,
-        features: [
-            "10 ИИ-генераций",
-            "Базовые игры",
-            "Поддержка",
-            "1 учитель",
-        ],
-    },
-    pro: {
-        name: "Pro Учитель",
-        price: "$15",
-        period: "/ месяц",
-        planKey: "pro",
-        accent: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
-        features: [
-            "до 430 ИИ-генераций в месяц",
-            "Все 6 интерактивных игр",
-            "ИИ-книги с именем ученика",
-            "Аналитика класса",
-            "Приоритетная поддержка",
-        ],
-    },
-    school: {
-        name: "Для Школ",
-        price: "$49",
-        period: "/ месяц",
-        planKey: "school",
-        accent: `linear-gradient(135deg, #F97316, #FBBF24)`,
-        features: [
-            "2 100 генераций/месяц на всю школу",
-            "До 10 учителей",
-            "Админ-панель",
-            "CSV-импорт пользователей",
-            "Договор",
-        ],
-    },
-};
 
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; logo: string; color: string }[] = [
     {
@@ -85,6 +33,31 @@ export default function Checkout() {
     const navigate = useNavigate();
     const [params] = useSearchParams();
     const { user } = useAuth();
+    const { t } = useTranslation();
+
+    const PLANS: Record<string, {
+        name: string; price: string; period: string; features: string[];
+        accent: string; planKey: Plan; free?: boolean;
+    }> = {
+        free: {
+            name: t("planFreeName"), price: "$0", period: t("checkoutForever"),
+            planKey: "pro" as Plan, free: true,
+            accent: `linear-gradient(135deg, #10B981, #06D6A0)`,
+            features: [t("planFreeF1"), t("planFreeF2"), t("planFreeF3"), t("planFreeF4")],
+        },
+        pro: {
+            name: t("planProName"), price: "$15", period: t("checkoutPerMonth"),
+            planKey: "pro",
+            accent: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
+            features: [t("planProF1"), t("planProF2"), t("planProF3"), t("planProF4"), t("planProF5")],
+        },
+        school: {
+            name: t("planSchoolName"), price: "$49", period: t("checkoutPerMonth"),
+            planKey: "school",
+            accent: `linear-gradient(135deg, #F97316, #FBBF24)`,
+            features: [t("planSchoolF1"), t("planSchoolF2"), t("planSchoolF3"), t("planSchoolF4"), t("planSchoolF5")],
+        },
+    };
 
     const planId = params.get("plan") || "pro";
     const plan = PLANS[planId] ?? PLANS.pro;
@@ -107,10 +80,10 @@ export default function Checkout() {
                 : { email, password, full_name: fullName };
             const res = await api.post(endpoint, payload);
             contextLogin(res.data.access_token, res.data.user);
-            toast.success(authMode === "login" ? "Добро пожаловать!" : "Аккаунт создан! Добро пожаловать!");
+            toast.success(authMode === "login" ? t("checkoutWelcome") : t("checkoutAccountCreated"));
             navigate("/teacher");
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || "Ошибка авторизации");
+            toast.error(err.response?.data?.detail || t("checkoutAuthError"));
         } finally {
             setAuthLoading(false);
         }
@@ -133,9 +106,9 @@ export default function Checkout() {
                     const res = await api.post(endpoint, payload);
                     contextLogin(res.data.access_token, res.data.user);
                     activeUser = res.data.user;
-                    toast.success(authMode === "login" ? "Вход выполнен" : "Аккаунт создан");
+                    toast.success(authMode === "login" ? t("checkoutLoggedIn") : t("checkoutAuthCreated"));
                 } catch (err: any) {
-                    toast.error(err.response?.data?.detail || "Ошибка авторизации");
+                    toast.error(err.response?.data?.detail || t("checkoutAuthError"));
                     setLoading(null);
                     setAuthLoading(false);
                     return;
@@ -147,7 +120,7 @@ export default function Checkout() {
             const res = await paymentService.initiate({ plan: plan.planKey, method });
             window.location.href = res.redirect_url;
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || "Не удалось инициировать платёж");
+            toast.error(err.response?.data?.detail || t("checkoutPaymentError"));
             setLoading(null);
         }
     };
@@ -178,16 +151,16 @@ export default function Checkout() {
                     </div>
 
                     <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: 8 }}>
-                        {authMode === "register" ? "Создайте аккаунт" : "Войдите в аккаунт"}
+                        {authMode === "register" ? t("checkoutRegister") : t("checkoutLogin")}
                     </h2>
                     <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 32 }}>
-                        Чтобы активировать план <strong style={{ color: "#fff" }}>{plan.name}</strong>
+                        {t("checkoutActivatePlan")} <strong style={{ color: "#fff" }}>{plan.name}</strong>
                     </p>
 
                     <form style={{ display: "flex", flexDirection: "column", gap: 16, textAlign: "left" }} onSubmit={(e) => e.preventDefault()}>
                         {authMode === "register" && (
                             <div>
-                                <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>ФИО</label>
+                                <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>{t("checkoutFullName")}</label>
                                 <input 
                                     type="text" 
                                     placeholder="Иван Иванов" 
@@ -208,7 +181,7 @@ export default function Checkout() {
                             />
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>Пароль</label>
+                            <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>{t("checkoutPassword")}</label>
                             <input 
                                 type="password" 
                                 placeholder="••••••••" 
@@ -233,7 +206,7 @@ export default function Checkout() {
                                         boxShadow: (email && password) ? `0 8px 24px rgba(16,185,129,0.3)` : "none",
                                     }}
                                 >
-                                    {authLoading ? <Loader2 size={18} className="animate-spin" /> : (authMode === "login" ? "Войти" : "Начать бесплатно")}
+                                    {authLoading ? <Loader2 size={18} className="animate-spin" /> : (authMode === "login" ? t("land_login") : t("land_hero_cta"))}
                                 </button>
                             ) : PAYMENT_METHODS.map(m => (
                                 <button
@@ -250,7 +223,7 @@ export default function Checkout() {
                                         boxShadow: (email && password) ? `0 8px 24px rgba(14,165,233,0.3)` : "none",
                                     }}
                                 >
-                                    {loading === m.id ? <Loader2 size={18} className="animate-spin" /> : <>Оплатить через {m.label}</>}
+                                    {loading === m.id ? <Loader2 size={18} className="animate-spin" /> : <>{t("checkoutPayWith")} {m.label}</>}
                                 </button>
                             ))}
                         </div>
@@ -260,7 +233,7 @@ export default function Checkout() {
                         onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
                         style={{ marginTop: 24, background: "none", border: "none", color: BLUE, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
                     >
-                        {authMode === "login" ? "Нет аккаунта? Зарегистрироваться" : "Уже есть аккаунт? Войти"}
+                        {authMode === "login" ? t("checkoutNoAccount") : t("checkoutHasAccount")}
                     </button>
                 </motion.div>
             </div>
@@ -280,7 +253,7 @@ export default function Checkout() {
                         marginBottom: 32, padding: 0,
                     }}
                 >
-                    <ArrowLeft size={16} /> Назад
+                    <ArrowLeft size={16} /> {t("checkoutBack")}
                 </button>
 
                 <h1 style={{
@@ -288,10 +261,10 @@ export default function Checkout() {
                     fontSize: 28, fontWeight: 800, color: "#fff",
                     marginBottom: 6,
                 }}>
-                    Оформление подписки
+                    {t("checkoutTitle")}
                 </h1>
                 <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 14, marginBottom: 28 }}>
-                    Выберите способ оплаты
+                    {t("checkoutSelectMethod")}
                 </p>
 
                 {/* Plan card */}
@@ -310,7 +283,7 @@ export default function Checkout() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
                         <div>
                             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
-                                Выбранный план
+                                {t("checkoutSelectedPlan")}
                             </p>
                             <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 800, color: "#fff" }}>
                                 {plan.name}
@@ -368,7 +341,7 @@ export default function Checkout() {
                                 <div style={{ textAlign: "left" }}>
                                     <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>{m.label}</p>
                                     <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>
-                                        Оплата через {m.label}
+                                        {t("checkoutPayVia")} {m.label}
                                     </p>
                                 </div>
                             </div>
@@ -381,7 +354,7 @@ export default function Checkout() {
                                     background: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
                                     color: "#fff", fontSize: 13, fontWeight: 700,
                                 }}>
-                                    Оплатить
+                                    {t("checkoutPay")}
                                 </div>
                             )}
                         </motion.button>
@@ -390,7 +363,7 @@ export default function Checkout() {
 
                 {/* Footer note */}
                 <p style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 12, marginTop: 24, lineHeight: 1.6 }}>
-                    Безопасная оплата через Payme и Click · Подписка на 30 дней
+                    {t("checkoutFooter")}
                 </p>
             </div>
         </div>

@@ -49,8 +49,8 @@ const TeacherNavbar: React.FC<TeacherNavbarProps> = ({ activeNav: initialActiveN
         { key: "Tools", label: t("navTools"), route: "/tools" },
         { key: "Games", label: t("navGames"), route: "/games" },
         { key: "Library", label: t("navLibrary"), route: "/library" },
-        { key: "History", label: lang === "ru" ? "История" : lang === "uz" ? "Tarix" : "History", route: "/history" },
-        { key: "Materials", label: lang === "ru" ? "Материалы" : lang === "uz" ? "Materiallar" : "Materials", route: "/materials" },
+        { key: "History", label: t("navHistory"), route: "/history" },
+        { key: "Materials", label: t("navMaterials"), route: "/materials" },
     ] as const;
 
     return (
