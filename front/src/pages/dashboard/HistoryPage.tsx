@@ -113,16 +113,16 @@ const HistoryPage = () => {
             <History className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground font-sans">История генераций</h1>
-            <p className="text-sm text-muted-foreground font-sans">Здесь сохраняются все созданные материалы</p>
+            <h1 className="text-2xl font-bold text-foreground font-sans">{t("histTitle")}</h1>
+            <p className="text-sm text-muted-foreground font-sans">{t("histSubtitle")}</p>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative w-full sm:w-1/3">
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-             <Input 
-                placeholder="Поиск по теме..." 
+             <Input
+                placeholder={t("histSearch")}
                 className="pl-10 rounded-xl"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -134,7 +134,7 @@ const HistoryPage = () => {
                value={filterType}
                onChange={e => setFilterType(e.target.value)}
              >
-                <option value="all">Все форматы</option>
+                <option value="all">{t("histAllFormats")}</option>
                 <option value="math">{t("genMath")}</option>
                 <option value="quiz">{t("genQuiz")}</option>
                 <option value="crossword">{t("genCrossword")}</option>
@@ -145,7 +145,7 @@ const HistoryPage = () => {
                 className="gap-2 rounded-xl"
                 onClick={() => setFilterFav(!filterFav)}
              >
-                <Star className={`w-4 h-4 ${filterFav ? "fill-white" : ""}`} /> Избранное
+                <Star className={`w-4 h-4 ${filterFav ? "fill-white" : ""}`} /> {t("histFavorites")}
              </Button>
           </div>
         </div>
@@ -154,10 +154,10 @@ const HistoryPage = () => {
           {isLoading ? (
              <TableSkeleton columns={1} rows={5} />
           ) : filteredItems.length === 0 ? (
-             <EmptyState 
-                icon={History} 
-                title="Истории пока нет" 
-                description="Сгенерируйте новые материалы, и они появятся здесь." 
+             <EmptyState
+                icon={History}
+                title={t("histEmptyTitle")}
+                description={t("histEmptyDesc")}
              />
           ) : (
             <AnimatePresence>
@@ -176,7 +176,7 @@ const HistoryPage = () => {
                    </div>
                    <div className="flex-1 min-w-0">
                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-foreground font-sans truncate">{item.topic || "Без темы"}</h3>
+                        <h3 className="font-semibold text-foreground font-sans truncate">{item.topic || t("histNoTopic")}</h3>
                      </div>
                      <p className="text-xs text-muted-foreground font-sans mt-0.5">
                        {getTypeName(item.generator_type)} • {new Date(item.created_at).toLocaleString("ru-RU")}
@@ -200,7 +200,7 @@ const HistoryPage = () => {
                           setSelectedItem(item);
                         }}
                      >
-                       <Eye className="w-4 h-4" /> См. результат
+                       <Eye className="w-4 h-4" /> {t("histView")}
                      </Button>
                    </div>
                 </motion.div>
@@ -211,7 +211,7 @@ const HistoryPage = () => {
             <div className="flex justify-center pt-2">
               <Button variant="outline" onClick={loadMore} disabled={isLoadingMore} className="gap-2 rounded-xl">
                 {isLoadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isLoadingMore ? "Загружаю..." : "Загрузить ещё"}
+                {isLoadingMore ? t("histLoadingMore") : t("histLoadMore")}
               </Button>
             </div>
           )}

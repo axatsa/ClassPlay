@@ -5,11 +5,13 @@ import { toast } from "sonner";
 import { MaterialUpload, Material } from "@/components/MaterialUpload";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 const PLAN_LIMITS: Record<string, number> = { free: 5, pro: 30, school: 100 };
 
 export default function MaterialsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [plan, setPlan] = useState("free");
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ export default function MaterialsPage() {
         setMaterials(mRes.data);
         setPlan(sRes.data.plan ?? "free");
       })
-      .catch(() => toast.error("Не удалось загрузить данные"))
+      .catch(() => toast.error(t("matErrLoad")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -36,9 +38,9 @@ export default function MaterialsPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Мои материалы</h1>
+            <h1 className="text-2xl font-bold">{t("matTitle")}</h1>
             <p className="text-sm text-muted-foreground">
-              Загрузите учебники или конспекты — ИИ будет генерировать задания на их основе
+              {t("matSubtitle")}
             </p>
           </div>
         </div>
@@ -47,11 +49,9 @@ export default function MaterialsPage() {
         <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-4 flex gap-3">
           <Sparkles className="w-5 h-5 text-primary mt-0.5 shrink-0" />
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-primary">Загрузите свои материалы</p>
+            <p className="text-sm font-semibold text-primary">{t("matBannerTitle")}</p>
             <p className="text-sm text-muted-foreground">
-              Когда вы добавляете учебник или конспект, ИИ создаёт задания строго по вашей теме:
-              использует именно те термины, примеры и факты, что есть в файле. Качество и точность
-              генерации заметно выше, чем без материала.
+              {t("matBannerDesc")}
             </p>
           </div>
         </div>
@@ -74,13 +74,13 @@ export default function MaterialsPage() {
         <div className="rounded-xl bg-muted/50 px-4 py-4 space-y-2">
           <p className="text-sm font-semibold flex items-center gap-2">
             <FileText className="w-4 h-4" />
-            Как использовать
+            {t("matHowTitle")}
           </p>
           <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-            <li>Загрузите файл (PDF, DOCX или TXT) с вашим учебным материалом</li>
-            <li>Откройте генератор заданий или любую игру</li>
-            <li>В поле «Материал» выберите загруженный файл</li>
-            <li>ИИ создаст задания именно по вашему контенту</li>
+            <li>{t("matHowStep1")}</li>
+            <li>{t("matHowStep2")}</li>
+            <li>{t("matHowStep3")}</li>
+            <li>{t("matHowStep4")}</li>
           </ol>
         </div>
       </div>

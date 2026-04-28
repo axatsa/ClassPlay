@@ -9,6 +9,7 @@ import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface BookPage {
@@ -71,6 +72,7 @@ const GenerateForm = ({
     onClose, onGenerated,
 }: { onClose: () => void; onGenerated: (b: Book) => void; }) => {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const [title, setTitle] = useState("");
     const [topic, setTopic] = useState("");
     const [ageGroup, setAgeGroup] = useState("7-10");
@@ -80,7 +82,7 @@ const GenerateForm = ({
 
     const handleGenerate = async () => {
         if (!topic.trim()) {
-            toast.error("Заполните тему книги");
+            toast.error(t("libToastFillTopic"));
             return;
         }
         setLoading(true);
@@ -92,9 +94,9 @@ const GenerateForm = ({
             const data = res.data;
             const newBook: Book = { ...data, createdAt: new Date(data.created_at) };
             onGenerated(newBook);
-            toast.success(`Книга «${newBook.title}» создана!`);
+            toast.success(t("libToastCreated"));
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || "Ошибка генерации книги.");
+            toast.error(err.response?.data?.detail || t("libToastErrGen"));
         } finally {
             setLoading(false);
         }
@@ -122,7 +124,7 @@ const GenerateForm = ({
                                 <Wand2 className="w-5 h-5 text-violet-600" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold font-serif text-foreground">Создать книгу</h3>
+                                <h3 className="text-lg font-bold font-serif text-foreground">{t("libGenTitle")}</h3>
                                 {user?.role === "super_admin" && (
                                     <p className="text-xs text-muted-foreground font-sans">
                                         Text: gemini-2.0-flash · Images: gemini-2.5-flash-image · 10 стр · 10 иллюстраций
@@ -140,26 +142,26 @@ const GenerateForm = ({
                         {/* Topic */}
                         <div>
                             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-sans block mb-1.5">
-                                Про что будет книга? *
+                                {t("libGenTopicLabel")}
                             </label>
                             <textarea
                                 value={topic}
                                 onChange={e => setTopic(e.target.value)}
-                                placeholder="Опишите главных героев, место действия и мораль истории..."
+                                placeholder={t("libGenTopicPlaceholder")}
                                 className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm font-sans focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[120px] resize-none"
                             />
                             <div className="mt-3 p-3 bg-violet-50 border border-violet-100 rounded-xl">
                                 <p className="text-xs text-violet-800 font-bold mb-1 flex items-center gap-1.5 font-sans">
-                                    <Info className="w-3.5 h-3.5" /> Секрет хорошей книги:
+                                    <Info className="w-3.5 h-3.5" /> {t("libGenTipTitle")}
                                 </p>
                                 <p className="text-xs text-violet-700 font-sans leading-relaxed mb-2">
-                                    Чем подробнее вы опишете идею, тем интереснее получится история. Укажите: кто главный герой, где происходят события, с какой проблемой он сталкивается и чему должен научиться.
+                                    {t("libGenTipText")}
                                 </p>
                                 <div
                                     onClick={() => setTopic("Напиши сказку про маленького динозаврика Тимми, который боялся темноты. Он жил в ярком тропическом лесу. Однажды ночью он потерялся и ему пришлось самому искать дорогу домой. В пути он встречает светлячков, которые показывают ему красоту ночного леса. В конце он понимает, что темнота совсем не страшная.")}
                                     className="bg-white/60 p-2.5 rounded-lg text-xs text-violet-900 font-sans cursor-pointer hover:bg-white border border-violet-200 transition-colors"
                                 >
-                                    <span className="font-semibold block mb-1">Пример промпта (нажмите, чтобы вставить):</span>
+                                    <span className="font-semibold block mb-1">{t("libGenExampleLabel")}</span>
                                     <span className="italic">«Напиши сказку про маленького динозаврика Тимми, который боялся темноты. Он жил в ярком тропическом лесу. Однажды ночью он потерялся и ему пришлось самому искать дорогу домой. В пути он встречает светлячков... В конце он понимает, что темнота совсем не страшная.»</span>
                                 </div>
                             </div>
@@ -169,7 +171,7 @@ const GenerateForm = ({
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-sans block mb-1.5">
-                                    <Globe className="w-3 h-3 inline mr-1" />Язык
+                                    <Globe className="w-3 h-3 inline mr-1" />{t("libGenLangLabel")}
                                 </label>
                                 <div className="flex gap-1">
                                     {LANGUAGES.map(l => (
@@ -182,7 +184,7 @@ const GenerateForm = ({
                             </div>
                             <div>
                                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-sans block mb-1.5">
-                                    <Users className="w-3 h-3 inline mr-1" />Возраст
+                                    <Users className="w-3 h-3 inline mr-1" />{t("libGenAgeLabel")}
                                 </label>
                                 <div className="flex gap-1">
                                     {AGE_GROUPS.map(a => (
@@ -198,7 +200,7 @@ const GenerateForm = ({
                         {/* Genre */}
                         <div>
                             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-sans block mb-1.5">
-                                Жанр
+                                {t("libGenGenreLabel")}
                             </label>
                             <select value={genre} onChange={e => setGenre(e.target.value)}
                                 className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm font-sans focus:outline-none focus:ring-2 focus:ring-primary/30">
@@ -210,7 +212,7 @@ const GenerateForm = ({
                         <div className="flex items-center gap-2 p-3 rounded-xl bg-violet-500/5 border border-violet-500/20">
                             <Sparkles className="w-4 h-4 text-violet-500 shrink-0" />
                             <p className="text-xs text-violet-700 font-sans">
-                                Книга будет содержать <strong>10 страниц</strong> текста (60–70 слов каждая) и <strong>10 иллюстраций</strong>, чередующихся.
+                                {t("libGenInfoText")}
                             </p>
                         </div>
                     </div>
@@ -219,8 +221,8 @@ const GenerateForm = ({
                         disabled={loading || !topic.trim()}
                         className="w-full mt-5 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold font-sans flex items-center justify-center gap-2 hover:from-violet-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md">
                         {loading
-                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Генерация (~30-60 сек)...</>
-                            : <><Sparkles className="w-4 h-4" /> Сгенерировать книгу</>
+                            ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("libGenLoading")}</>
+                            : <><Sparkles className="w-4 h-4" /> {t("libGenSubmit")}</>
                         }
                     </button>
                 </motion.div>
@@ -233,6 +235,7 @@ const GenerateForm = ({
 const Library = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { t } = useTranslation();
     const [books, setBooks] = useState<Book[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [openBook, setOpenBook] = useState<Book | null>(null);
@@ -244,7 +247,7 @@ const Library = () => {
                 createdAt: new Date(b.created_at),
                 pages: []
             })));
-        }).catch(() => toast.error("Не удалось загрузить книги. Попробуйте обновить страницу."));
+        }).catch(() => toast.error(t("libToastErrLoad")));
     }, []);
 
     const handleGenerated = (book: Book) => {
@@ -254,24 +257,24 @@ const Library = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Вы уверены, что хотите удалить книгу?")) return;
+        if (!confirm(t("libConfirmDelete"))) return;
         try {
             await api.delete(`/library/books/${id}`);
             setBooks(prev => prev.filter(b => b.id !== id));
-            toast.success("Книга удалена");
+            toast.success(t("libToastDeleted"));
         } catch {
-            toast.error("Ошибка при удалении книги");
+            toast.error(t("libToastErrDelete"));
         }
     };
 
     const handleOpenBook = async (book: Book) => {
         try {
-            const toastId = toast.loading("Открываем книгу...");
+            const toastId = toast.loading(t("libToastOpening"));
             const res = await api.get(`/library/books/${book.id}`);
             toast.dismiss(toastId);
             setOpenBook({ ...res.data, createdAt: new Date(res.data.created_at) });
         } catch {
-            toast.error("Ошибка загрузки данных книги");
+            toast.error(t("libToastErrOpen"));
         }
     };
 
@@ -287,19 +290,19 @@ const Library = () => {
                         </button>
                         <div className="flex items-center gap-2">
                             <BookMarked className="w-5 h-5 text-violet-600" />
-                            <span className="text-lg font-bold font-serif text-foreground">Библиотека</span>
+                            <span className="text-lg font-bold font-serif text-foreground">{t("libTitle")}</span>
                         </div>
                     </div>
                     <button onClick={() => setShowForm(true)}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white text-sm font-semibold font-sans hover:from-violet-600 hover:to-purple-700 transition-all shadow-md">
-                        <Plus className="w-4 h-4" /> Новая книга
+                        <Plus className="w-4 h-4" /> {t("libNewBook")}
                     </button>
                 </div>
             </header>
 
             <main className="max-w-5xl mx-auto px-6 py-10">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-                    <h1 className="text-3xl font-bold font-serif text-foreground mb-1">Детская библиотека</h1>
+                    <h1 className="text-3xl font-bold font-serif text-foreground mb-1">{t("libChildTitle")}</h1>
                     {user?.role === "super_admin" && (
                         <p className="text-muted-foreground font-sans text-sm">
                             Текст: <span className="text-violet-600 font-semibold">gemini-2.0-flash</span> · Картинки: <span className="text-violet-600 font-semibold">gemini-2.5-flash-image</span> · 10 стр · 10 иллюстраций
@@ -314,16 +317,16 @@ const Library = () => {
                         <div className="w-20 h-20 rounded-3xl bg-violet-500/10 flex items-center justify-center mb-5">
                             <BookOpen className="w-10 h-10 text-violet-500" />
                         </div>
-                        <h2 className="text-xl font-bold font-serif text-foreground mb-2">Библиотека пуста</h2>
+                        <h2 className="text-xl font-bold font-serif text-foreground mb-2">{t("libEmptyTitle")}</h2>
                         <p className="text-muted-foreground font-sans mb-2 max-w-sm text-sm">
-                            Нажмите «Новая книга» —  и AI напишет уникальную историю
+                            {t("libEmptyDesc")}
                         </p>
                         <p className="text-xs text-muted-foreground/60 font-sans mb-6">
                             10 страниц · 60–70 слов каждая · 10 иллюстраций
                         </p>
                         <button onClick={() => setShowForm(true)}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold font-sans hover:from-violet-600 hover:to-purple-700 transition-all shadow-lg text-sm">
-                            <Plus className="w-4 h-4" /> Создать первую книгу
+                            <Plus className="w-4 h-4" /> {t("libCreateFirst")}
                         </button>
                     </motion.div>
                 )}
@@ -335,9 +338,9 @@ const Library = () => {
                         {/* Table header */}
                         <div className="grid grid-cols-[52px_1fr_190px_170px] gap-4 px-6 py-3 border-b border-border bg-muted/50">
                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-sans">#</span>
-                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-sans">Название</span>
-                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-sans">Дата создания</span>
-                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-sans">Действия</span>
+                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-sans">{t("libColTitle")}</span>
+                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-sans">{t("libColDate")}</span>
+                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-sans">{t("libColActions")}</span>
                         </div>
 
                         <div className="divide-y divide-border">
@@ -360,7 +363,7 @@ const Library = () => {
                                         <div className="min-w-0">
                                             <p className="font-semibold text-foreground font-sans text-sm truncate">{book.title}</p>
                                             <p className="text-xs text-muted-foreground font-sans">
-                                                {book.genre} · {book.age_group} лет · {(book as any).page_count ?? 10} стр.
+                                                {book.genre} · {book.age_group} {t("libYears")} · {(book as any).page_count ?? 10} {t("libPages")}
                                             </p>
                                         </div>
                                     </div>
@@ -372,11 +375,11 @@ const Library = () => {
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => handleOpenBook(book)}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-600 hover:bg-violet-500/20 transition-colors text-xs font-semibold font-sans">
-                                            <BookText className="w-3.5 h-3.5" /> Читать
+                                            <BookText className="w-3.5 h-3.5" /> {t("libRead")}
                                         </button>
                                         <button onClick={() => handleDelete(book.id)}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors text-xs font-semibold font-sans">
-                                            <Trash2 className="w-3.5 h-3.5" /> Удалить
+                                            <Trash2 className="w-3.5 h-3.5" /> {t("libDelete")}
                                         </button>
                                     </div>
                                 </motion.div>

@@ -9,6 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { AnalyticsPanel } from "./AnalyticsPage";
+import { useTranslation } from "react-i18next";
 
 interface UserProfile {
   id: number;
@@ -54,6 +55,7 @@ export default function Profile() {
   const [pwdForm, setPwdForm] = useState({ old_password: "", new_password: "", confirm: "" });
   const [copied, setCopied] = useState(false);
   const { logout, updateUser } = useAuth();
+  const { t } = useTranslation();
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
   const navigate = useNavigate();
@@ -111,9 +113,9 @@ export default function Profile() {
       setProfile(p => p ? { ...p, ...editForm } : p);
       updateUser({ full_name: editForm.full_name });
       setEditing(false);
-      flash("Профиль обновлён", "success");
+      flash(t("profToastSaved"), "success");
     } catch {
-      flash("Ошибка при сохранении", "error");
+      flash(t("profToastSaveErr"), "error");
     } finally {
       setSavingProfile(false);
     }
@@ -123,7 +125,7 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        flash("Размер файла не должен превышать 2MB", "error");
+        flash(t("profToastFileSize"), "error");
         return;
       }
       const reader = new FileReader();
@@ -133,9 +135,9 @@ export default function Profile() {
           await api.patch("/auth/me", { avatar_url: base64String });
           setProfile(p => p ? { ...p, avatar_url: base64String } : p);
           updateUser({ avatar_url: base64String });
-          flash("Аватар обновлён", "success");
+          flash(t("profToastAvatarSaved"), "success");
         } catch {
-          flash("Ошибка обновления аватара", "error");
+          flash(t("profToastAvatarErr"), "error");
         }
       };
       reader.readAsDataURL(file);
@@ -144,7 +146,7 @@ export default function Profile() {
 
   const changePassword = async () => {
     if (pwdForm.new_password !== pwdForm.confirm) {
-      flash("Пароли не совпадают", "error");
+      flash(t("profToastPwdMismatch"), "error");
       return;
     }
     setSavingPwd(true);
@@ -154,9 +156,9 @@ export default function Profile() {
         new_password: pwdForm.new_password,
       });
       setPwdForm({ old_password: "", new_password: "", confirm: "" });
-      flash("Пароль изменён", "success");
+      flash(t("profToastPwdChanged"), "success");
     } catch (e: any) {
-      flash(e?.response?.data?.detail || "Ошибка смены пароля", "error");
+      flash(e?.response?.data?.detail || t("profToastPwdErr"), "error");
     } finally {
       setSavingPwd(false);
     }
@@ -200,18 +202,16 @@ export default function Profile() {
     <div className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
       <div className="mb-6">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Назад
+          <ArrowLeft className="w-4 h-4" /> {t("profBack")}
         </button>
       </div>
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {activeTab === "analytics" ? "Аналитика" : "Настройки профиля"}
+            {activeTab === "analytics" ? t("profTitleAnalytics") : t("profTitleSettings")}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {activeTab === "analytics"
-              ? "Статистика использования платформы и популярные темы."
-              : "Управляйте настройками вашего аккаунта и подпиской."}
+            {activeTab === "analytics" ? t("profSubAnalytics") : t("profSubSettings")}
           </p>
         </div>
         <button
@@ -219,7 +219,7 @@ export default function Profile() {
           className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 rounded-xl transition-colors font-medium text-sm"
         >
           <LogOut className="w-4 h-4" />
-          Выйти из аккаунта
+          {t("profLogout")}
         </button>
       </div>
 
@@ -234,7 +234,7 @@ export default function Profile() {
           }`}
         >
           <SettingsIcon className="w-4 h-4" />
-          Настройки
+          {t("profTabSettings")}
         </button>
         <button
           onClick={() => setActiveTab("analytics")}
@@ -245,7 +245,7 @@ export default function Profile() {
           }`}
         >
           <BarChart3 className="w-4 h-4" />
-          Аналитика
+          {t("profTabAnalytics")}
         </button>
       </div>
 
@@ -263,7 +263,7 @@ export default function Profile() {
               <button
                 onClick={() => setEditing(!editing)}
                 className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur-sm"
-                title="Редактировать профиль"
+                title={t("profEditTooltip")}
               >
                 {editing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
               </button>
@@ -279,7 +279,7 @@ export default function Profile() {
                   <Camera className="w-6 h-6 text-white" />
                 </div>
               </label>
-              <h2 className="text-xl font-bold mb-1 text-center">{profile.full_name || "Без имени"}</h2>
+              <h2 className="text-xl font-bold mb-1 text-center">{profile.full_name || t("profNoName")}</h2>
               <div className="flex items-center gap-2 opacity-90 p-1.5 px-3 bg-black/10 rounded-full">
                 <span className="text-sm">{profile.email}</span>
                 <button onClick={copyEmail} className="hover:text-emerald-200 transition-colors">
@@ -294,8 +294,8 @@ export default function Profile() {
                   <Shield className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Роль</p>
-                  <p className="font-medium capitalize">{profile.role || "Пользователь"}</p>
+                  <p className="text-xs text-gray-400">{t("profRole")}</p>
+                  <p className="font-medium capitalize">{profile.role || t("profUserRole")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
@@ -303,7 +303,7 @@ export default function Profile() {
                   <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">На платформе с</p>
+                  <p className="text-xs text-gray-400">{t("profSince")}</p>
                   <p className="font-medium">{formatDate(profile.created_at)}</p>
                 </div>
               </div>
@@ -313,10 +313,10 @@ export default function Profile() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <Zap className="w-5 h-5 text-emerald-500" />
-              <h3 className="font-bold text-gray-900 dark:text-white">Токены</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t("profTokens")}</h3>
             </div>
             <div className="mb-3 flex justify-between text-sm font-medium">
-              <span className="text-gray-600 dark:text-gray-300">Использовано</span>
+              <span className="text-gray-600 dark:text-gray-300">{t("profUsed")}</span>
               <span style={{ color: usageColor }}>{usagePercent}%</span>
             </div>
             <div className="h-2.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-3">
@@ -325,7 +325,7 @@ export default function Profile() {
               </div>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center font-medium">
-              {profile.tokens_used_this_month?.toLocaleString()} / {profile.tokens_limit === -1 ? "Неограниченно" : profile.tokens_limit?.toLocaleString()}
+              {profile.tokens_used_this_month?.toLocaleString()} / {profile.tokens_limit === -1 ? t("profUnlimited") : profile.tokens_limit?.toLocaleString()}
             </p>
           </div>
         </div>
@@ -337,14 +337,14 @@ export default function Profile() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden shadow-sm">
             <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center gap-2">
               <User className="w-5 h-5 text-emerald-500" />
-              <h3 className="font-bold text-gray-900 dark:text-white">Личные данные</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t("profPersonalData")}</h3>
             </div>
             <div className="p-6">
               {editing ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label className="block">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Имя и фамилия</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">{t("profFullName")}</span>
                       <input
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-shadow"
                         value={editForm.full_name}
@@ -353,7 +353,7 @@ export default function Profile() {
                       />
                     </label>
                     <label className="block">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Телефон</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">{t("profPhone")}</span>
                       <input
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-shadow"
                         value={editForm.phone}
@@ -362,7 +362,7 @@ export default function Profile() {
                       />
                     </label>
                     <label className="block md:col-span-2">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Учебное заведение</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">{t("profSchool")}</span>
                       <input
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-shadow"
                         value={editForm.school}
@@ -378,31 +378,31 @@ export default function Profile() {
                       className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-sm shadow-emerald-500/20 active:scale-95"
                     >
                       <Save className="w-4 h-4" />
-                      {savingProfile ? "Сохраняем..." : "Сохранить изменения"}
+                      {savingProfile ? t("profSavingProfile") : t("profSaveChanges")}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex flex-col">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email-адрес</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t("profEmailLabel")}</span>
                     <div className="flex items-center gap-2 text-gray-900 dark:text-white font-medium">
                       <Mail className="w-4 h-4 text-emerald-500" />
                       {profile.email}
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">Номер телефона</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t("profPhoneLabel")}</span>
                     <div className="flex items-center gap-2 text-gray-900 dark:text-white font-medium">
                       <Phone className="w-4 h-4 text-emerald-500" />
-                      {profile.phone || <span className="text-gray-400 italic">Не указано</span>}
+                      {profile.phone || <span className="text-gray-400 italic">{t("profNotSpecified")}</span>}
                     </div>
                   </div>
                   <div className="flex flex-col md:col-span-2">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">Учебное заведение</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t("profSchool")}</span>
                     <div className="flex items-center gap-2 text-gray-900 dark:text-white font-medium">
                       <School className="w-4 h-4 text-emerald-500" />
-                      {profile.school || <span className="text-gray-400 italic">Не указано</span>}
+                      {profile.school || <span className="text-gray-400 italic">{t("profNotSpecified")}</span>}
                     </div>
                   </div>
                 </div>
@@ -417,9 +417,9 @@ export default function Profile() {
                 <BookOpen className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Сгенерировано</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t("profGenerated")}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.total_resources ?? 0}</p>
-                <p className="text-xs text-gray-400">материалов</p>
+                <p className="text-xs text-gray-400">{t("profMaterials")}</p>
               </div>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 p-5 flex items-center gap-4 shadow-sm">
@@ -427,9 +427,9 @@ export default function Profile() {
                 <BarChart2 className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Мои классы</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t("profMyClasses")}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.active_classes ?? 0}</p>
-                <p className="text-xs text-gray-400">активных групп</p>
+                <p className="text-xs text-gray-400">{t("profActiveGroups")}</p>
               </div>
             </div>
           </div>
@@ -441,16 +441,16 @@ export default function Profile() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 p-6 flex flex-col shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Star className={`w-5 h-5 ${subscription?.is_active ? 'text-amber-500 fill-amber-500' : 'text-gray-400'}`} />
-                <h3 className="font-bold text-gray-900 dark:text-white">Текущий план</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">{t("profCurrentPlan")}</h3>
               </div>
               <div className="flex-1">
                 <div className="text-xl font-bold capitalize mb-1 text-gray-900 dark:text-white">
-                  {subscription?.is_active ? `План ${subscription.plan}` : "Бесплатный"}
+                  {subscription?.is_active ? t("profPlanLabel", { plan: subscription.plan }) : t("profFreePlan")}
                 </div>
                 {subscription?.is_active && subscription.expires_at ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Действителен до {formatDate(subscription.expires_at)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t("profValidUntil")} {formatDate(subscription.expires_at)}</p>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Базовый доступ к платформе</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t("profBasicAccess")}</p>
                 )}
               </div>
               <Link
@@ -460,7 +460,7 @@ export default function Profile() {
                   : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
                   }`}
               >
-                {subscription?.is_active ? "Управление подпиской" : "Улучшить план"}
+                {subscription?.is_active ? t("profManageSub") : t("profUpgrade")}
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
@@ -469,26 +469,26 @@ export default function Profile() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-black/5 dark:border-white/10 p-6 flex flex-col shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Lock className="w-5 h-5 text-emerald-500" />
-                <h3 className="font-bold text-gray-900 dark:text-white">Смена пароля</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">{t("profChangePassword")}</h3>
               </div>
               <div className="space-y-3 flex-1">
                 <input
                   type="password"
-                  placeholder="Текущий пароль"
+                  placeholder={t("profCurrentPwd")}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
                   value={pwdForm.old_password}
                   onChange={e => setPwdForm(f => ({ ...f, old_password: e.target.value }))}
                 />
                 <input
                   type="password"
-                  placeholder="Новый пароль"
+                  placeholder={t("profNewPwd")}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
                   value={pwdForm.new_password}
                   onChange={e => setPwdForm(f => ({ ...f, new_password: e.target.value }))}
                 />
                 <input
                   type="password"
-                  placeholder="Повторите новый пароль"
+                  placeholder={t("profConfirmPwd")}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
                   value={pwdForm.confirm}
                   onChange={e => setPwdForm(f => ({ ...f, confirm: e.target.value }))}
@@ -499,7 +499,7 @@ export default function Profile() {
                 disabled={savingPwd || !pwdForm.old_password || !pwdForm.new_password || pwdForm.new_password !== pwdForm.confirm}
                 className="w-full py-2.5 mt-4 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95"
               >
-                {savingPwd ? "Сохранение..." : "Обновить пароль"}
+                {savingPwd ? t("profSaving") : t("profUpdatePwd")}
               </button>
             </div>
           </div>
@@ -510,9 +510,9 @@ export default function Profile() {
               <Info className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Полезная информация</h4>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-1">{t("profInfoTitle")}</h4>
               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                При использовании платформы, каждый сгенерированный материал расходует токены. Вы можете отслеживать количество оставшихся токенов в панели слева. Если вам не хватает токенов, вы всегда можете улучшить свой тарифный план. Приглашайте коллег и делитесь материалами в классах.
+                {t("profInfoText")}
               </p>
             </div>
           </div>

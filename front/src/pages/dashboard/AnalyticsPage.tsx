@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 interface Stats {
   total_generations: number;
@@ -28,17 +29,19 @@ interface HistoryItem {
   is_favorite: boolean;
 }
 
-const GAME_LABELS: Record<string, string> = {
-  quiz: "Викторина",
-  jeopardy: "Jeopardy",
-  crossword: "Кроссворд",
-  hangman: "Виселица",
-  spelling: "Орфография",
-  "math-puzzle": "Математика",
-  "word-pairs": "Перевод слов",
-  assignment: "Задание",
-  book: "Книга",
-};
+function getGameLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    quiz: t("analyticsGameQuiz"),
+    jeopardy: "Jeopardy",
+    crossword: t("analyticsGameCrossword"),
+    hangman: t("analyticsGameHangman"),
+    spelling: t("analyticsGameSpelling"),
+    "math-puzzle": t("analyticsGameMath"),
+    "word-pairs": t("analyticsGameWordPairs"),
+    assignment: t("analyticsGameAssignment"),
+    book: t("analyticsGameBook"),
+  };
+}
 
 const CHART_COLORS = [
   "#6366f1", "#f59e0b", "#10b981", "#ef4444",
@@ -78,6 +81,7 @@ export function AnalyticsPanel({ compact = false }: { compact?: boolean }) {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -134,6 +138,7 @@ export function AnalyticsPanel({ compact = false }: { compact?: boolean }) {
     return s;
   })();
 
+  const GAME_LABELS = getGameLabels(t);
   const featureData = (stats?.top_features ?? []).map((f) => ({
     name: GAME_LABELS[f.name] ?? f.name,
     count: f.count,
@@ -153,9 +158,9 @@ export function AnalyticsPanel({ compact = false }: { compact?: boolean }) {
     return (
       <div className="text-center py-12 space-y-3">
         <Target className="w-10 h-10 text-muted-foreground mx-auto" />
-        <p className="text-foreground font-semibold font-sans">Данных пока нет</p>
-        <p className="text-muted-foreground text-sm font-sans">Начните генерировать материалы — статистика появится здесь</p>
-        <Button onClick={() => navigate("/generator")} className="rounded-xl">Открыть генератор</Button>
+        <p className="text-foreground font-semibold font-sans">{t("analyticsNoData")}</p>
+        <p className="text-muted-foreground text-sm font-sans">{t("analyticsNoDataDesc")}</p>
+        <Button onClick={() => navigate("/generator")} className="rounded-xl">{t("analyticsOpenGen")}</Button>
       </div>
     );
   }
@@ -164,24 +169,24 @@ export function AnalyticsPanel({ compact = false }: { compact?: boolean }) {
     <div className="space-y-4">
       {/* Compact stat row — no scrolling needed */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={BookOpen} label="Всего" value={String(stats?.total_generations ?? 0)} color="bg-primary/10 text-primary" />
-        <StatCard icon={TrendingUp} label="В этом месяце" value={String(stats?.generations_this_month ?? 0)} color="bg-emerald-500/10 text-emerald-600" />
-        <StatCard icon={Flame} label="Серия дней" value={String(streak)} color="bg-orange-500/10 text-orange-500" />
-        <StatCard icon={Zap} label="Токены" value={`${tokenPct}%`} sub={`${tokensUsed.toLocaleString()} / ${tokensLimit.toLocaleString()}`} color="bg-yellow-500/10 text-yellow-600" />
+        <StatCard icon={BookOpen} label={t("analyticsAll")} value={String(stats?.total_generations ?? 0)} color="bg-primary/10 text-primary" />
+        <StatCard icon={TrendingUp} label={t("analyticsThisMonth")} value={String(stats?.generations_this_month ?? 0)} color="bg-emerald-500/10 text-emerald-600" />
+        <StatCard icon={Flame} label={t("analyticsStreakDays")} value={String(streak)} color="bg-orange-500/10 text-orange-500" />
+        <StatCard icon={Zap} label={t("analyticsTokens")} value={`${tokenPct}%`} sub={`${tokensUsed.toLocaleString()} / ${tokensLimit.toLocaleString()}`} color="bg-yellow-500/10 text-yellow-600" />
       </div>
 
       {/* Two-column layout to minimize scrolling on wide screens */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Activity chart */}
         <div className="bg-card border border-border rounded-2xl p-4">
-          <p className="font-semibold text-foreground font-sans mb-3 text-sm">Активность за {compact ? 7 : 14} дней</p>
+          <p className="font-semibold text-foreground font-sans mb-3 text-sm">{compact ? t("analyticsActivity7") : t("analyticsActivity14")}</p>
           <ResponsiveContainer width="100%" height={130}>
             <BarChart data={activityData} barSize={12}>
               <XAxis dataKey="day" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} interval={0} />
               <YAxis hide allowDecimals={false} />
               <Tooltip
                 contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12 }}
-                formatter={(v: number) => [`${v} генераций`, ""]}
+                formatter={(v: number) => [`${v} ${t("analyticsGenerations")}`, ""]}
               />
               <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                 {activityData.map((entry, i) => (
@@ -195,7 +200,7 @@ export function AnalyticsPanel({ compact = false }: { compact?: boolean }) {
         {/* Game type breakdown */}
         {featureData.length > 0 && (
           <div className="bg-card border border-border rounded-2xl p-4">
-            <p className="font-semibold text-foreground font-sans mb-3 text-sm">Используемые игры</p>
+            <p className="font-semibold text-foreground font-sans mb-3 text-sm">{t("analyticsGamesUsed")}</p>
             <ResponsiveContainer width="100%" height={130}>
               <PieChart>
                 <Pie data={featureData} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={55} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
@@ -211,7 +216,7 @@ export function AnalyticsPanel({ compact = false }: { compact?: boolean }) {
       {/* Top topics */}
       {topTopics.length > 0 && (
         <div className="bg-card border border-border rounded-2xl p-4">
-          <p className="font-semibold text-foreground font-sans mb-3 text-sm">Популярные темы</p>
+          <p className="font-semibold text-foreground font-sans mb-3 text-sm">{t("analyticsTopTopics")}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {topTopics.map((t, i) => {
               const maxCount = topTopics[0].count;
@@ -244,6 +249,7 @@ export function AnalyticsPanel({ compact = false }: { compact?: boolean }) {
 
 export default function AnalyticsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [stats, setStats] = useState<Stats | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
@@ -308,6 +314,7 @@ export default function AnalyticsPage() {
   })();
 
   // Top features with labels
+  const GAME_LABELS = getGameLabels(t);
   const featureData = (stats?.top_features ?? []).map((f) => ({
     name: GAME_LABELS[f.name] ?? f.name,
     count: f.count,
@@ -334,11 +341,11 @@ export default function AnalyticsPage() {
       <header className="sticky top-0 z-30 bg-card/90 backdrop-blur-xl border-b border-border">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
           <Button variant="ghost" size="sm" className="gap-2 font-sans" onClick={() => navigate("/teacher")}>
-            <ArrowLeft className="w-4 h-4" /> Назад
+            <ArrowLeft className="w-4 h-4" /> {t("profBack")}
           </Button>
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
-            <h1 className="font-bold text-foreground font-sans">Аналитика</h1>
+            <h1 className="font-bold text-foreground font-sans">{t("analyticsTitle")}</h1>
           </div>
         </div>
       </header>
@@ -346,16 +353,16 @@ export default function AnalyticsPage() {
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         {/* Stat cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard icon={BookOpen} label="Всего генераций" value={String(stats?.total_generations ?? 0)} color="bg-primary/10 text-primary" />
-          <StatCard icon={TrendingUp} label="За этот месяц" value={String(stats?.generations_this_month ?? 0)} color="bg-emerald-500/10 text-emerald-600" />
-          <StatCard icon={Flame} label="Дней подряд" value={String(streak)} sub={streak >= 7 ? "🔥 Отличная серия!" : "Заходите каждый день"} color="bg-orange-500/10 text-orange-500" />
-          <StatCard icon={Zap} label="Токены / месяц" value={`${tokenPct}%`} sub={`${tokensUsed.toLocaleString()} / ${tokensLimit.toLocaleString()}`} color="bg-yellow-500/10 text-yellow-600" />
+          <StatCard icon={BookOpen} label={t("analyticsAllGen")} value={String(stats?.total_generations ?? 0)} color="bg-primary/10 text-primary" />
+          <StatCard icon={TrendingUp} label={t("analyticsThisMonthGen")} value={String(stats?.generations_this_month ?? 0)} color="bg-emerald-500/10 text-emerald-600" />
+          <StatCard icon={Flame} label={t("analyticsDaysRow")} value={String(streak)} sub={streak >= 7 ? `🔥 ${t("analyticsFireStreak")}` : t("analyticsVisitDaily")} color="bg-orange-500/10 text-orange-500" />
+          <StatCard icon={Zap} label={t("analyticsTokensMonth")} value={`${tokenPct}%`} sub={`${tokensUsed.toLocaleString()} / ${tokensLimit.toLocaleString()}`} color="bg-yellow-500/10 text-yellow-600" />
         </div>
 
         {/* Token usage bar */}
         <div className="bg-card border border-border rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="font-semibold text-foreground font-sans">Использование токенов в этом месяце</p>
+            <p className="font-semibold text-foreground font-sans">{t("analyticsTokenUsage")}</p>
             <span className="text-sm font-bold font-sans text-foreground">{tokenPct}%</span>
           </div>
           <div className="h-3 bg-muted rounded-full overflow-hidden">
@@ -367,21 +374,21 @@ export default function AnalyticsPage() {
             />
           </div>
           <div className="flex justify-between mt-2 text-xs text-muted-foreground font-sans">
-            <span>{tokensUsed.toLocaleString()} использовано</span>
-            <span>{(tokensLimit - tokensUsed).toLocaleString()} осталось</span>
+            <span>{tokensUsed.toLocaleString()} {t("analyticsUsedCount")}</span>
+            <span>{(tokensLimit - tokensUsed).toLocaleString()} {t("analyticsRemaining")}</span>
           </div>
         </div>
 
         {/* Activity chart */}
         <div className="bg-card border border-border rounded-2xl p-5">
-          <p className="font-semibold text-foreground font-sans mb-4">Активность за 14 дней</p>
+          <p className="font-semibold text-foreground font-sans mb-4">{t("analyticsActivity14")}</p>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={activityData} barSize={14}>
               <XAxis dataKey="day" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} interval={1} />
               <YAxis hide allowDecimals={false} />
               <Tooltip
                 contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12 }}
-                formatter={(v: number) => [`${v} генераций`, ""]}
+                formatter={(v: number) => [`${v} ${t("analyticsGenerations")}`, ""]}
                 labelFormatter={(l) => l}
               />
               <Bar dataKey="count" radius={[6, 6, 0, 0]}>
@@ -397,7 +404,7 @@ export default function AnalyticsPage() {
           {/* Game type breakdown */}
           {featureData.length > 0 && (
             <div className="bg-card border border-border rounded-2xl p-5">
-              <p className="font-semibold text-foreground font-sans mb-4">Используемые игры</p>
+              <p className="font-semibold text-foreground font-sans mb-4">{t("analyticsGamesUsed")}</p>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie data={featureData} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
@@ -414,7 +421,7 @@ export default function AnalyticsPage() {
           {/* Top topics */}
           {topTopics.length > 0 && (
             <div className="bg-card border border-border rounded-2xl p-5">
-              <p className="font-semibold text-foreground font-sans mb-4">Популярные темы</p>
+              <p className="font-semibold text-foreground font-sans mb-4">{t("analyticsTopTopics")}</p>
               <div className="space-y-2">
                 {topTopics.map((t, i) => {
                   const maxCount = topTopics[0].count;
@@ -448,7 +455,7 @@ export default function AnalyticsPage() {
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-4">
               <Star className="w-4 h-4 text-yellow-500" />
-              <p className="font-semibold text-foreground font-sans">Избранные генерации</p>
+              <p className="font-semibold text-foreground font-sans">{t("analyticsFavorites")}</p>
             </div>
             <div className="space-y-2">
               {favorites.map((h) => (
@@ -470,10 +477,10 @@ export default function AnalyticsPage() {
         {stats?.total_generations === 0 && (
           <div className="text-center py-16 space-y-4">
             <Target className="w-12 h-12 text-muted-foreground mx-auto" />
-            <p className="text-foreground font-semibold font-sans">Данных пока нет</p>
-            <p className="text-muted-foreground text-sm font-sans">Начните генерировать материалы — статистика появится здесь</p>
+            <p className="text-foreground font-semibold font-sans">{t("analyticsNoData")}</p>
+            <p className="text-muted-foreground text-sm font-sans">{t("analyticsNoDataDesc")}</p>
             <Button onClick={() => navigate("/generator")} className="rounded-xl">
-              Открыть генератор
+              {t("analyticsOpenGen")}
             </Button>
           </div>
         )}
