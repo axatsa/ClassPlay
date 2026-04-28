@@ -96,6 +96,13 @@ export default function Landing() {
     a: t(`land_faq_${config.key}_a`),
   }));
 
+  const NAV_LINKS = [
+    { href: "#features", label: t("land_nav_features") },
+    { href: "#how-it-works", label: t("land_nav_how") },
+    { href: "#games", label: t("land_nav_games") },
+    { href: "#pricing", label: t("land_nav_pricing") },
+  ];
+
   return (
     <div className="min-h-screen bg-background font-sans">
 
@@ -113,13 +120,13 @@ export default function Landing() {
           </button>
 
           <nav className="hidden md:flex items-center gap-6">
-            {["#features", "#how-it-works", "#games", "#pricing"].map((href) => (
+            {NAV_LINKS.map(({ href, label }) => (
               <a
                 key={href}
                 href={href}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium capitalize"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
               >
-                {href.replace("#", "").replace("-", " ")}
+                {label}
               </a>
             ))}
           </nav>
@@ -165,9 +172,9 @@ export default function Landing() {
               </div>
             ) : (
               <>
-                <Button variant="ghost" className="text-sm rounded-xl" onClick={() => navigate("/demo")}>Демо</Button>
+                <Button variant="ghost" className="text-sm rounded-xl" onClick={() => navigate("/demo")}>{t("land_demo")}</Button>
                 <Button className="rounded-xl text-sm gap-1.5" onClick={() => navigate("/login")}>
-                  Войти <ChevronRight className="w-3.5 h-3.5" />
+                  {t("land_login")} <ChevronRight className="w-3.5 h-3.5" />
                 </Button>
               </>
             )}
@@ -183,14 +190,14 @@ export default function Landing() {
 
         {mobileOpen && (
           <div className="md:hidden border-t border-border bg-card px-6 py-4 space-y-3">
-            {["#features", "#how-it-works", "#games", "#pricing"].map((href) => (
-              <a key={href} href={href} className="block text-sm font-medium text-muted-foreground hover:text-foreground capitalize" onClick={() => setMobileOpen(false)}>
-                {href.replace("#", "").replace("-", " ")}
+            {NAV_LINKS.map(({ href, label }) => (
+              <a key={href} href={href} className="block text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>
+                {label}
               </a>
             ))}
             <div className="pt-2 flex gap-3">
-              <Button variant="outline" className="flex-1 rounded-xl text-sm" onClick={() => navigate("/demo")}>Демо</Button>
-              <Button className="flex-1 rounded-xl text-sm" onClick={() => navigate("/login")}>Войти</Button>
+              <Button variant="outline" className="flex-1 rounded-xl text-sm" onClick={() => navigate("/demo")}>{t("land_demo")}</Button>
+              <Button className="flex-1 rounded-xl text-sm" onClick={() => navigate("/login")}>{t("land_login")}</Button>
             </div>
           </div>
         )}
@@ -210,7 +217,7 @@ export default function Landing() {
             className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 rounded-full px-4 py-1.5 text-sm font-medium mb-8"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            ИИ-платформа для учителей нового поколения
+            {t("land_platform_badge")}
           </motion.div>
 
           <motion.h1
@@ -219,9 +226,9 @@ export default function Landing() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl md:text-7xl font-bold text-foreground font-serif leading-tight tracking-tight mb-6 max-w-4xl mx-auto"
           >
-            Уроки,{" "}
+            {t("land_hero_title1")}{" "}
             <span className="text-primary relative inline-block">
-              которые не забудут
+              {t("land_hero_title2")}
               <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 400 12" fill="none" preserveAspectRatio="none">
                 <path d="M2 9 Q100 2 200 9 Q300 16 398 9" stroke="hsl(217 91% 60%)" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.5" />
               </svg>
@@ -234,7 +241,7 @@ export default function Landing() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Создавайте материалы, запускайте игры и вовлекайте учеников — всё в одном месте. Хватит тратить часы на подготовку.
+            {t("land_hero_sub")}
           </motion.p>
 
           <motion.div
@@ -244,14 +251,14 @@ export default function Landing() {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Button size="lg" className="rounded-2xl px-8 gap-2 text-base" onClick={() => navigate("/login")}>
-              Начать бесплатно <ArrowRight className="w-4 h-4" />
+              {t("land_hero_cta")} <ArrowRight className="w-4 h-4" />
             </Button>
             <Button size="lg" variant="outline" className="rounded-2xl px-8 gap-2 text-base border-border" onClick={() => navigate("/demo")}>
-              <Play className="w-4 h-4 fill-current" /> Смотреть демо
+              <Play className="w-4 h-4 fill-current" /> {t("land_hero_demo")}
             </Button>
           </motion.div>
 
-          <p className="mt-4 text-xs text-muted-foreground">Без карточки · Бесплатно для 1 класса</p>
+          <p className="mt-4 text-xs text-muted-foreground">{t("land_hero_note")}</p>
 
           {/* Dashboard preview */}
           <motion.div
@@ -266,11 +273,11 @@ export default function Landing() {
 
             <div className="flex items-center justify-between mb-6 relative z-10">
               <div>
-                <h2 className="text-2xl font-bold font-serif text-foreground">Добро пожаловать, Алекс 👋</h2>
-                <p className="text-muted-foreground text-sm mt-0.5">Продолжайте серию — вы в ударе!</p>
+                <h2 className="text-2xl font-bold font-serif text-foreground">{t("land_preview_welcome")}</h2>
+                <p className="text-muted-foreground text-sm mt-0.5">{t("land_preview_streak_msg")}</p>
               </div>
               <div className="bg-primary text-primary-foreground rounded-2xl px-4 py-2 flex items-center gap-2 text-sm font-semibold shrink-0">
-                <Coins className="w-4 h-4" /> 480 монет
+                <Coins className="w-4 h-4" /> 480 {t("land_preview_coins_label")}
               </div>
             </div>
 
@@ -278,13 +285,13 @@ export default function Landing() {
               <div className="w-16 h-16 rounded-full bg-primary/10 border-4 border-primary/20 flex items-center justify-center shrink-0 relative">
                 <span className="text-2xl font-black text-primary font-serif">8</span>
                 <div className="absolute -bottom-2 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
-                  Ур.
+                  {t("land_preview_level_abbr")}
                 </div>
               </div>
               <div className="flex-1 space-y-2">
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-primary">1 840 XP</span>
-                  <span className="text-muted-foreground">240 XP до Уровня 9</span>
+                  <span className="text-muted-foreground">240 XP {t("land_preview_xp_to")} 9</span>
                 </div>
                 <div className="h-4 rounded-full bg-secondary/20 overflow-hidden">
                   <div className="h-full rounded-full bg-primary transition-all" style={{ width: "76%" }} />
@@ -294,10 +301,10 @@ export default function Landing() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 relative z-10">
               {[
-                { label: "Дневной XP", value: "320 / 500", icon: Sparkles, color: "text-primary" },
-                { label: "Монеты", value: "60 / 100", icon: Coins, color: "text-secondary" },
-                { label: "Серия", value: "7 дней 🔥", icon: Zap, color: "text-yellow-500" },
-                { label: "Рейтинг", value: "#3 в классе", icon: Trophy, color: "text-primary" },
+                { label: t("land_preview_daily_xp"), value: "320 / 500", icon: Sparkles, color: "text-primary" },
+                { label: t("land_preview_coins_stat"), value: "60 / 100", icon: Coins, color: "text-secondary" },
+                { label: t("land_preview_streak_stat"), value: `7 ${t("land_preview_days")}`, icon: Zap, color: "text-yellow-500" },
+                { label: t("land_preview_rank_stat"), value: `#3 ${t("land_preview_in_class")}`, icon: Trophy, color: "text-primary" },
               ].map((s) => (
                 <div key={s.label} className="bg-muted/50 rounded-2xl border border-border p-4 space-y-1">
                   <div className="flex items-center justify-between">
@@ -331,13 +338,13 @@ export default function Landing() {
         <div className="mb-14">
           <div className="inline-flex items-center gap-2 bg-accent/10 text-accent border border-accent/20 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
             <Star className="w-3.5 h-3.5 fill-current" />
-            Возможности
+            {t("land_features_badge")}
           </div>
           <h2 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4 max-w-lg">
-            Всё для современного учителя
+            {t("land_features_section_title")}
           </h2>
           <p className="text-muted-foreground max-w-xl">
-            От ИИ-генераторов до живых игр — ClassPlay полный комплект для вовлечённого класса.
+            {t("land_features_section_sub")}
           </p>
         </div>
 
@@ -375,23 +382,23 @@ export default function Landing() {
             <div className="text-sidebar-foreground">
               <div className="inline-flex items-center gap-2 bg-sidebar-primary/20 text-sidebar-primary border border-sidebar-primary/30 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
                 <Trophy className="w-3.5 h-3.5" />
-                Живые лидерборды
+                {t("land_lb_badge")}
               </div>
               <h2 className="text-4xl md:text-5xl font-bold font-serif mb-5 leading-tight">
-                Соревнование, которое действительно мотивирует
+                {t("land_lb_title")}
               </h2>
               <p className="text-sidebar-foreground/70 text-lg leading-relaxed mb-8">
-                Ученики постоянно проверяют свой рейтинг. Это любопытство превращается в обучение. Обновления в реальном времени означают, что каждое задание — шанс подняться выше.
+                {t("land_lb_desc")}
               </p>
               <Button className="rounded-2xl px-6 gap-2" onClick={() => navigate("/login")}>
-                Попробовать <ArrowRight className="w-4 h-4" />
+                {t("land_lb_btn")} <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
 
             <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-2xl">
               <div className="px-6 py-4 border-b border-border flex items-center gap-3">
                 <Trophy className="w-5 h-5 text-primary" />
-                <span className="font-bold font-serif text-foreground">Класс 7Б — Эта неделя</span>
+                <span className="font-bold font-serif text-foreground">{t("land_lb_class")}</span>
               </div>
               <div className="divide-y divide-border">
                 {LEADERBOARD_DEMO.map((item) => (
@@ -404,7 +411,7 @@ export default function Landing() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-foreground">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">Уровень {item.level}</p>
+                      <p className="text-xs text-muted-foreground">{t("land_lb_level")} {item.level}</p>
                     </div>
                     <span className="text-sm font-mono font-bold text-primary">{item.xp.toLocaleString()} XP</span>
                   </div>
@@ -420,13 +427,13 @@ export default function Landing() {
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 bg-secondary/20 text-amber-700 border border-secondary/30 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
             <BookOpen className="w-3.5 h-3.5" />
-            Как это работает
+            {t("land_how_badge")}
           </div>
           <h2 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4">
-            Три шага до результата
+            {t("land_how_title")}
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Никаких звонков по онбордингу. Никаких IT-заявок. Создайте аккаунт и начните прямо сегодня.
+            {t("land_how_sub")}
           </p>
         </div>
 
@@ -459,13 +466,13 @@ export default function Landing() {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
               <Gamepad2 className="w-3.5 h-3.5" />
-              Игры
+              {t("land_games_badge")}
             </div>
             <h2 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4">
-              6 игр для живого урока
+              {t("land_games_section_title")}
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Запускайте прямо на проекторе. Ученики играют — учитель управляет.
+              {t("land_games_section_sub")}
             </p>
           </div>
 
@@ -494,7 +501,7 @@ export default function Landing() {
 
           <div className="text-center">
             <Button size="lg" className="rounded-2xl px-8 gap-2" onClick={() => navigate("/login")}>
-              Попробовать все игры <ArrowRight className="w-4 h-4" />
+              {t("land_games_cta")} <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -505,13 +512,13 @@ export default function Landing() {
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 bg-secondary/20 text-amber-700 border border-secondary/30 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
             <Coins className="w-3.5 h-3.5" />
-            Тарифы
+            {t("land_pricing_badge")}
           </div>
           <h2 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4">
-            Для любого масштаба
+            {t("land_pricing_title")}
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Начните бесплатно. Масштабируйтесь только тогда, когда будете готовы.
+            {t("land_pricing_sub")}
           </p>
         </div>
 
@@ -519,15 +526,15 @@ export default function Landing() {
           {/* Free */}
           <div className="bg-card rounded-3xl border border-border p-8 space-y-6">
             <div>
-              <div className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Бесплатно</div>
+              <div className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">{t("land_p1_title")}</div>
               <div className="flex items-end gap-1.5">
-                <span className="text-5xl font-black font-serif text-foreground">$0</span>
-                <span className="text-sm text-muted-foreground pb-2">/ мес</span>
+                <span className="text-5xl font-black font-serif text-foreground">{t("land_p1_price")}</span>
+                <span className="text-sm text-muted-foreground pb-2">{t("land_per_month")}</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">Попробуйте без риска</p>
+              <p className="text-sm text-muted-foreground mt-2">{t("land_p1_tagline")}</p>
             </div>
             <ul className="space-y-3">
-              {["10 ИИ-генераций", "Базовые игры", "Поддержка", "1 учитель"].map((f) => (
+              {[t("land_p1_fi1"), t("land_p1_fi2"), t("land_p1_fi3"), t("land_p1_fi4")].map((f) => (
                 <li key={f} className="flex items-center gap-3 text-sm">
                   <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 text-primary" />
@@ -537,7 +544,7 @@ export default function Landing() {
               ))}
             </ul>
             <Button variant="outline" className="w-full rounded-2xl" onClick={() => navigate("/checkout?plan=free")}>
-              Начать бесплатно
+              {t("land_p1_cta")}
             </Button>
           </div>
 
@@ -545,18 +552,18 @@ export default function Landing() {
           <div className="bg-sidebar rounded-3xl border border-sidebar-primary/30 p-8 space-y-6 shadow-2xl scale-[1.02] relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-secondary" />
             <div className="absolute top-4 right-4 bg-secondary text-secondary-foreground text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
-              Популярный
+              {t("land_popular")}
             </div>
             <div>
-              <div className="text-sm font-bold uppercase tracking-widest text-sidebar-primary mb-1">Pro Учитель</div>
+              <div className="text-sm font-bold uppercase tracking-widest text-sidebar-primary mb-1">{t("land_p2_title")}</div>
               <div className="flex items-end gap-1.5">
-                <span className="text-5xl font-black font-serif text-sidebar-foreground">$15</span>
-                <span className="text-sm text-sidebar-foreground/50 pb-2">/ мес</span>
+                <span className="text-5xl font-black font-serif text-sidebar-foreground">{t("land_p2_price")}</span>
+                <span className="text-sm text-sidebar-foreground/50 pb-2">{t("land_per_month")}</span>
               </div>
-              <p className="text-sm text-sidebar-foreground/60 mt-2">Всё без ограничений</p>
+              <p className="text-sm text-sidebar-foreground/60 mt-2">{t("land_p2_tagline")}</p>
             </div>
             <ul className="space-y-3">
-              {["Безлимитные генерации", "Все 6 игр", "ИИ-книги", "Аналитика класса", "Приоритетная поддержка"].map((f) => (
+              {[t("land_p2_fi1"), t("land_p2_fi2"), t("land_p2_fi3"), t("land_p2_fi4"), t("land_p2_fi5")].map((f) => (
                 <li key={f} className="flex items-center gap-3 text-sm">
                   <div className="w-5 h-5 rounded-full bg-sidebar-primary/20 flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 text-sidebar-primary" />
@@ -566,22 +573,22 @@ export default function Landing() {
               ))}
             </ul>
             <Button className="w-full rounded-2xl bg-sidebar-primary hover:bg-sidebar-primary/90" onClick={() => navigate("/checkout?plan=pro")}>
-              Начать сейчас
+              {t("land_p2_cta")}
             </Button>
           </div>
 
           {/* School */}
           <div className="bg-card rounded-3xl border border-border p-8 space-y-6">
             <div>
-              <div className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Для Школ</div>
+              <div className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">{t("land_p3_title")}</div>
               <div className="flex items-end gap-1.5">
-                <span className="text-5xl font-black font-serif text-foreground">$49</span>
-                <span className="text-sm text-muted-foreground pb-2">/ мес</span>
+                <span className="text-5xl font-black font-serif text-foreground">{t("land_p3_price")}</span>
+                <span className="text-sm text-muted-foreground pb-2">{t("land_per_month")}</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">Полное решение для учреждений</p>
+              <p className="text-sm text-muted-foreground mt-2">{t("land_p3_tagline")}</p>
             </div>
             <ul className="space-y-3">
-              {["Все функции Pro", "До 10 учителей", "Админ-панель", "CSV-импорт", "Договор"].map((f) => (
+              {[t("land_p3_fi1"), t("land_p3_fi2"), t("land_p3_fi3"), t("land_p3_fi4"), t("land_p3_fi5")].map((f) => (
                 <li key={f} className="flex items-center gap-3 text-sm">
                   <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 text-primary" />
@@ -591,7 +598,7 @@ export default function Landing() {
               ))}
             </ul>
             <Button variant="outline" className="w-full rounded-2xl border-primary/30 text-primary hover:bg-primary/5" onClick={() => navigate("/checkout?plan=school")}>
-              Оформить
+              {t("land_p3_cta")}
             </Button>
           </div>
         </div>
@@ -601,7 +608,7 @@ export default function Landing() {
       <section className="bg-muted/30 border-y border-border py-24">
         <div className="max-w-2xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold font-serif text-foreground">Частые вопросы</h2>
+            <h2 className="text-4xl font-bold font-serif text-foreground">{t("land_faq_title")}</h2>
           </div>
           <div className="space-y-3">
             {FAQS.map((faq, i) => (
@@ -645,13 +652,13 @@ export default function Landing() {
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
               <Users className="w-3.5 h-3.5" />
-              Более 12 000 учеников уже используют ClassPlay
+              {t("land_cta_users_badge")}
             </div>
             <h2 className="text-4xl md:text-5xl font-bold font-serif mb-5 leading-tight">
-              Готовы сделать ваш класс<br />лучшей игрой в школе?
+              {t("land_cta_title")}
             </h2>
             <p className="text-primary-foreground/80 text-lg mb-10 max-w-xl mx-auto">
-              Настройте первый геймифицированный класс за несколько минут. Бесплатно для учителей — навсегда.
+              {t("land_cta_sub")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button
@@ -659,7 +666,7 @@ export default function Landing() {
                 className="rounded-2xl px-10 bg-white text-primary hover:bg-white/90 font-semibold gap-2"
                 onClick={() => navigate("/login")}
               >
-                Создать бесплатный аккаунт <ArrowRight className="w-4 h-4" />
+                {t("land_cta_register")} <ArrowRight className="w-4 h-4" />
               </Button>
               <Button
                 size="lg"
@@ -667,11 +674,11 @@ export default function Landing() {
                 className="rounded-2xl px-10 text-primary-foreground hover:bg-white/10 border border-white/20"
                 onClick={() => navigate("/demo")}
               >
-                <Play className="w-4 h-4 fill-current" /> Смотреть демо
+                <Play className="w-4 h-4 fill-current" /> {t("land_hero_demo")}
               </Button>
             </div>
             <div className="flex flex-wrap gap-6 justify-center">
-              {["Бесплатный старт", "Без карточки", "Отмена в любой момент"].map((item) => (
+              {[t("land_trust_1"), t("land_trust_2"), t("land_trust_3")].map((item) => (
                 <span key={item} className="flex items-center gap-2 text-sm text-primary-foreground/60">
                   <CheckCircle2 className="w-4 h-4 text-primary-foreground/40" /> {item}
                 </span>
@@ -690,15 +697,15 @@ export default function Landing() {
             </div>
             <span className="font-bold font-serif text-foreground">ClassPlay</span>
           </div>
-          <p className="text-sm text-muted-foreground">ИИ-платформа для учителей нового поколения.</p>
+          <p className="text-sm text-muted-foreground">{t("land_foot_tagline")}</p>
           <div className="flex gap-5 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">Конфиденциальность</a>
-            <a href="#" className="hover:text-foreground transition-colors">Условия</a>
-            <a href="#" className="hover:text-foreground transition-colors">Контакты</a>
+            <a href="#" className="hover:text-foreground transition-colors">{t("land_foot_comp3")}</a>
+            <a href="#" className="hover:text-foreground transition-colors">{t("land_foot_comp4")}</a>
+            <a href="#" className="hover:text-foreground transition-colors">{t("land_foot_contact")}</a>
           </div>
         </div>
         <div className="border-t border-border">
-          <p className="text-center text-xs text-muted-foreground py-4">© {new Date().getFullYear()} ClassPlay. Все права защищены.</p>
+          <p className="text-center text-xs text-muted-foreground py-4">{t("land_copy")}</p>
         </div>
       </footer>
     </div>
