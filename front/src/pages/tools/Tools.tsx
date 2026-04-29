@@ -498,10 +498,10 @@ const AssignmentGenerator = () => {
       };
 
       setResult(finalResult);
-      toast.success(lang === "uz" ? "Topshiriq yaratildi!" : "Задание создано!");
+      toast.success(t("toolsAssignCreated"));
     } catch (e) {
       console.error(e);
-      toast.error(lang === "uz" ? "Xatolik. Qayta urinib ko'ring." : "Ошибка. Попробуйте ещё раз.");
+      toast.error(t("toolsAssignError"));
     } finally {
       setLoading(false);
     }
@@ -511,9 +511,7 @@ const AssignmentGenerator = () => {
     <div className="flex flex-col gap-6 w-full">
       <div className="bg-card border border-border rounded-2xl p-6 flex flex-col gap-4">
         <Textarea
-          placeholder={lang === "uz"
-            ? "Masalan: '5-sinf uchun 10 ta matematika savoli' yoki 'Geografiya, Osiyo, 8 ta savol'"
-            : "Например: 'Создай 10 вопросов по математике для 5 класса' или 'География, Азия, 8 вопросов'"}
+          placeholder={t("toolsAssignPlaceholder")}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           className="min-h-[100px] font-sans text-sm resize-none rounded-xl"
@@ -541,7 +539,7 @@ const AssignmentGenerator = () => {
           className="bg-card border border-border rounded-2xl p-10 flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
           <p className="text-muted-foreground font-sans text-sm">
-            {lang === "uz" ? "AI kontent yaratmoqda..." : "AI создаёт контент..."}
+            {t("toolsAiCreating")}
           </p>
         </motion.div>
       )}
@@ -558,15 +556,7 @@ const AssignmentGenerator = () => {
           <FileText className="w-12 h-12 text-muted-foreground/40" />
           <p className="text-muted-foreground font-sans text-sm">{t("describeAssignment")}</p>
           <div className="flex flex-wrap gap-2 justify-center mt-2">
-            {(lang === "uz" ? [
-              "5-sinf uchun 10 ta matematika savoli",
-              "Geografiya bo'yicha 8 ta test",
-              "Biologiya, o'simliklar, 6 ta savol",
-            ] : [
-              "10 вопросов по математике для 5 класса",
-              "Тест по географии, 8 вопросов",
-              "Биология, растения, 6 вопросов",
-            ]).map((ex) => (
+            {[t("toolsEx1"), t("toolsEx2"), t("toolsEx3")].map((ex) => (
               <button key={ex} onClick={() => setPrompt(ex)}
                 className="text-xs font-sans bg-muted hover:bg-blue-50 hover:text-blue-700 text-muted-foreground px-3 py-1.5 rounded-lg border border-border transition-colors">
                 {ex}

@@ -45,8 +45,8 @@ const TeacherDashboard = () => {
     { key: "Tools",      label: t("navTools"),      route: "/tools" },
     { key: "Games",      label: t("navGames"),      route: "/games" },
     { key: "Library",    label: t("navLibrary"),    route: "/library" },
-    { key: "History",    label: lang === "ru" ? "История" : "Tarix",  route: "/history" },
-    { key: "Materials",  label: lang === "ru" ? "Материалы" : "Materiallar", route: "/materials" },
+    { key: "History",    label: t("navHistory"),    route: "/history" },
+    { key: "Materials",  label: t("navMaterials"),  route: "/materials" },
   ] as const;
 
   const [activeNav] = useState<typeof navPills[number]["key"]>("Generators");
@@ -190,12 +190,12 @@ const TeacherDashboard = () => {
           >
             {materialCount === 0 && (
               <span className="absolute top-3 right-3 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 border border-amber-200">
-                Загрузить
+                {t("dashUpload")}
               </span>
             )}
             {materialCount > 0 && (
               <span className="absolute top-3 right-3 text-[10px] font-bold bg-green-100 text-green-700 rounded-full px-2 py-0.5 border border-green-200">
-                {materialCount} файл{materialCount === 1 ? "" : materialCount < 5 ? "а" : "ов"}
+                {t("dashFileCount_many", { count: materialCount })}
               </span>
             )}
             <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -203,12 +203,10 @@ const TeacherDashboard = () => {
             </div>
             <div>
               <h3 className="text-lg font-bold text-foreground leading-tight">
-                {lang === "ru" ? "Материалы" : "Materiallar"}
+                {t("dashMaterials")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                {lang === "ru"
-                  ? "Загрузите учебники — ИИ создаст задания по вашему контенту"
-                  : "Darsliklar yuklang — AI sizning materialingiz bo'yicha topshiriqlar yaratadi"}
+                {t("dashMaterialsDesc")}
               </p>
             </div>
           </motion.button>

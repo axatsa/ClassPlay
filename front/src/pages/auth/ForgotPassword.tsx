@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 export default function ForgotPassword() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [sent, setSent] = useState(false);
@@ -20,7 +22,7 @@ export default function ForgotPassword() {
             await api.post("/auth/forgot-password", { email });
             setSent(true);
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || "Ошибка. Попробуйте позже.");
+            toast.error(err.response?.data?.detail || t("forgotPwdError"));
         } finally {
             setIsLoading(false);
         }
@@ -37,7 +39,7 @@ export default function ForgotPassword() {
                     onClick={() => navigate("/login")}
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors"
                 >
-                    <ArrowLeft className="w-4 h-4" /> Вернуться к входу
+                    <ArrowLeft className="w-4 h-4" /> {t("forgotPwdBackBtn")}
                 </button>
 
                 <div className="bg-card border border-border rounded-3xl p-8 shadow-xl space-y-6">
@@ -46,12 +48,12 @@ export default function ForgotPassword() {
                             {sent ? <CheckCircle2 className="w-7 h-7 text-green-500" /> : <Mail className="w-7 h-7 text-primary" />}
                         </div>
                         <h1 className="text-2xl font-bold text-foreground">
-                            {sent ? "Письмо отправлено" : "Восстановление пароля"}
+                            {sent ? t("forgotPwdSentTitle") : t("forgotPwdTitle")}
                         </h1>
                         <p className="text-sm text-muted-foreground font-sans">
                             {sent
-                                ? `Мы отправили ссылку для сброса пароля на ${email}. Проверьте почту.`
-                                : "Введите email — мы пришлём ссылку для сброса пароля."}
+                                ? t("forgotPwdSentSub", { email })
+                                : t("forgotPwdSub")}
                         </p>
                     </div>
 
@@ -73,14 +75,14 @@ export default function ForgotPassword() {
                                 </div>
                             </div>
                             <Button type="submit" className="w-full h-12 rounded-xl font-bold" disabled={isLoading || !email}>
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Отправить ссылку"}
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t("forgotPwdSendBtn")}
                             </Button>
                         </form>
                     )}
 
                     {sent && (
                         <Button variant="outline" className="w-full h-12 rounded-xl" onClick={() => navigate("/login")}>
-                            Вернуться к входу
+                            {t("forgotPwdBackBtn")}
                         </Button>
                     )}
                 </div>

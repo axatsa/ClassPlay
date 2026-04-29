@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 const DARK = "#07101F";
 const BLUE = "#0EA5E9";
@@ -14,6 +15,7 @@ export default function PaymentSuccess() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
+    const { t } = useTranslation();
     
     const [status, setStatus] = useState<"verifying" | "completed" | "timeout">("verifying");
     const paymentId = searchParams.get("payment_id");
@@ -105,14 +107,14 @@ export default function PaymentSuccess() {
                     fontSize: 32, fontWeight: 800,
                     color: "#fff", marginBottom: 12, lineHeight: 1.1,
                 }}>
-                    {status === "verifying" ? "Ожидание банка..." : status === "timeout" ? "Долго нет ответа" : "Оплата прошла!"}
+                    {status === "verifying" ? t("payVerifying") : status === "timeout" ? t("payTimeout") : t("payDone")}
                 </h1>
                 <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 15, lineHeight: 1.6, marginBottom: 36 }}>
                     {status === "verifying"
-                        ? "Мы ждем подтверждения от платежной системы. Обычно это занимает несколько секунд."
+                        ? t("payVerifyingDesc")
                         : status === "timeout"
-                        ? "Платёжная система не ответила в течение минуты. Ваш платёж может быть всё ещё в обработке."
-                        : "Ваша подписка активирована. Теперь вам доступны все возможности платформы."}
+                        ? t("payTimeoutDesc")
+                        : t("payDoneDesc")}
                 </p>
 
                 {status === "timeout" && (
@@ -122,13 +124,13 @@ export default function PaymentSuccess() {
                             onClick={handleContinue}
                             style={{ width: "100%", padding: "14px 24px", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 15, fontWeight: 600, border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                         >
-                            Всё равно войти в кабинет <ArrowRight size={16} />
+                            {t("payStillEnter")} <ArrowRight size={16} />
                         </motion.button>
                         <a
                             href="mailto:support@classplay.uz"
                             style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, textDecoration: "none", marginTop: 8 }}
                         >
-                            Написать в поддержку → support@classplay.uz
+                            {t("paySupport")}
                         </a>
                     </div>
                 )}
@@ -146,7 +148,7 @@ export default function PaymentSuccess() {
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                     }}
                 >
-                    Перейти в личный кабинет <ArrowRight size={16} />
+                    {t("payGoToCabinet")} <ArrowRight size={16} />
                 </motion.button>
                 )}
             </motion.div>

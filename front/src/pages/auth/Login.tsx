@@ -12,7 +12,6 @@ import { toast } from "sonner";
 const Login = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const lang = i18n.language;
   const { login, user } = useAuth();
 
   useEffect(() => {
@@ -54,19 +53,13 @@ const Login = () => {
       let userMsg = t("invalidCredits");
       let field: "email" | "password" | null = null;
       if (code === "user_not_found") {
-        userMsg = lang === "uz"
-          ? "Bunday email bilan foydalanuvchi topilmadi"
-          : "Пользователь с таким email не найден";
+        userMsg = t("loginErrUserNotFound");
         field = "email";
       } else if (code === "wrong_password") {
-        userMsg = lang === "uz"
-          ? "Noto'g'ri parol. Iltimos, qaytadan urinib ko'ring"
-          : "Неверный пароль. Пожалуйста, попробуйте ещё раз";
+        userMsg = t("loginErrWrongPwd");
         field = "password";
       } else if (code === "account_blocked") {
-        userMsg = lang === "uz"
-          ? "Hisob bloklangan. Administrator bilan bog'laning"
-          : "Аккаунт заблокирован. Свяжитесь с администратором";
+        userMsg = t("loginErrBlocked");
       }
       setErrorMsg(userMsg);
       setErrorField(field);
@@ -153,13 +146,13 @@ const Login = () => {
           </div>
 
           <p className="text-sm text-muted-foreground font-sans">
-            {t("noAccount", "Нет аккаунта?")}{" "}
+            {t("noAccount")}{" "}
             <button
               type="button"
               onClick={() => navigate("/checkout?plan=free")}
               className="text-primary font-semibold hover:underline"
             >
-              {t("registerFree", "Зарегистрироваться бесплатно")}
+              {t("registerFree")}
             </button>
           </p>
 
@@ -205,7 +198,7 @@ const Login = () => {
                 onClick={() => navigate("/forgot-password")}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors font-sans"
               >
-                {t("forgotPassword", "Забыли пароль?")}
+                {t("forgotPassword")}
               </button>
             </div>
             <Button type="submit" className="w-full h-16 text-xl font-bold rounded-2xl font-sans" size="lg" disabled={isLoading}>

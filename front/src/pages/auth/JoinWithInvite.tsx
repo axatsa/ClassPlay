@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 export default function JoinWithInvite() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("invite");
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,7 +25,7 @@ export default function JoinWithInvite() {
 
   useEffect(() => {
     if (!token) {
-      toast.error("Отсутствует токен приглашения");
+      toast.error(t("joinNoToken"));
       navigate("/login");
     }
   }, [token, navigate]);
@@ -39,11 +41,11 @@ export default function JoinWithInvite() {
         ...formData
       });
       
-      toast.success("Регистрация успешна!");
+      toast.success(t("joinSuccess"));
       login(response.data.access_token, response.data.user);
       navigate("/teacher");
     } catch (error: any) {
-      const msg = error.response?.data?.detail || "Ошибка при регистрации";
+      const msg = error.response?.data?.detail || t("joinError");
       toast.error(msg);
     } finally {
       setIsLoading(false);
@@ -71,21 +73,21 @@ export default function JoinWithInvite() {
           >
             <UserPlus className="w-8 h-8 text-primary" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-foreground">Присоединяйтесь к нам</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t("joinTitle")}</h1>
           <p className="text-muted-foreground mt-2 font-sans">
-            Завершите регистрацию по приглашению для доступа к платформе
+            {t("joinSub")}
           </p>
         </div>
 
         <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-semibold ml-1 font-sans">Полное имя</label>
+              <label className="text-sm font-semibold ml-1 font-sans">{t("joinFullName")}</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   required
-                  placeholder="Иван Иванов"
+                  placeholder={t("joinFullNamePlaceholder")}
                   className="pl-10 rounded-xl h-12 font-sans"
                   value={formData.full_name}
                   onChange={e => setFormData({ ...formData, full_name: e.target.value })}
@@ -109,7 +111,7 @@ export default function JoinWithInvite() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold ml-1 font-sans">Пароль</label>
+              <label className="text-sm font-semibold ml-1 font-sans">{t("joinPassword")}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -129,7 +131,7 @@ export default function JoinWithInvite() {
               disabled={isLoading || !token}
             >
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-              Зарегистрироваться
+              {t("joinRegisterBtn")}
             </Button>
           </form>
 
@@ -138,14 +140,13 @@ export default function JoinWithInvite() {
               onClick={() => navigate("/login")}
               className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors font-sans"
             >
-              <ArrowLeft className="w-4 h-4" /> У меня уже есть аккаунт
+              <ArrowLeft className="w-4 h-4" /> {t("joinHaveAccount")}
             </button>
           </div>
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground mt-8 font-sans px-4">
-          Присоединяясь к платформе, вы соглашаетесь с Условиями использования и Политикой конфиденциальности. 
-          Ваш аккаунт будет привязан к вашей образовательной организации.
+          {t("joinAgreement")}
         </p>
       </motion.div>
     </div>

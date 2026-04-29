@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 export default function ResetPassword() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const token = searchParams.get("token");
+    const { t } = useTranslation();
 
     const [password, setPassword] = useState("");
     const [confirm, setConfirm] = useState("");
@@ -20,11 +22,11 @@ export default function ResetPassword() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (password !== confirm) {
-            toast.error("Пароли не совпадают");
+            toast.error(t("resetPwdErrMismatch"));
             return;
         }
         if (!token) {
-            toast.error("Неверная ссылка для сброса");
+            toast.error(t("resetPwdErrBadLink"));
             return;
         }
         setIsLoading(true);
@@ -32,7 +34,7 @@ export default function ResetPassword() {
             await api.post("/auth/reset-password", { token, new_password: password });
             setDone(true);
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || "Ссылка недействительна или устарела");
+            toast.error(err.response?.data?.detail || t("resetPwdErrInvalid"));
         } finally {
             setIsLoading(false);
         }
@@ -51,17 +53,17 @@ export default function ResetPassword() {
                             {done ? <CheckCircle2 className="w-7 h-7 text-green-500" /> : <Lock className="w-7 h-7 text-primary" />}
                         </div>
                         <h1 className="text-2xl font-bold text-foreground">
-                            {done ? "Пароль изменён" : "Новый пароль"}
+                            {done ? t("resetPwdDoneTitle") : t("resetPwdTitle")}
                         </h1>
                         <p className="text-sm text-muted-foreground font-sans">
-                            {done ? "Теперь вы можете войти с новым паролем." : "Введите новый пароль для вашего аккаунта."}
+                            {done ? t("resetPwdDoneSub") : t("resetPwdSub")}
                         </p>
                     </div>
 
                     {!done && (
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium font-sans">Новый пароль</label>
+                                <label className="text-sm font-medium font-sans">{t("resetPwdNewLabel")}</label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                     <Input
@@ -77,7 +79,7 @@ export default function ResetPassword() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium font-sans">Повторите пароль</label>
+                                <label className="text-sm font-medium font-sans">{t("resetPwdConfirmLabel")}</label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                     <Input
@@ -92,14 +94,14 @@ export default function ResetPassword() {
                                 </div>
                             </div>
                             <Button type="submit" className="w-full h-12 rounded-xl font-bold" disabled={isLoading || !password || !confirm}>
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Сохранить пароль"}
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t("resetPwdSaveBtn")}
                             </Button>
                         </form>
                     )}
 
                     {done && (
                         <Button className="w-full h-12 rounded-xl" onClick={() => navigate("/login")}>
-                            Войти
+                            {t("resetPwdLoginBtn")}
                         </Button>
                     )}
                 </div>
