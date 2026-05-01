@@ -239,6 +239,21 @@ const Library = () => {
     const [books, setBooks] = useState<Book[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [openBook, setOpenBook] = useState<Book | null>(null);
+    const [bookProgress, setBookProgress] = useState<Record<number, number>>({});
+
+    // Load reading progress from localStorage
+    React.useEffect(() => {
+        const progress: Record<number, number> = {};
+        books.forEach(book => {
+            const savedPage = localStorage.getItem(`book-${book.id}-page`);
+            if (savedPage) {
+                const pageNum = parseInt(savedPage);
+                const totalPages = book.pages?.length || 10;
+                progress[book.id] = totalPages > 0 ? Math.round((pageNum / totalPages) * 100) : 0;
+            }
+        });
+        setBookProgress(progress);
+    }, [books]);
 
     React.useEffect(() => {
         api.get("/library/books").then(res => {
@@ -373,10 +388,30 @@ const Library = () => {
 
                                     {/* Actions */}
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => handleOpenBook(book)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-600 hover:bg-violet-500/20 transition-colors text-xs font-semibold font-sans">
-                                            <BookText className="w-3.5 h-3.5" /> {t("libRead")}
-                                        </button>
+                                        <div className="relative group">
+                                            <button onClick={() => handleOpenBook(book)}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-600 hover:bg-violet-500/20 transition-colors text-xs font-semibold font-sans">
+                                                <BookText className="w-3.5 h-3.5" /> {t("libRead")}
+                                            </button>
+                                            {bookProgress[book.id] > 0 && (
+                                                <div className="absolute -top-8 left-0 bg-gray-900 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                                    <motion.div
+                                                        animate={{ scale: [1, 1.05, 1] }}
+                                                        transition={{ duration: 0.6, repeat: Infinity }}
+                                                        className="flex items-center gap-1"
+                                                    >
+                                                        📖 {bookProgress[book.id]}% прочитано
+                                                    </motion.div>
+                                                </div>
+                                            )}
+                                            {bookProgress[book.id] > 0 && (
+                                                <motion.div
+                                                    animate={{ y: [0, -3, 0] }}
+                                                    transition={{ duration: 0.6, repeat: Infinity }}
+                                                    className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-400 shadow-sm"
+                                                />
+                                            )}
+                                        </div>
                                         <button onClick={() => handleDelete(book.id)}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors text-xs font-semibold font-sans">
                                             <Trash2 className="w-3.5 h-3.5" /> {t("libDelete")}
