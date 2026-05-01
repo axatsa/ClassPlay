@@ -8,14 +8,33 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
+interface StudentProfile {
+    xp: number;
+    coins: number;
+    level: number;
+}
+
+interface DailyStats {
+    xp_today: number;
+    limit_xp: number;
+    coins_today: number;
+    limit_coins: number;
+}
+
+interface LeaderboardEntry {
+    name: string;
+    level: number;
+    xp: number;
+}
+
 const StudentDashboard = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { user } = useAuth();
 
-    const [profile, setProfile] = useState<any>(null);
-    const [dailyStats, setDailyStats] = useState<any>(null);
-    const [leaderboard, setLeaderboard] = useState<any[]>([]);
+    const [profile, setProfile] = useState<StudentProfile | null>(null);
+    const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -35,13 +54,13 @@ const StudentDashboard = () => {
             setLeaderboard(leaders);
         } catch (error) {
             console.error(error);
-            toast.error("Failed to load dashboard data");
+            toast.error(t("errorLoadDashboard", "Ошибка загрузки данных"));
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (isLoading) {
+    if (isLoading || !profile || !dailyStats) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
                 <Loader2 className="w-10 h-10 animate-spin text-primary" />

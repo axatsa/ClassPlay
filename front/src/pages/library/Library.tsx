@@ -26,7 +26,8 @@ interface Book {
     age_group: string;
     genre: string;
     language: string;
-    pages: BookPage[];        // 10 страниц
+    pages: BookPage[];
+    page_count?: number;
     cover_emoji: string;
     createdAt: Date;
 }
@@ -299,7 +300,7 @@ const Library = () => {
             <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border">
                 <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <button onClick={() => navigate("/teacher")}
+                        <button onClick={() => navigate(-1)}
                             className="w-9 h-9 rounded-xl hover:bg-muted flex items-center justify-center transition-colors">
                             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
                         </button>
@@ -378,7 +379,7 @@ const Library = () => {
                                         <div className="min-w-0">
                                             <p className="font-semibold text-foreground font-sans text-sm truncate">{book.title}</p>
                                             <p className="text-xs text-muted-foreground font-sans">
-                                                {book.genre} · {book.age_group} {t("libYears")} · {(book as any).page_count ?? 10} {t("libPages")}
+                                                {book.genre} · {book.age_group} {t("libYears")} · {book.page_count ?? 10} {t("libPages")}
                                             </p>
                                         </div>
                                     </div>

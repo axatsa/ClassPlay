@@ -2,13 +2,14 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Star, Play, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GAMES_CONFIG } from "@/lib/mock-data";
+import { GAMES_CONFIG } from "@/lib/games-config";
 import { useState } from "react";
 import gameTugOfWar from "@/assets/game-tug-of-war.png";
 import gameJeopardy from "@/assets/game-jeopardy.png";
 import gameMemory from "@/assets/game-memory.png";
 import gameScales from "@/assets/game-scales.png";
 import gameWordSearch from "@/assets/game-word-search.png";
+import gameCrossword from "@/assets/game-crossword.svg";
 import gameHangman from "@/assets/game-hangman.jpeg";
 import gameSpelling from "@/assets/game-spelling.jpeg";
 import gameMathPuzzle from "@/assets/game-math-puzzle.jpeg";
@@ -22,7 +23,7 @@ const coverImages: Record<string, string> = {
   "memory": gameMemory,
   "scales": gameScales,
   "word-search": gameWordSearch,
-  "crossword": gameWordSearch, // reuse word-search image
+  "crossword": gameCrossword,
   "hangman": gameHangman,
   "spelling": gameSpelling,
   "math-puzzle": gameMathPuzzle,
@@ -39,7 +40,7 @@ const GamesLibrary = () => {
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-4">
           <button
-            onClick={() => navigate("/teacher")}
+            onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground font-sans transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

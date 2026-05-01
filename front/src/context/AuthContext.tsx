@@ -77,8 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
-        localStorage.clear();
-        queryClient.clear(); // Wipe React Query cache so next user never sees previous user's data
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("classplay_active_class_id");
+        localStorage.removeItem("redirectAfter");
+        queryClient.clear();
         setToken(null);
         setUser(null);
         navigate("/");

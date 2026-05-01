@@ -112,24 +112,3 @@ export const GAMES_CONFIG: Game[] = [
     howToPlay: "ИИ создаёт колоду флэшкарт по вашей теме. На лицевой стороне — слово на исходном языке, на обороте — перевод и пример предложения. Нажмите на карточку чтобы перевернуть. Отметьте «✓ Знаю» — карточка убирается, «✗ Учить» — запоминается для повтора. В конце видите статистику знаю/учить. Выбирайте любую пару языков: Рус↔O'zb, Рус↔Eng, O'zb↔Eng.",
   },
 ];
-
-export const mathProblems = [
-  "1)  24 + 37 = ___",
-  "2)  56 − 18 = ___",
-  "3)  8 × 7 = ___",
-  "4)  63 ÷ 9 = ___",
-  "5)  123 + 89 = ___",
-  "6)  200 − 45 = ___",
-  "7)  12 × 5 = ___",
-  "8)  48 ÷ 6 = ___",
-  "9)  345 + 167 = ___",
-  "10) 500 − 238 = ___",
-];
-
-export const crosswordWords = [
-  { word: "APPLE", clue: "A red or green fruit" },
-  { word: "BANANA", clue: "A yellow curved fruit" },
-  { word: "ORANGE", clue: "A citrus fruit" },
-  { word: "GRAPE", clue: "Small round fruit, grows in bunches" },
-  { word: "MANGO", clue: "Tropical sweet fruit" },
-];

@@ -340,7 +340,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-card/90 backdrop-blur-xl border-b border-border">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
-          <Button variant="ghost" size="sm" className="gap-2 font-sans" onClick={() => navigate("/teacher")}>
+          <Button variant="ghost" size="sm" className="gap-2 font-sans" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4" /> {t("profBack")}
           </Button>
           <div className="flex items-center gap-2">
