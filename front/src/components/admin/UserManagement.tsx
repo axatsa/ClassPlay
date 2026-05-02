@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTranslation } from "react-index";
+import { useTranslation } from "react-i18next";
 import { 
   Search, Filter, Plus, CreditCard, Calendar, Lock, Unlock, X, 
   Clock, LogIn, Settings, Key, Ban, AlertTriangle, ShieldCheck, ShieldOff 

@@ -17,8 +17,11 @@ import { toast } from "sonner";
 import { generateCrosswordLayout, CrosswordGrid } from "@/lib/crossword";
 import { EmptyState } from "@/components/common/EmptyState";
 import { RichTextRenderer } from "@/components/common/RichTextRenderer";
+import { SegmentedControl } from "@/components/common/SegmentedControl";
 import { downloadDOCX, cleanMathForExport, AssignmentData, QuizQuestion, MathProblem } from "@/lib/generatorExport";
 import type { GeneratorType } from "@/lib/generatorExport";
+import { handleAIError } from "@/lib/errorUtils";
+import ResultEditor from "@/pages/tools/ResultEditor";
 
 import { MathForm } from "@/components/generator/forms/MathForm";
 import { CrosswordForm } from "@/components/generator/forms/CrosswordForm";

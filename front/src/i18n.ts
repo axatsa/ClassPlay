@@ -517,15 +517,6 @@ i18n
                     ai_generating: "AI создаёт материал…",
                     take_few_seconds: "Это займёт несколько секунд",
 
-                    // New Landing Strings
-                    land_testimonials_badge: "Отзывы учителей",
-                    land_testimonials_title: "Тысячи учителей уже экономят время",
-                    land_faq_title: "Часто задаваемые вопросы",
-                    land_ready_to_change: "Готовы изменить ваши уроки?",
-                    land_cta_try: "Попробовать ClassPlay",
-                    land_dashboard: "Дашборд",
-                    land_demo: "Демо",
-
                     // Landing v2 strings
                     land_platform_badge: "ИИ-платформа для учителей нового поколения",
                     land_hero_title1: "Уроки,",
@@ -1447,15 +1438,6 @@ i18n
                     teacher_placeholder: "O'qituvchi",
                     ai_generating: "AI kontent yaratmoqda…",
                     take_few_seconds: "Bu bir necha soniya davom etadi",
-
-                    // New Landing Strings
-                    land_testimonials_badge: "O'qituvchilar fikri",
-                    land_testimonials_title: "Minglab o'qituvchilar vaqtingizni tejashmoqda",
-                    land_faq_title: "Ko'p beriladigan savollar",
-                    land_ready_to_change: "Darslaringizni o'zgartirishga tayyormisiz?",
-                    land_cta_try: "ClassPlay-ni sinab ko'ring",
-                    land_dashboard: "Boshqaruv paneli",
-                    land_demo: "Demo",
 
                     // Landing v2 strings
                     land_platform_badge: "Yangi avlod o'qituvchilari uchun AI platforma",
@@ -2485,15 +2467,6 @@ i18n
                     teacher_placeholder: "Teacher",
                     ai_generating: "AI is creating content…",
                     take_few_seconds: "This will take a few seconds",
-
-                    // New Landing Strings
-                    land_testimonials_badge: "Teacher Reviews",
-                    land_testimonials_title: "Thousands of teachers are already saving time",
-                    land_faq_title: "Frequently Asked Questions",
-                    land_ready_to_change: "Ready to change your lessons?",
-                    land_cta_try: "Try ClassPlay",
-                    land_dashboard: "Dashboard",
-                    land_demo: "Demo",
 
                     // Landing v2 strings
                     land_platform_badge: "AI platform for next-generation teachers",
