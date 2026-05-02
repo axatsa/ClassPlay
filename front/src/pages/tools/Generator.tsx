@@ -17,58 +17,20 @@ import { toast } from "sonner";
 import { generateCrosswordLayout, CrosswordGrid } from "@/lib/crossword";
 import { EmptyState } from "@/components/common/EmptyState";
 import { RichTextRenderer } from "@/components/common/RichTextRenderer";
-import ResultEditor from "./ResultEditor";
-import { handleAIError } from "@/lib/errorUtils";
+import { downloadDOCX, cleanMathForExport, AssignmentData, QuizQuestion, MathProblem } from "@/lib/generatorExport";
+import type { GeneratorType } from "@/lib/generatorExport";
 
-type GeneratorType = "math" | "crossword" | "quiz" | "assignment";
+import { MathForm } from "@/components/generator/forms/MathForm";
+import { CrosswordForm } from "@/components/generator/forms/CrosswordForm";
+import { QuizForm } from "@/components/generator/forms/QuizForm";
+import { AssignmentForm } from "@/components/generator/forms/AssignmentForm";
 
-// difficulties are handled via t() now
+import { MathPreview } from "@/components/generator/preview/MathPreview";
+import { QuizPreview } from "@/components/generator/preview/QuizPreview";
+import { AssignmentPreview } from "@/components/generator/preview/AssignmentPreview";
+import { CrosswordPreview } from "@/components/generator/preview/CrosswordPreview";
 
-// Cleans up [FRAC:N:D] and other markers for plain text export (e.g. DOCX)
-function cleanMathForExport(text: string): string {
-  if (!text) return "";
-  return text
-    .replace(/\[FRAC:([^:]+):([^\]]+)\]/g, "$1/$2")
-    .replace(/\*/g, "×")
-    .replace(/((?:[a-zA-Z0-9]|\([^)]+\))\^\d+)/g, "$1"); // Simple text fallback
-}
 
-const SegmentedControl = ({
-  label,
-  options,
-  value,
-  onChange,
-  segId,
-}: {
-  label: string;
-  options: string[];
-  value: string;
-  onChange: (v: string) => void;
-  segId: string;
-}) => (
-  <div className="space-y-2">
-    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</Label>
-    <div className="flex bg-muted rounded-xl p-1 gap-1">
-      {options.map((opt) => (
-        <button
-          key={opt}
-          onClick={() => onChange(opt)}
-          className={`relative flex-1 py-2.5 text-sm font-medium font-sans rounded-lg transition-colors ${value === opt ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-        >
-          {value === opt && (
-            <motion.div
-              layoutId={`seg-${segId}`}
-              className="absolute inset-0 bg-primary rounded-lg shadow-sm"
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-          )}
-          <span className="relative z-10">{opt}</span>
-        </button>
-      ))}
-    </div>
-  </div>
-);
 
 const Generator = () => {
   const navigate = useNavigate();
@@ -112,12 +74,12 @@ const Generator = () => {
   }, []);
 
   // Results State
-  const [quizData, setQuizData] = useState<any[]>([]);
-  const [assignmentData, setAssignmentData] = useState<any>(null);
+  const [quizData, setQuizData] = useState<QuizQuestion[]>([]);
+  const [assignmentData, setAssignmentData] = useState<AssignmentData | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
-  const [generatedProblems, setGeneratedProblems] = useState<{ q: string, a: string }[]>([]);
+  const [generatedProblems, setGeneratedProblems] = useState<MathProblem[]>([]);
 
   // Batch states
   const [isBatchMode, setIsBatchMode] = useState(false);
@@ -350,345 +312,19 @@ const Generator = () => {
   const puzzleRef = useRef<HTMLDivElement>(null);
   const answerRef = useRef<HTMLDivElement>(null);
 
-  const downloadDOCX = async () => {
-    try {
-      toast.info("Generating DOCX... Please wait.");
-      const docx = await import("docx");
-      const { saveAs } = await import("file-saver");
-
-      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel, BorderStyle, TableBorders, VerticalAlign } = docx;
-
-      let sections: any[] = [];
-
-      if (genType === "math" && generatedProblems.length > 0) {
-        sections.push({
-          properties: {
-            page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } }
-          },
-          children: [
-            new Paragraph({ text: orgName || "ClassPlay", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
-            new Paragraph({ text: `${mathTopic} - ${difficulty}`, alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
-            new Paragraph({ text: "Name: _______________________ Date: ______________", spacing: { before: 200, after: 600 } }),
-
-            new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              borders: TableBorders.NONE,
-              rows: Array.from({ length: Math.ceil(generatedProblems.length / 2) }, (_, i) => {
-                const p1 = generatedProblems[i * 2];
-                const p2 = generatedProblems[i * 2 + 1];
-                return new TableRow({
-                  children: [
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: [
-                            new TextRun({ text: `${i * 2 + 1}) `, bold: true }),
-                            new TextRun({ text: cleanMathForExport(p1.q) })
-                          ],
-                          spacing: { before: 200, after: 400 }
-                        })
-                      ]
-                    }),
-                    new TableCell({
-                      children: p2 ? [
-                        new Paragraph({
-                          children: [
-                            new TextRun({ text: `${i * 2 + 2}) `, bold: true }),
-                            new TextRun({ text: cleanMathForExport(p2.q) })
-                          ],
-                          spacing: { before: 200, after: 400 }
-                        })
-                      ] : []
-                    })
-                  ]
-                });
-              })
-            }),
-
-            new Paragraph({ text: "Answer Key", heading: HeadingLevel.HEADING_2, pageBreakBefore: true, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }),
-            new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              rows: Array.from({ length: Math.ceil(generatedProblems.length / 4) }, (_, i) => {
-                return new TableRow({
-                  children: Array.from({ length: 4 }, (_, j) => {
-                    const idx = i * 4 + j;
-                    const p = generatedProblems[idx];
-                    return new TableCell({
-                      children: p ? [
-                        new Paragraph({
-                          children: [
-                            new TextRun({ text: `${idx + 1}) `, bold: true, color: "666666" }),
-                            new TextRun({ text: cleanMathForExport(p.a), bold: true })
-                          ]
-                        })
-                      ] : []
-                    });
-                  })
-                });
-              })
-            })
-          ]
-        });
-      } else if (genType === "quiz" && quizData.length > 0) {
-        sections.push({
-          properties: {
-            page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } }
-          },
-          children: [
-            new Paragraph({ text: orgName || "ClassPlay", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
-            new Paragraph({ text: `Quiz: ${quizTopic}`, alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
-            new Paragraph({ text: "Name: _______________________ Date: ______________", spacing: { before: 200, after: 600 } }),
-
-            ...quizData.flatMap((q: any, i: number) => {
-              const options = q.options || [];
-              const optionTable = new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                borders: TableBorders.NONE,
-                rows: Array.from({ length: Math.ceil(options.length / 2) }, (_, rowIdx) => {
-                  return new TableRow({
-                    children: [
-                      new TableCell({
-                        children: [new Paragraph({ text: `[  ] ${options[rowIdx * 2]}`, indent: { left: 360 } })]
-                      }),
-                      new TableCell({
-                        children: options[rowIdx * 2 + 1]
-                          ? [new Paragraph({ text: `[  ] ${options[rowIdx * 2 + 1]}`, indent: { left: 360 } })]
-                          : []
-                      })
-                    ]
-                  });
-                })
-              });
-
-              return [
-                new Paragraph({
-                  children: [
-                    new TextRun({ text: `${i + 1}. `, bold: true }),
-                    new TextRun({ text: cleanMathForExport(q.q) })
-                  ],
-                  spacing: { before: 200, after: 100 }
-                }),
-                optionTable
-              ];
-            }),
-
-            new Paragraph({
-              text: "✅ Answer Key (Teacher Copy)",
-              heading: HeadingLevel.HEADING_2,
-              pageBreakBefore: true,
-              alignment: AlignmentType.CENTER,
-              spacing: { before: 400, after: 400 }
-            }),
-            new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              rows: Array.from({ length: Math.ceil(quizData.length / 5) }, (_, i) => {
-                return new TableRow({
-                  children: Array.from({ length: 5 }, (_, j) => {
-                    const idx = i * 5 + j;
-                    const q = quizData[idx];
-                    return new TableCell({
-                      children: q ? [
-                        new Paragraph({
-                          children: [
-                            new TextRun({ text: `${idx + 1}) `, bold: true, color: "666666" }),
-                            new TextRun({ text: cleanMathForExport(q.a), bold: true, color: "15803d" }) // green-700
-                          ],
-                          alignment: AlignmentType.CENTER
-                        })
-                      ] : [],
-                      shading: { fill: "f3f4f6" }
-                    });
-                  })
-                });
-              })
-            })
-          ]
-        });
-      } else if (genType === "assignment" && assignmentData) {
-        sections.push({
-          properties: {},
-          children: [
-            new Paragraph({ text: orgName || "ClassPlay", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
-            new Paragraph({ text: `${assignmentData.title}`, heading: HeadingLevel.HEADING_2, alignment: AlignmentType.CENTER }),
-            new Paragraph({ text: `${assignmentData.subject} • ${assignmentData.grade}`, alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
-            ...(assignmentData.intro ? [new Paragraph({ children: [new TextRun({ text: assignmentData.intro, italics: true })], spacing: { after: 400 } })] : []),
-            new Paragraph({ text: "Name: _______________________ Date: ______________", spacing: { before: 200, after: 400 } }),
-            ...assignmentData.questions.flatMap((q: any) => [
-              new Paragraph({
-                children: [
-                  new TextRun({ text: `${q.num}. `, bold: true }),
-                  new TextRun({ text: cleanMathForExport(q.text) })
-                ],
-                spacing: { before: 200, after: 100 }
-              }),
-              ...(q.options || []).map((opt: string) => new Paragraph({
-                text: `[  ] ${opt}`,
-                indent: { left: 720 }
-              }))
-            ]),
-            new Paragraph({ text: "Answer Key", heading: HeadingLevel.HEADING_2, pageBreakBefore: true }),
-            ...assignmentData.questions.map((q: any) => new Paragraph({
-              text: `${q.num}) ${cleanMathForExport(q.answer?.split(")")[0] || q.answer)}`
-            }))
-          ]
-        });
-      } else if (genType === "crossword" && crosswordData) {
-        const rows = crosswordData.grid.map((rowArr, r) => {
-          return new TableRow({
-            children: rowArr.map((cell, c) => {
-              const wordStart = crosswordData.words.find(w => w.row === r && w.col === c);
-              const cellPct = Math.floor(100 / crosswordData.width);
-              return new TableCell({
-                borders: {
-                  top: { style: cell ? BorderStyle.SINGLE : BorderStyle.NONE, size: cell ? 4 : 0, color: "000000" },
-                  bottom: { style: cell ? BorderStyle.SINGLE : BorderStyle.NONE, size: cell ? 4 : 0, color: "000000" },
-                  left: { style: cell ? BorderStyle.SINGLE : BorderStyle.NONE, size: cell ? 4 : 0, color: "000000" },
-                  right: { style: cell ? BorderStyle.SINGLE : BorderStyle.NONE, size: cell ? 4 : 0, color: "000000" }
-                },
-                width: { size: cellPct, type: WidthType.PERCENTAGE },
-                children: [
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: wordStart ? `${wordStart.number}` : "",
-                        size: 14,
-                        bold: true,
-                        color: "666666"
-                      })
-                    ],
-                    alignment: AlignmentType.LEFT,
-                    spacing: { before: 0, after: 0 }
-                  })
-                ],
-                shading: {
-                  fill: "FFFFFF"
-                },
-                verticalAlign: VerticalAlign.TOP
-              });
-            })
-          });
-        });
-
-        const acrossWords = crosswordData.words.filter(w => w.isAcross).sort((a, b) => a.number - b.number);
-        const downWords = crosswordData.words.filter(w => !w.isAcross).sort((a, b) => a.number - b.number);
-
-        sections.push({
-          properties: {
-            page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } }
-          },
-          children: [
-            new Paragraph({
-              text: orgName || "ClassPlay",
-              heading: HeadingLevel.HEADING_1,
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 200 }
-            }),
-            new Paragraph({
-              text: `${crosswordTopic}`,
-              heading: HeadingLevel.HEADING_2,
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 600 }
-            }),
-            new Table({
-              rows: rows,
-              alignment: AlignmentType.CENTER,
-              width: { size: 100, type: WidthType.PERCENTAGE },
-            }),
-            new Paragraph({ text: "", spacing: { before: 400 } }),
-
-            // Two-column clues using a borderless table
-            new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              borders: TableBorders.NONE,
-              rows: [
-                new TableRow({
-                  children: [
-                    new TableCell({
-                      children: [
-                        new Paragraph({ text: "Across", heading: HeadingLevel.HEADING_3, spacing: { after: 100 } }),
-                        ...acrossWords.map(w => new Paragraph({
-                          children: [
-                            new TextRun({ text: `${w.number}. `, bold: true, color: "000000" }),
-                            new TextRun({ text: w.clue })
-                          ],
-                          spacing: { after: 80 }
-                        }))
-                      ]
-                    }),
-                    new TableCell({
-                      children: [
-                        new Paragraph({ text: "Down", heading: HeadingLevel.HEADING_3, spacing: { after: 100 } }),
-                        ...downWords.map(w => new Paragraph({
-                          children: [
-                            new TextRun({ text: `${w.number}. `, bold: true, color: "000000" }),
-                            new TextRun({ text: w.clue })
-                          ],
-                          spacing: { after: 80 }
-                        }))
-                      ]
-                    })
-                  ]
-                })
-              ]
-            }),
-
-            // Answer Key
-            new Paragraph({
-              text: "Answer Key",
-              heading: HeadingLevel.HEADING_2,
-              alignment: AlignmentType.CENTER,
-              pageBreakBefore: true,
-              spacing: { before: 400, after: 400 }
-            }),
-            new Table({
-              alignment: AlignmentType.CENTER,
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              rows: crosswordData.grid.map((rowArr, r) => new TableRow({
-                children: rowArr.map((cell, c) => {
-                  const answerCellPct = Math.floor(100 / crosswordData.width);
-                  return new TableCell({
-                    borders: {
-                      top: { style: cell ? BorderStyle.SINGLE : BorderStyle.NONE, size: cell ? 4 : 0, color: "000000" },
-                      bottom: { style: cell ? BorderStyle.SINGLE : BorderStyle.NONE, size: cell ? 4 : 0, color: "000000" },
-                      left: { style: cell ? BorderStyle.SINGLE : BorderStyle.NONE, size: cell ? 4 : 0, color: "000000" },
-                      right: { style: cell ? BorderStyle.SINGLE : BorderStyle.NONE, size: cell ? 4 : 0, color: "000000" }
-                    },
-                    width: { size: answerCellPct, type: WidthType.PERCENTAGE },
-                    children: [
-                      new Paragraph({
-                        children: [
-                          new TextRun({ text: cell || "", bold: true, size: 24 })
-                        ],
-                        alignment: AlignmentType.CENTER
-                      })
-                    ],
-                    shading: { fill: "FFFFFF" }
-                  });
-                })
-              }))
-            })
-          ]
-        });
-      } else {
-        toast.info("Nothing to export.");
-        return;
-      }
-
-      const doc = new Document({
-        creator: orgName || "ClassPlay",
-        title: "Generated Content",
-        description: "AI Generated Educational Material",
-        sections: sections
-      });
-
-      const blob = await Packer.toBlob(doc);
-      saveAs(blob, "generated-content.docx");
-
-      toast.success("DOCX downloaded successfully!");
-    } catch (e) {
-      console.error("DOCX Generation failed", e);
-      toast.error("Failed to generate DOCX");
-    }
+  const handleDownloadDOCX = async () => {
+    await downloadDOCX({
+      genType,
+      orgName,
+      generatedProblems,
+      mathTopic,
+      difficulty,
+      quizData,
+      quizTopic,
+      assignmentData,
+      crosswordData,
+      crosswordTopic
+    });
   };
 
   const openEdit = () => {
@@ -926,203 +562,51 @@ const Generator = () => {
               ))}
             </div>
           </div>
-        </div> {/* This is the missing closing div */}
+        </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
           <AnimatePresence mode="wait">
             {genType === "math" && (
-              <motion.div
-                key="math"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className="space-y-5"
-              >
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("genTopic")}</Label>
-                  <Input
-                    placeholder={t("genTopicPlaceholder")}
-                    value={mathTopic}
-                    onChange={(e) => setMathTopic(e.target.value)}
-                    className="h-11 rounded-xl font-sans"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("genCount")} (10–30)</Label>
-                  <Input
-                    type="number"
-                    min="10"
-                    max="30"
-                    placeholder="15"
-                    value={questionCount}
-                    onChange={(e) => {
-                      const v = Math.min(30, Math.max(10, parseInt(e.target.value) || 10));
-                      setQuestionCount(String(v));
-                    }}
-                    className="h-11 rounded-xl font-sans"
-                  />
-                </div>
-
-                <SegmentedControl
-                  label={t("genDiff")}
-                  options={[t("genDiffEasy"), t("genDiffMed"), t("genDiffHard")]}
-                  value={difficulty === "Easy" ? t("genDiffEasy") : difficulty === "Hard" ? t("genDiffHard") : t("genDiffMed")}
-                  onChange={(v) => {
-                    const diffMap: any = { [t("genDiffEasy")]: "Easy", [t("genDiffMed")]: "Medium", [t("genDiffHard")]: "Hard" };
-                    setDifficulty(diffMap[v]);
-                  }}
-                  segId="difficulty"
-                />
-              </motion.div>
+              <MathForm
+                topic={mathTopic}
+                setTopic={setMathTopic}
+                count={questionCount}
+                setCount={setQuestionCount}
+                difficulty={difficulty}
+                setDifficulty={setDifficulty}
+              />
             )}
             {genType === "crossword" && (
-              <motion.div
-                key="crossword"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="space-y-5"
-              >
-                <SegmentedControl
-                  label={t("genCrosswordMode")}
-                  options={["AI", t("custom_words") || "Свои слова"]}
-                  value={crosswordMode === "ai" ? "AI" : (t("custom_words") || "Свои слова")}
-                  onChange={(v) => setCrosswordMode(v === "AI" ? "ai" : "custom")}
-                  segId="crossword-mode"
-                />
-
-                {crosswordMode === "ai" && (
-                  <>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("genTopic")}</Label>
-                      <Input
-                        placeholder={t("genTopicPlaceholder")}
-                        value={crosswordTopic}
-                        onChange={(e) => setCrosswordTopic(e.target.value)}
-                        className="h-11 rounded-xl font-sans"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("genCount")}</Label>
-                      <Input
-                        type="number"
-                        min="5"
-                        max="20"
-                        placeholder="10"
-                        value={wordCount}
-                        onChange={(e) => setWordCount(e.target.value)}
-                        className="h-11 rounded-xl font-sans"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {crosswordMode === "custom" && (
-                  <div className="space-y-2">
-                    <Textarea
-                      placeholder={"кот:домашнее животное\nсобака:друг человека\nрыба"}
-                      value={customWordsText}
-                      onChange={(e) => setCustomWordsText(e.target.value)}
-                      className="rounded-xl font-sans min-h-[140px] resize-y"
-                    />
-                    <p className="text-xs text-muted-foreground">{t("genCustomWordsHint")}</p>
-                  </div>
-                )}
-              </motion.div>
+              <CrosswordForm
+                mode={crosswordMode}
+                setMode={setCrosswordMode}
+                topic={crosswordTopic}
+                setTopic={setCrosswordTopic}
+                count={wordCount}
+                setCount={setWordCount}
+                customWordsText={customWordsText}
+                setCustomWordsText={setCustomWordsText}
+              />
             )}
 
             {genType === "quiz" && (
-              <motion.div
-                key="quiz"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="space-y-5"
-              >
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("genTopic")}</Label>
-                  <Input
-                    placeholder={t("genTopicPlaceholder")}
-                    value={quizTopic}
-                    onChange={(e) => setQuizTopic(e.target.value)}
-                    className="h-11 rounded-xl font-sans"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("genCount")}</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="15"
-                    placeholder="5"
-                    value={quizCount}
-                    onChange={(e) => setQuizCount(e.target.value)}
-                    className="h-11 rounded-xl font-sans"
-                  />
-                </div>
-              </motion.div>
+              <QuizForm
+                topic={quizTopic}
+                setTopic={setQuizTopic}
+                count={quizCount}
+                setCount={setQuizCount}
+              />
             )}
 
             {genType === "assignment" && (
-              <motion.div
-                key="assignment"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="space-y-5"
-              >
-                {/* Subject — выбор или ввод */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("subject_label")}</Label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { key: "Math", label: t("subject_math") },
-                      { key: "Biology", label: t("subject_biology") },
-                      { key: "History", label: t("subject_history") },
-                      { key: "Physics", label: t("subject_physics") },
-                      { key: "Chemistry", label: t("subject_chemistry") },
-                      { key: "English", label: t("subject_english") },
-                      { key: "Geography", label: t("subject_geography") },
-                      { key: "Literature", label: t("subject_literature") },
-                      { key: "General", label: t("subject_general") }
-                    ].map((s) => (
-                      <button key={s.key} onClick={() => setAssignSubject(s.key)}
-                        className={`py-2 px-2 text-xs font-sans rounded-lg border transition-all ${assignSubject === s.key ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"}`}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                  <Input
-                    placeholder={t("subject_placeholder")}
-                    value={assignSubject}
-                    onChange={(e) => setAssignSubject(e.target.value)}
-                    className="h-10 rounded-xl font-sans mt-1"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("genTopic")}</Label>
-                  <Input
-                    placeholder={t("genTopicPlaceholder")}
-                    value={assignTopic}
-                    onChange={(e) => setAssignTopic(e.target.value)}
-                    className="h-11 rounded-xl font-sans"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("genCount")}</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="20"
-                    placeholder="5"
-                    value={assignCount}
-                    onChange={(e) => setAssignCount(e.target.value)}
-                    className="h-11 rounded-xl font-sans"
-                  />
-                </div>
-              </motion.div>
+              <AssignmentForm
+                subject={assignSubject}
+                setSubject={setAssignSubject}
+                topic={assignTopic}
+                setTopic={setAssignTopic}
+                count={assignCount}
+                setCount={setAssignCount}
+              />
             )}
           </AnimatePresence>
 
@@ -1301,398 +785,49 @@ const Generator = () => {
                     <Sparkles className="w-4 h-4" /> Rewrite Layout
                   </Button>
                 )}
-                <Button variant="outline" size="sm" onClick={downloadDOCX} className="gap-2 bg-white/80 backdrop-blur">
+                <Button variant="outline" size="sm" onClick={handleDownloadDOCX} className="gap-2 bg-white/80 backdrop-blur">
                   <Download className="w-4 h-4" /> Download DOCX
                 </Button>
               </div>
 
-              {genType === "quiz" && quizData.length > 0 && (() => {
-                const QUIZ_PER_PAGE = 10;
-                const questionPages = Array.from(
-                  { length: Math.ceil(quizData.length / QUIZ_PER_PAGE) },
-                  (_, pi) => quizData.slice(pi * QUIZ_PER_PAGE, (pi + 1) * QUIZ_PER_PAGE)
-                );
-                return (
-                  <>
-                    {/* Answer key — скрытый, рендерится только для PDF */}
-                    <div className="fixed left-[-9999px] top-0">
-                      <div ref={answerRef} className="w-[210mm] bg-white p-8 flex flex-col">
-                        <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <img src="/logo_sticker.webp" alt="Logo" className="w-6 h-6 rounded object-contain" />
-                            <span style={{ fontSize: "11px" }} className="font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
-                          </div>
-                          <span style={{ fontSize: "9px" }} className="text-gray-500 font-sans">Answer Key • {quizTopic}</span>
-                        </div>
-                        <h2 style={{ fontSize: "14px" }} className="font-bold font-serif mb-4 text-center">Quiz Answer Key</h2>
-                        <div className="grid grid-cols-5 gap-1.5">
-                          {quizData.map((q, i) => (
-                            <div key={i} className="border border-gray-300 rounded text-center p-1.5">
-                              <div className="text-gray-400" style={{ fontSize: "8px" }}>№{i + 1}</div>
-                              <div className="font-bold text-green-700" style={{ fontSize: "10px" }}>{q.a}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Quiz worksheet — многостраничный */}
-                    <motion.div
-                      ref={puzzleRef}
-                      key="quiz-paper"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="w-full max-w-xl bg-white rounded-lg shadow-2xl border border-border overflow-y-auto print:shadow-none print:border-0 print:w-full print:max-w-none print:block print:overflow-visible"
-                      style={{ maxHeight: "80vh" }}
-                    >
-                      {/* Question pages — 10 вопросов на страницу */}
-                      {questionPages.map((pageQs, pi) => (
-                        <div
-                          key={pi}
-                          className="p-6 flex flex-col print:p-5"
-                          style={{ pageBreakAfter: "always" }}
-                        >
-                          {/* Header */}
-                          {pi === 0 ? (
-                            <>
-                              <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
-                                <div className="flex items-center gap-1.5">
-                                  <img src="/logo_sticker.webp" alt="Logo" className="w-6 h-6 rounded object-contain" />
-                                  <span style={{ fontSize: "11px" }} className="font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
-                                </div>
-                                <span style={{ fontSize: "9px" }} className="text-gray-500 font-sans">{quizTopic}</span>
-                              </div>
-                              <h3 style={{ fontSize: "15px" }} className="font-bold text-gray-900 text-center mb-4 font-serif">Quiz Worksheet</h3>
-                            </>
-                          ) : (
-                            <div className="flex items-center justify-end mb-3 pb-2 border-b border-gray-200">
-                              <span style={{ fontSize: "9px" }} className="text-gray-400 font-sans">Стр. {pi + 1}</span>
-                            </div>
-                          )}
-
-                          {/* Questions — компактный layout */}
-                          <div className="space-y-3">
-                            {pageQs.map((q, qi) => {
-                              const globalIdx = pi * QUIZ_PER_PAGE + qi;
-                              return (
-                                <div key={qi} className="pb-2 border-b border-gray-100 last:border-0">
-                                  <div style={{ fontSize: "11px" }} className="font-semibold text-gray-800 mb-1.5 leading-snug">
-                                    {globalIdx + 1}. <RichTextRenderer text={q.q} />
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-3">
-                                    {q.options?.map((opt: string, idx: number) => (
-                                      <div key={idx} style={{ fontSize: "10px" }} className="flex items-start gap-1 text-gray-700">
-                                        <span className="shrink-0 w-3 h-3 mt-0.5 rounded-full border border-gray-400 inline-block" />
-                                        <RichTextRenderer text={opt} className="leading-tight" />
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Answer Key — последняя страница */}
-                      <div className="p-6 flex flex-col print:p-5 border-t-4 border-dashed border-gray-300" style={{ pageBreakBefore: "always" }}>
-                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
-                          <div className="flex items-center gap-1.5">
-                            <img src="/logo_sticker.webp" alt="Logo" className="w-6 h-6 rounded object-contain" />
-                            <span style={{ fontSize: "11px" }} className="font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
-                          </div>
-                          <span style={{ fontSize: "9px" }} className="text-gray-500 font-sans">Answer Key • {quizTopic}</span>
-                        </div>
-                        <h3 style={{ fontSize: "14px" }} className="font-bold text-gray-900 text-center mb-4 font-serif">✅ Answer Key (Teacher Copy)</h3>
-                        <div className="grid grid-cols-5 gap-2">
-                          {quizData.map((q, i) => (
-                            <div key={i} className="border border-gray-300 rounded-lg text-center p-2">
-                              <div style={{ fontSize: "8px" }} className="text-gray-400 font-sans">№{i + 1}</div>
-                              <div style={{ fontSize: "11px" }} className="font-bold text-green-700 font-sans">{q.a}</div>
-                            </div>
-                          ))}
-                        </div>
-                        <p style={{ fontSize: "9px" }} className="text-gray-400 font-sans italic text-center mt-3">
-                          Этот лист только для учителя — не раздавать ученикам.
-                        </p>
-                      </div>
-                    </motion.div>
-                  </>
-                );
-              })()}
+              {genType === "quiz" && quizData.length > 0 && (
+                <QuizPreview
+                  quizData={quizData}
+                  quizTopic={quizTopic}
+                  orgName={orgName}
+                  puzzleRef={puzzleRef}
+                  answerRef={answerRef}
+                />
+              )}
 
               {genType === "assignment" && assignmentData && (
-                <>
-                  <div className="fixed left-[-9999px] top-0">
-                    <div ref={answerRef} className="w-[210mm] min-h-[297mm] bg-white p-10 flex flex-col">
-                      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <img src="/logo_sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
-                        </div>
-                        <span className="text-xs text-gray-500 font-sans">Answer Key • {assignmentData.title}</span>
-                      </div>
-                      <h2 className="text-xl font-bold font-serif mb-6 text-center">Teacher Key</h2>
-                      <div className="grid grid-cols-4 gap-1.5 mb-4">
-                        {assignmentData.questions.map((q: any) => (
-                          <div key={q.num} className="border border-gray-300 rounded text-center p-1">
-                            <div className="text-gray-400" style={{ fontSize: "9px" }}>№{q.num}</div>
-                            <div className="font-bold text-xs">{q.answer?.split(")")[0] || q.answer})</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <motion.div
-                    ref={puzzleRef}
-                    key="assignment-paper"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="w-full max-w-xl bg-white rounded-lg shadow-2xl border border-border overflow-y-auto print:shadow-none print:border-0 print:w-full print:max-w-none print:block"
-                    style={{ maxHeight: "80vh" }}
-                  >
-                    <div className="p-10 h-full flex flex-col print:p-2 print:h-auto">
-                      <div className="text-center mb-6 print:mb-4">
-                        <h1 className="text-2xl font-bold font-serif text-gray-900 mb-1">{assignmentData.title}</h1>
-                        <p className="text-sm text-gray-500 uppercase tracking-widest">{assignmentData.subject} • {assignmentData.grade}</p>
-                      </div>
-
-                      {assignmentData.intro && (
-                        <div className="mb-6 bg-gray-50 p-4 rounded-lg text-sm text-gray-700 italic border-l-4 border-primary/20">
-                          {assignmentData.intro}
-                        </div>
-                      )}
-
-                      <div className="space-y-4 flex-1 text-sm print:space-y-3">
-                        {assignmentData.questions?.map((q: any, i: number) => (
-                          <div key={i} className="space-y-1 pb-3 border-b border-gray-100 last:border-0 print:pb-2">
-                            <div className="font-semibold text-gray-800">
-                              {q.num}. <RichTextRenderer text={q.text} />
-                            </div>
-                            <div className="space-y-1 pl-4 print:space-y-0.5">
-                              {q.options?.map((opt: string, idx: number) => (
-                                <div key={idx} className="text-gray-600 flex items-center gap-2 text-sm print:text-xs">
-                                  <span className="w-3 h-3 rounded-full border border-gray-300 inline-block"></span>
-                                  <RichTextRenderer text={opt} />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                </>
+                <AssignmentPreview
+                  assignmentData={assignmentData}
+                  orgName={orgName}
+                  puzzleRef={puzzleRef}
+                  answerRef={answerRef}
+                />
               )}
 
               {genType === "math" && generatedProblems.length > 0 && (
-                <>
-                  <div className="fixed left-[-9999px] top-0">
-                    <div ref={answerRef} className="w-[210mm] min-h-[297mm] bg-white p-10 flex flex-col">
-                      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <img src="/logo_sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
-                        </div>
-                        <span className="text-xs text-gray-500 font-sans">Answer Key • {mathTopic}</span>
-                      </div>
-                      <h2 className="text-xl font-bold font-serif mb-6 text-center">Teacher's Answer Key</h2>
-                      <div className="grid grid-cols-4 gap-4">
-                        {generatedProblems.map((p, i) => (
-                          <div key={i} className="border border-gray-100 p-2 text-sm">
-                            <span className="text-gray-400 mr-2">#{i + 1}</span>
-                            <span className="font-mono font-bold text-primary">{p.a}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <motion.div
-                    ref={puzzleRef}
-                    key="math-paper"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="w-full max-w-xl bg-white rounded-lg shadow-2xl border border-border overflow-y-auto print:shadow-none print:border-0 print:w-full print:max-w-none print:block"
-                    style={{ maxHeight: "80vh" }}
-                  >
-                    <div className="p-10 h-full flex flex-col print:p-2">
-                      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <img src="/logo_sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 font-sans uppercase tracking-widest">{mathTopic}</p>
-                          <p className="text-[10px] text-gray-400 font-sans">{difficulty}</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-x-12 gap-y-8 flex-1">
-                        {generatedProblems.map((p, i) => (
-                          <div key={i} className="flex gap-4 items-start">
-                            <span className="text-xs text-gray-300 font-mono mt-1 w-5">{i + 1})</span>
-                            <div className="text-lg font-mono text-gray-800 tracking-wider">
-                              <RichTextRenderer text={p.q} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="mt-12 pt-6 border-t border-gray-100 flex justify-between items-end">
-                        <div className="space-y-1">
-                          <div className="flex gap-2">
-                            <div className="w-40 border-b border-gray-300 h-6"></div>
-                            <span className="text-[10px] text-gray-400 uppercase font-sans">Name</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="w-40 border-b border-gray-300 h-6"></div>
-                            <span className="text-[10px] text-gray-400 uppercase font-sans">Date</span>
-                          </div>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-center min-w-[120px]">
-                          <p className="text-[10px] text-gray-400 uppercase mb-1 font-sans">Score</p>
-                          <p className="text-2xl font-bold font-serif text-gray-300">/ {generatedProblems.length}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                </>
+                <MathPreview
+                  problems={generatedProblems}
+                  topic={mathTopic}
+                  difficulty={difficulty}
+                  orgName={orgName}
+                  puzzleRef={puzzleRef}
+                  answerRef={answerRef}
+                />
               )}
 
               {genType === "crossword" && crosswordData && (
-                <>
-                  <div className="fixed left-[-9999px] top-0">
-                    <div ref={answerRef} className="w-[210mm] min-h-[297mm] bg-white p-10 flex flex-col">
-                      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <img src="/logo_sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
-                        </div>
-                        <span className="text-xs text-gray-500 font-sans">Answer Key • {crosswordTopic}</span>
-                      </div>
-                      <h2 className="text-xl font-bold font-serif mb-6 text-center">Crossword Answer Key</h2>
-                      <div className="flex-1 flex items-center justify-center px-4 py-6">
-                        <div
-                          className="grid gap-0 w-full"
-                          style={{
-                            gridTemplateColumns: `repeat(${crosswordData.width}, 1fr)`,
-                          }}
-                        >
-                          {crosswordData.grid.map((row, r) =>
-                            row.map((cell, c) => (
-                              <div
-                                key={`${r}-${c}`}
-                                className={`aspect-square flex items-center justify-center text-sm font-bold ${cell
-                                  ? "bg-white text-gray-900 border border-gray-400"
-                                  : "bg-transparent"
-                                  }`}
-                              >
-                                {cell}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <motion.div
-                    ref={puzzleRef}
-                    key="crossword-paper"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="w-full max-w-2xl bg-white rounded-lg shadow-2xl border border-border overflow-y-auto print:shadow-none print:border-0 print:w-full print:max-w-none print:block"
-                    style={{ maxHeight: "80vh" }}
-                  >
-                    <div className="p-8 flex flex-col min-h-full print:p-2">
-                      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <img src="/logo_sticker.webp" alt="Logo" className="w-8 h-8 rounded object-contain" />
-                          <span className="text-sm font-bold font-serif text-gray-800">{orgName || "ClassPlay"}</span>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 font-sans uppercase tracking-widest">{crosswordTopic}</p>
-                          <p className="text-[10px] text-gray-400 font-sans">Crossword Puzzle</p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-6 items-stretch mb-8">
-                        <div
-                          className="grid gap-0 shrink-0 w-full px-1"
-                          style={{
-                            gridTemplateColumns: `repeat(${crosswordData.width}, 1fr)`,
-                          }}
-                        >
-                          {crosswordData.grid.map((row, r) =>
-                            row.map((cell, c) => {
-                              const wordStart = crosswordData.words.find(w => w.row === r && w.col === c);
-                              return (
-                                <div
-                                  key={`${r}-${c}`}
-                                  className={`relative flex items-center justify-center aspect-square ${cell
-                                    ? "bg-white border border-gray-400"
-                                    : "bg-transparent"
-                                    }`}
-                                >
-                                  {wordStart && cell && (
-                                    <span className="absolute top-0.5 left-0.5 text-[8px] font-bold text-gray-500 leading-none">
-                                      {wordStart.number}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-
-                        <div className="flex-1 space-y-4 font-sans">
-                          {['Across', 'Down'].map((dir) => {
-                            const isAcross = dir === 'Across';
-                            const dirWords = crosswordData.words
-                              .filter(w => w.isAcross === isAcross)
-                              .sort((a, b) => a.number - b.number);
-
-                            if (dirWords.length === 0) return null;
-
-                            return (
-                              <div key={dir}>
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-2 border-b border-primary/20 pb-1">
-                                  {dir}
-                                </h3>
-                                <div className="space-y-1.5">
-                                  {dirWords.map(w => (
-                                    <div key={w.number} className="text-[11px] leading-relaxed flex gap-2">
-                                      <span className="font-bold text-primary shrink-0 w-4">{w.number}.</span>
-                                      <span className="text-gray-700">{w.clue}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="mt-auto pt-6 border-t border-gray-100 flex justify-between items-end">
-                        <div className="space-y-1">
-                          <div className="flex gap-2">
-                            <div className="w-40 border-b border-gray-300 h-6"></div>
-                            <span className="text-[10px] text-gray-400 uppercase font-sans">Name</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="w-40 border-b border-gray-300 h-6"></div>
-                            <span className="text-[10px] text-gray-400 uppercase font-sans">Date</span>
-                          </div>
-                        </div>
-                        <p className="text-[8px] text-gray-300 italic font-sans max-w-[200px] text-right">
-                          Crossword generated with AI assistance. Keep practicing and keep learning!
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                </>
+                <CrosswordPreview
+                  crosswordData={crosswordData}
+                  crosswordTopic={crosswordTopic}
+                  orgName={orgName}
+                  puzzleRef={puzzleRef}
+                  answerRef={answerRef}
+                />
               )}
             </>
           )}

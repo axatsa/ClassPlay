@@ -1,4 +1,4 @@
-export type Section = "dashboard" | "teachers" | "organizations" | "ai-monitor" | "finances" | "system";
+import { TFunction } from "i18next";
 
 export type Teacher = {
   id: number;
@@ -13,6 +13,8 @@ export type Teacher = {
   is_active: boolean;
   tokens_limit: number;
   expires_at: string | null;
+  organization_id: number | null;
+  role: string;
 };
 
 export type Org = {
@@ -46,11 +48,67 @@ export type FinancialStats = {
 
 export type AuditLog = {
   id: number;
-  timestamp: string;
-  user_id: number;
   action: string;
-  resource_type: string;
-  resource_id?: number;
-  changes?: Record<string, unknown>;
-  ip_address?: string;
+  target: string;
+  time: string;
+  type: string;
 };
+
+export type OrgUser = {
+  id: number;
+  full_name: string;
+  email: string;
+  plan: string;
+  expires_at: string | null;
+  is_active: boolean;
+};
+
+export interface ApiTeacher {
+  id: number;
+  full_name: string;
+  email: string;
+  school: string;
+  is_active: boolean;
+  plan: string;
+  expires_at: string | null;
+  organization_id: number | null;
+  role: string;
+  tokens_limit: number;
+}
+
+export interface ApiAnalyticEntry {
+  user_id: number;
+  last_active: string | null;
+  total_tokens: number;
+}
+
+export interface ApiOrg {
+  id: number;
+  name: string;
+  contact_person: string;
+  license_seats: number;
+  used_seats: number;
+  expires_at: string;
+  status: string;
+}
+
+export interface ApiPayment {
+  id: number;
+  org_name: string;
+  amount: number;
+  currency: string;
+  date: string;
+  method: string;
+  status: "paid" | "pending" | "failed";
+  period: string;
+}
+
+export interface ApiAuditLog {
+  id: number;
+  action: string;
+  target: string;
+  timestamp: string;
+  log_type: string;
+}
+
+export type Section = "dashboard" | "teachers" | "organizations" | "ai-monitor" | "finances" | "system";
