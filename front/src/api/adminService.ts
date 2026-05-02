@@ -1,9 +1,19 @@
 import api from "@/lib/api";
+import type {
+  ApiTeacher,
+  ApiOrg,
+  ApiPayment,
+  ApiAuditLog,
+  ApiAnalyticEntry,
+  OrgUser,
+  FinancialStats,
+} from "@/types/admin";
+import type { OrgTeacher, OrgInviteResponse } from "@/types/api";
 
 export const adminService = {
     // ── Teachers ──────────────────────────────────────────────
-    getTeachers: async (skip: number, limit: number, search: string) => {
-        const response = await api.get(`/admin/teachers?skip=${skip}&limit=${limit}&search=${search}`);
+    getTeachers: async (skip: number, limit: number, search: string): Promise<ApiTeacher[]> => {
+        const response = await api.get<ApiTeacher[]>(`/admin/teachers?skip=${skip}&limit=${limit}&search=${search}`);
         return response.data;
     },
 
@@ -63,14 +73,14 @@ export const adminService = {
     },
 
     // ── Analytics ──────────────────────────────────────────────
-    getAnalytics: async () => {
-        const response = await api.get("/admin/analytics");
+    getAnalytics: async (): Promise<ApiAnalyticEntry[]> => {
+        const response = await api.get<ApiAnalyticEntry[]>("/admin/analytics");
         return response.data;
     },
 
     // ── Organizations ─────────────────────────────────────────
-    getOrganizations: async (skip: number, limit: number) => {
-        const response = await api.get(`/admin/organizations?skip=${skip}&limit=${limit}`);
+    getOrganizations: async (skip: number, limit: number): Promise<ApiOrg[]> => {
+        const response = await api.get<ApiOrg[]>(`/admin/organizations?skip=${skip}&limit=${limit}`);
         return response.data;
     },
 
@@ -90,18 +100,18 @@ export const adminService = {
     },
 
     // ── Payments & Misc ───────────────────────────────────────
-    getPayments: async (skip: number, limit: number) => {
-        const response = await api.get(`/admin/payments?skip=${skip}&limit=${limit}`);
+    getPayments: async (skip: number, limit: number): Promise<ApiPayment[]> => {
+        const response = await api.get<ApiPayment[]>(`/admin/payments?skip=${skip}&limit=${limit}`);
         return response.data;
     },
 
-    getAuditLogs: async (skip: number, limit: number) => {
-        const response = await api.get(`/admin/audit-logs?skip=${skip}&limit=${limit}`);
+    getAuditLogs: async (skip: number, limit: number): Promise<ApiAuditLog[]> => {
+        const response = await api.get<ApiAuditLog[]>(`/admin/audit-logs?skip=${skip}&limit=${limit}`);
         return response.data;
     },
 
-    getFinancials: async () => {
-        const response = await api.get("/admin/financials");
+    getFinancials: async (): Promise<FinancialStats> => {
+        const response = await api.get<FinancialStats>("/admin/financials");
         return response.data;
     },
 
@@ -110,8 +120,8 @@ export const adminService = {
         return response.data;
     },
 
-    getOrgUsers: async (orgId: number) => {
-        const response = await api.get(`/admin/organizations/${orgId}/users`);
+    getOrgUsers: async (orgId: number): Promise<OrgUser[]> => {
+        const response = await api.get<OrgUser[]>(`/admin/organizations/${orgId}/users`);
         return response.data;
     },
 
@@ -122,8 +132,8 @@ export const adminService = {
         return response.data;
     },
 
-    getOrgInvites: async (orgId: number) => {
-        const response = await api.get(`/admin/organizations/${orgId}/invites`);
+    getOrgInvites: async (orgId: number): Promise<OrgInviteResponse[]> => {
+        const response = await api.get<OrgInviteResponse[]>(`/admin/organizations/${orgId}/invites`);
         return response.data;
     },
 

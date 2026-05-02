@@ -12,22 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { useTranslation } from "react-i18next";
-
-interface Stats {
-  total_generations: number;
-  generations_this_month: number;
-  games_launched: number;
-  activity_by_day: { date: string; count: number }[];
-  top_features: { name: string; count: number }[];
-}
-
-interface HistoryItem {
-  id: number;
-  generator_type: string;
-  topic: string;
-  created_at: string;
-  is_favorite: boolean;
-}
+import type { GenerationStats as Stats, HistoryItem, SubscriptionMe as SubscriptionData } from "@/types/api";
 
 function getGameLabels(t: (key: string) => string): Record<string, string> {
   return {
@@ -68,11 +53,6 @@ function StatCard({
       {sub && <p className="text-xs text-muted-foreground mt-1 font-sans">{sub}</p>}
     </motion.div>
   );
-}
-
-interface SubscriptionData {
-  tokens_used_this_month: number;
-  tokens_limit: number;
 }
 
 // ── Reusable embeddable analytics panel (no header — for use inside Profile tabs etc.) ───

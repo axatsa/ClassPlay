@@ -10,27 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-
-// ─── Types ─────────────────────────────────────────────────────────────────
-interface BookPage {
-    page_number: number;
-    text: string;
-    illustration_prompt: string;
-    image_base64?: string;  // base64 PNG from gemini-2.5-flash-image
-}
-
-interface Book {
-    id: number;
-    title: string;
-    description: string;
-    age_group: string;
-    genre: string;
-    language: string;
-    pages: BookPage[];
-    page_count?: number;
-    cover_emoji: string;
-    createdAt: Date;
-}
+import type { BookPage, Book } from "@/types/api";
 
 // Reader "slides": cover → [text, illustration] × 10  (21 total)
 type Slide =

@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/lib/api";
-
-interface WordPair { source: string; target: string; example: string }
+import type { WordPair } from "@/types/api";
 
 const LANG_LABELS: Record<string, string> = {
   Russian: "Русский", Uzbek: "O'zbek", English: "English",

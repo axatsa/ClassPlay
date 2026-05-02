@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/lib/api";
+import type { HangmanWord as WordEntry } from "@/types/api";
 
 // ── SVG Hangman drawing ──────────────────────────────────────────────────────
 const HANGMAN_PARTS = [
@@ -35,8 +36,6 @@ const MAX_WRONG = HANGMAN_PARTS.length - 3; // 7 wrong guesses allowed (after ga
 
 const ALPHABET_RU = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split("");
 const ALPHABET_EN = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-
-interface WordEntry { word: string; hint: string; hints?: string[] }
 
 type Phase = "setup" | "playing" | "result";
 

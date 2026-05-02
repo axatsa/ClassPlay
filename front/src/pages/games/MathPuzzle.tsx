@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/lib/api";
-
-type PuzzleType = "missing_operator" | "number_chain" | "magic_square";
-
-interface OperatorPuzzle { puzzle: string; answer: string }
-interface ChainPuzzle { puzzle: string; answer: string; rule: string }
-interface MagicPuzzle { puzzle: (number | "?")[][][]; answers: string[]; magic_sum: number }
-type AnyPuzzle = OperatorPuzzle | ChainPuzzle | MagicPuzzle;
+import type {
+  MathPuzzleType as PuzzleType,
+  OperatorPuzzle,
+  ChainPuzzle,
+  MagicPuzzle,
+  AnyMathPuzzle as AnyPuzzle,
+} from "@/types/api";
 
 const PUZZLE_LABELS: Record<PuzzleType, string> = {
   missing_operator: "Пропущенный оператор",

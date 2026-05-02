@@ -11,30 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import api from "@/lib/api";
 import { toast } from "sonner";
-
-interface OrgStats {
-  org_id: number;
-  org_name: string;
-  contact_person: string;
-  seats_used: number;
-  seats_total: number;
-  expires_at: string;
-  status: string;
-  teachers_count: number;
-  tokens_this_month: number;
-}
-
-interface TeacherRow {
-  id: number;
-  email: string;
-  full_name: string | null;
-  school: string | null;
-  is_active: boolean;
-  plan: string | null;
-  expires_at: string | null;
-  role: string;
-  tokens_limit?: number;
-}
+import type { OrgMeResponse as OrgStats, OrgTeacher as TeacherRow, OrgContact } from "@/types/api";
 
 function StatusBadge({ active }: { active: boolean }) {
   return active ? (
