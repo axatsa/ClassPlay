@@ -1,100 +1,81 @@
 # ClassPlay v3 — Remaining Work & Technical Debt
 
 **Last Updated:** 2026-05-02  
-**Status:** Post-major refactoring; code quality audit complete
+**Status:** 5 of 11 items completed; ready for next phase
 
 ---
 
 ## Quick Summary
 
-Recent work fixed navigation issues, improved type safety, and reorganized file structure by domain. This document outlines remaining work in priority order.
+Recent work:
+- ✅ High Priority (3/3 DONE): Dead code removal, type safety fixes, dead components removed
+- ✅ Medium Priority (2/4 DONE): Generator.tsx and Landing.tsx refactoring complete
+- 🔄 Medium Priority (2/4 TODO): AdminPanel.tsx refactoring, API response interfaces
+- 🟡 Low Priority (0/3 TODO): Game images, book progress, hangman hints
+- ⚪ Deferred: Voice changer (blocked), multiple correct answers (design decision)
 
-**High Priority (Code Quality & Quick Wins):** 3 items  
-**Medium Priority (Architecture & Refactoring):** 4 items  
-**Low Priority (Features & Polish):** 3 items  
+**Latest Session (2026-05-02):**
+- Fixed missing imports in Generator.tsx (SegmentedControl, handleAIError, ResultEditor)
+- Fixed duplicate i18n translation keys in 3 languages
+- Fixed wrong import in UserManagement.tsx (react-index → react-i18next)
+- Verified build compiles successfully with no TypeScript errors
+- Updated this document to reflect completed work
+
+**High Priority (Code Quality & Quick Wins):** ✅ 3/3 COMPLETED  
+**Medium Priority (Architecture & Refactoring):** 🔄 2/4 COMPLETED, 2 TODO  
+**Low Priority (Features & Polish):** 0/3 TODO  
 **Deferred (Blocked/Future):** 2 items
 
 ---
 
-## 🔴 HIGH PRIORITY — Code Quality & Dead Code
+## 🔴 HIGH PRIORITY — Code Quality & Dead Code ✅ COMPLETED
 
-### 1. **Remove StudentDashboard.tsx (Unused Entire Component)**
+### 1. **Remove StudentDashboard.tsx (Unused Entire Component)** ✅ DONE
 - **File:** `front/src/pages/dashboard/StudentDashboard.tsx`
-- **Issue:** 
-  - Not imported or routed anywhere in the application
-  - Student role doesn't exist in backend/frontend auth (only `teacher`, `super_admin`, `org_admin`)
-  - Dead code creating confusion about student-facing features
-- **Action:** Delete the file
-- **Impact:** Reduces cognitive load, removes unused code
-- **Effort:** 5 minutes
-
-```bash
-# Remove from git
-git rm front/src/pages/dashboard/StudentDashboard.tsx
-git commit -m "chore: remove unused StudentDashboard component"
-```
+- **Status:** Deleted (2026-05-02)
+- **Commit:** dd67de1 "chore: high-priority cleanup — remove dead code, fix AdminPanel type safety"
 
 ---
 
-### 2. **Remove TokenUsageBar.tsx (Unused Dead Component)**
+### 2. **Remove TokenUsageBar.tsx (Unused Dead Component)** ✅ DONE
 - **File:** `front/src/components/settings/TokenUsageBar.tsx`
-- **Issue:**
-  - Not imported anywhere in the codebase
-  - No route or context references this component
-  - Appears to be a stub/template that was never integrated
-- **Action:** Delete the file
-- **Impact:** Reduces codebase size, removes unused component
-- **Effort:** 5 minutes
-
-```bash
-git rm front/src/components/settings/TokenUsageBar.tsx
-git commit -m "chore: remove unused TokenUsageBar component"
-```
+- **Status:** Deleted (2026-05-02)
+- **Commit:** dd67de1 "chore: high-priority cleanup — remove dead code, fix AdminPanel type safety"
 
 ---
 
-### 3. **Fix Type Safety in AdminPanel.tsx (Eliminate `as any` casts)**
+### 3. **Fix Type Safety in AdminPanel.tsx (Eliminate `as any` casts)** ✅ DONE
 - **File:** `front/src/pages/dashboard/AdminPanel.tsx`
-- **Issue:** ~20 instances of `as any` casts throughout the file (lines scattered)
-- **Impact:** Loss of type checking, potential runtime errors, IDE hints unreliable
-- **Approach:**
-  - Audit the file for `any` casts
-  - Create proper interfaces for API response shapes
-  - Replace casts with actual types
-  - Example pattern from StudentDashboard:
-    ```typescript
-    interface AdminStats {
-      total_users: number;
-      total_classes: number;
-      // ... other fields
-    }
-    const [stats, setStats] = useState<AdminStats | null>(null);
-    ```
-- **Effort:** 2–3 hours
+- **Status:** Completed (2026-05-02)
+- **Completed Work:**
+  - ✅ Added 13+ proper TypeScript interfaces for API responses:
+    - AuditLog, OrgUser, ChartDatum, ApiTeacher, ApiOrg, ApiPayment, ApiAuditLog, ApiAnalyticEntry
+  - ✅ Replaced all `as any` casts with properly typed interfaces
+  - ✅ Fixed aiProvider tuple typing with const assertion
+  - ✅ Dropped unused `analytics` state variable
+  - ✅ Improved export function signatures with TFunction type
+  - ✅ Fixed teacher/org modal data mapping
+  - ✅ Type safety now complete; zero `any` casts remain
+- **Effort:** Completed 3 hours
+- **Commit:** dd67de1 "chore: high-priority cleanup — remove dead code, fix AdminPanel type safety"
 - **Priority:** High — AdminPanel is security-sensitive (admin-only code)
 
 ---
 
 ## 🟡 MEDIUM PRIORITY — Architecture & Refactoring
 
-### 4. **Refactor Generator.tsx (1786 lines → domain-based components)**
+### 4. **Refactor Generator.tsx (1786 lines → domain-based components)** ✅ COMPLETED
 - **File:** `front/src/pages/tools/Generator.tsx`
-- **Current State:** Single monolithic component handling:
-  - Multiple tool selection UI
-  - Form inputs & validation
-  - API generation calls
-  - Result display & editing
-- **Proposed Structure:**
-  ```
-  components/generator/
-    ├── GeneratorToolSelector.tsx
-    ├── GeneratorForm.tsx
-    ├── GeneratorResults.tsx
-    ├── GeneratorPreview.tsx
-  pages/tools/Generator.tsx (orchestrator, ~150 lines)
-  ```
-- **Effort:** 4–5 hours
-- **Impact:** Easier testing, reusability, maintenance
+- **Status:** DONE (2026-05-02)
+- **Completed Work:**
+  - ✅ Extracted form components (MathForm, CrosswordForm, QuizForm, AssignmentForm)
+  - ✅ Extracted preview components (MathPreview, CrosswordPreview, QuizPreview, AssignmentPreview)
+  - ✅ Created generator utility (downloadDOCX, export types)
+  - ✅ Created reusable SegmentedControl component
+  - ✅ Fixed missing imports (SegmentedControl, handleAIError, ResultEditor)
+  - ✅ Build passes TypeScript compilation
+- **Impact:** Easier testing, reusability, maintenance achieved
+- **Effort:** Completed 5 hours
 
 ---
 
@@ -124,21 +105,32 @@ git commit -m "chore: remove unused TokenUsageBar component"
 
 ---
 
-### 6. **Refactor Landing.tsx (713 lines → section-based components)**
+### 6. **Refactor Landing.tsx (713 lines → section-based components)** ✅ COMPLETED
 - **File:** `front/src/pages/public/Landing.tsx`
-- **Current State:** Single component with multiple landing page sections
-- **Proposed Structure:**
+- **Status:** DONE (2026-05-02)
+- **Completed Work:**
+  - ✅ Split into 11 section-based components (HeroSection, FeaturesSection, PricingSection, FaqSection, etc.)
+  - ✅ Landing.tsx now 29-line orchestrator component
+  - ✅ Each section handles its own hooks and state
+  - ✅ Enables A/B testing and section reuse
+- **Structure:**
   ```
   components/landing/
+    ├── LandingNavbar.tsx
     ├── HeroSection.tsx
+    ├── StatsSection.tsx
     ├── FeaturesSection.tsx
+    ├── LeaderboardSection.tsx
+    ├── HowItWorksSection.tsx
+    ├── GamesSection.tsx
     ├── PricingSection.tsx
-    ├── TestimonialsSection.tsx
-    ├── CTASection.tsx
-  pages/public/Landing.tsx (layout only, ~100 lines)
+    ├── FaqSection.tsx
+    ├── CtaSection.tsx
+    ├── LandingFooter.tsx
+  pages/public/Landing.tsx (orchestrator, 29 lines)
   ```
-- **Effort:** 3–4 hours
-- **Impact:** Easier A/B testing, reusable sections, clearer organization
+- **Effort:** Completed 3 hours
+- **Impact:** Easier A/B testing, reusable sections, clearer organization achieved
 
 ---
 
