@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useClass } from "@/context/ClassContext";
-import { useTranslation } from "react-i18next";
+import { useTranslation, type TFunction } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
 import BulkImportModal from "@/components/dashboard/BulkImportModal";
 import OrgStatsModal from "@/components/dashboard/OrgStatsModal";
@@ -68,6 +68,68 @@ type FinancialStats = {
   pending_payments: number;
 };
 
+type AuditLog = {
+  id: number;
+  action: string;
+  target: string;
+  time: string;
+  type: string;
+};
+
+type OrgUser = {
+  id: number;
+  full_name: string;
+  email: string;
+  plan: string;
+  expires_at: string | null;
+  is_active: boolean;
+};
+
+// API response shapes (raw from backend before mapping)
+interface ApiTeacher {
+  id: number;
+  full_name: string;
+  email: string;
+  school: string;
+  is_active: boolean;
+  plan: string;
+  expires_at: string | null;
+  organization_id: number | null;
+  role: string;
+  tokens_limit: number;
+}
+interface ApiAnalyticEntry {
+  user_id: number;
+  last_active: string | null;
+  total_tokens: number;
+}
+interface ApiOrg {
+  id: number;
+  name: string;
+  contact_person: string;
+  license_seats: number;
+  used_seats: number;
+  expires_at: string;
+  status: string;
+}
+interface ApiPayment {
+  id: number;
+  org_name: string;
+  amount: number;
+  currency: string;
+  date: string;
+  method: string;
+  status: "paid" | "pending" | "failed";
+  period: string;
+}
+interface ApiAuditLog {
+  id: number;
+  action: string;
+  target: string;
+  timestamp: string;
+  log_type: string;
+}
+
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const DAILY_TOKENS = [
   { day: "Mon", tokens: 2400 },
@@ -103,7 +165,7 @@ const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
   URL.revokeObjectURL(url);
 };
 
-const exportTeachersCSV = (teachers: Teacher[], t: any) => {
+const exportTeachersCSV = (teachers: Teacher[], t: TFunction) => {
   downloadCSV(
     `classplay_teachers_${new Date().toISOString().slice(0, 10)}.csv`,
     [t("exp_name"), t("exp_login"), t("exp_school"), t("exp_status"), t("exp_last_login"), t("exp_plan"), "Истекает", t("exp_tokens"), t("exp_ip")],
@@ -121,7 +183,7 @@ const exportTeachersCSV = (teachers: Teacher[], t: any) => {
   );
 };
 
-const exportOrgsCSV = (orgs: Org[], t: any) => {
+const exportOrgsCSV = (orgs: Org[], t: TFunction) => {
   downloadCSV(
     `classplay_organizations_${new Date().toISOString().slice(0, 10)}.csv`,
     [t("exp_org_name"), t("exp_contact"), "План", t("exp_seats_total"), t("exp_seats_used"), "Загрузка %", t("exp_expires"), t("exp_status")],
@@ -133,7 +195,7 @@ const exportOrgsCSV = (orgs: Org[], t: any) => {
   );
 };
 
-const exportAiUsageCSV = (teachers: Teacher[], t: any) => {
+const exportAiUsageCSV = (teachers: Teacher[], t: TFunction) => {
   downloadCSV(
     `classplay_ai_usage_${new Date().toISOString().slice(0, 10)}.csv`,
     ["#", t("exp_teacher"), t("exp_school"), t("exp_ip"), t("exp_tokens_used"), t("exp_status")],
@@ -143,7 +205,7 @@ const exportAiUsageCSV = (teachers: Teacher[], t: any) => {
   );
 };
 
-const exportPaymentsCSV = (payments: Payment[], t: any) => {
+const exportPaymentsCSV = (payments: Payment[], t: TFunction) => {
   downloadCSV(
     `classplay_payments_${new Date().toISOString().slice(0, 10)}.csv`,
     [t("exp_org_name"), t("exp_amount"), t("exp_currency"), t("exp_date"), t("exp_method"), t("exp_status"), t("exp_period")],
@@ -153,7 +215,7 @@ const exportPaymentsCSV = (payments: Payment[], t: any) => {
 
 // HTML-to-PDF export via print dialog
 // structured DOCX export
-const exportTeachersDOCX = async (teachers: Teacher[], t: any) => {
+const exportTeachersDOCX = async (teachers: Teacher[], t: TFunction) => {
   try {
 
     const doc = new Document({
@@ -192,7 +254,7 @@ const exportTeachersDOCX = async (teachers: Teacher[], t: any) => {
   } catch (e) { console.error(e); toast.error("DOCX failed"); }
 };
 
-const exportOrgsDOCX = async (orgs: Org[], t: any) => {
+const exportOrgsDOCX = async (orgs: Org[], t: TFunction) => {
   try {
     const doc = new Document({
       sections: [{
@@ -227,7 +289,7 @@ const exportOrgsDOCX = async (orgs: Org[], t: any) => {
   } catch (e) { console.error(e); }
 };
 
-const exportAiUsageDOCX = async (teachers: Teacher[], t: any) => {
+const exportAiUsageDOCX = async (teachers: Teacher[], t: TFunction) => {
   try {
     const sorted = [...teachers].sort((a, b) => b.tokenUsage - a.tokenUsage);
     const doc = new Document({
@@ -259,7 +321,7 @@ const exportAiUsageDOCX = async (teachers: Teacher[], t: any) => {
   } catch (e) { console.error(e); }
 };
 
-const exportPaymentsDOCX = async (payments: Payment[], t: any) => {
+const exportPaymentsDOCX = async (payments: Payment[], t: TFunction) => {
   try {
     const doc = new Document({
       sections: [{
@@ -290,7 +352,7 @@ const exportPaymentsDOCX = async (payments: Payment[], t: any) => {
   } catch (e) { console.error(e); }
 };
 
-const exportAuditLogDOCX = async (logs: any[], t: any) => {
+const exportAuditLogDOCX = async (logs: AuditLog[], t: TFunction) => {
   try {
     const doc = new Document({
       sections: [{
@@ -431,7 +493,8 @@ const MetricCard = ({
   );
 };
 
-const BarChart = ({ data }: { data: (typeof DAILY_TOKENS) | any[] }) => {
+type ChartDatum = { day: string; tokens: number; cost?: number };
+const BarChart = ({ data }: { data: ChartDatum[] }) => {
   const max = Math.max(...data.map(d => d.tokens || 0)) || 1;
   return (
     <div className="flex items-end gap-2 h-32">
@@ -508,7 +571,7 @@ const ExportMenu = ({ onCSV, onPDF }: { onCSV: () => void; onPDF: () => void }) 
   );
 };
 
-const DashboardView = ({ teachers, orgs, payments, auditLogs, isLoading }: { teachers: Teacher[]; orgs: Org[]; payments: Payment[]; auditLogs: any[]; isLoading: boolean }) => {
+const DashboardView = ({ teachers, orgs, payments, auditLogs, isLoading }: { teachers: Teacher[]; orgs: Org[]; payments: Payment[]; auditLogs: AuditLog[]; isLoading: boolean }) => {
   const { t } = useTranslation();
   const expiringTeachers = teachers.filter(t => {
     if (!t.expires_at) return false;
@@ -651,7 +714,7 @@ const TeachersView = ({
 
   const handleSave = async (data: TeacherFormData) => {
     if (data.id) await adminService.updateTeacher(data.id, data);
-    else await adminService.createTeacher(data as any);
+    else await adminService.createTeacher({ ...data, password: data.password! });
     onRefresh();
     toast.success("Saved successfully");
   };
@@ -968,7 +1031,7 @@ const TeachersView = ({
                         <button onClick={() => onImpersonate(t.id)} className="p-2 rounded-lg hover:bg-primary/10 transition-colors" title="Войти как пользователь">
                           <LogIn className="w-3.5 h-3.5 text-primary" />
                         </button>
-                        <button onClick={() => setModal({ isOpen: true, data: { id: t.id, full_name: t.name, email: t.login, tokens_limit: t.tokens_limit, password: "", phone: "", plan: t.plan } as any })} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Редактировать">
+                        <button onClick={() => setModal({ isOpen: true, data: { id: t.id, full_name: t.name, email: t.login, school: t.school, tokens_limit: t.tokens_limit, password: "", phone: "", plan: t.plan } })} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Редактировать">
                           <Settings className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
                         <button onClick={() => setShowResetModal(t.id)} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Сбросить пароль">
@@ -1075,7 +1138,7 @@ const OrgsView = ({ orgs, isLoading, onRefresh }: { orgs: Org[]; isLoading: bool
   const [importOrg, setImportOrg] = useState<{ id: number, name: string } | null>(null);
   const [statsOrg, setStatsOrg] = useState<number | null>(null);
   const [usersOrg, setUsersOrg] = useState<{ id: number, name: string } | null>(null);
-  const [orgUsers, setOrgUsers] = useState<any[]>([]);
+  const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
   const [inviteOrg, setInviteOrg] = useState<{ id: number, name: string } | null>(null);
   const [modal, setModal] = useState<{isOpen: boolean, data?: OrgFormData}>({isOpen: false});
   const [tokenLimitOrg, setTokenLimitOrg] = useState<{ id: number, name: string } | null>(null);
@@ -1083,7 +1146,7 @@ const OrgsView = ({ orgs, isLoading, onRefresh }: { orgs: Org[]; isLoading: bool
 
   const handleSave = async (data: OrgFormData) => {
     if (data.id) await adminService.updateOrganization(data.id, data);
-    else await adminService.createOrganization(data as any);
+    else { const { id: _id, ...createData } = data; await adminService.createOrganization(createData); }
     onRefresh();
     toast.success("Saved correctly");
   };
@@ -1174,7 +1237,7 @@ const OrgsView = ({ orgs, isLoading, onRefresh }: { orgs: Org[]; isLoading: bool
                     >
                       <Upload className="w-3 h-3" /> CSV
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setModal({ isOpen: true, data: org as any })} className="rounded-xl font-sans h-8 text-xs gap-1">
+                    <Button variant="outline" size="sm" onClick={() => setModal({ isOpen: true, data: { id: org.id, name: org.name, contact_person: org.contact, license_seats: org.seats, expires_at: org.expires, status: org.status } })} className="rounded-xl font-sans h-8 text-xs gap-1">
                       <Settings className="w-3 h-3" /> Орг
                     </Button>
                     <Button
@@ -1738,14 +1801,14 @@ const SystemView = ({
 }: {
   aiProvider: string; systemAlert: string; setSystemAlert: (v: string) => void;
   alertEnabled: boolean; setAlertEnabled: (v: boolean) => void;
-  auditLogs: any[]; isLoading: boolean;
+  auditLogs: AuditLog[]; isLoading: boolean;
   adminTelegram: string; setAdminTelegram: (v: string) => void;
 }) => {
   const { t } = useTranslation();
   const [logFilter, setLogFilter] = useState<"all" | "today" | "week" | "month">("all");
   const [actionFilter, setActionFilter] = useState<string>("");
   const [targetFilter, setTargetFilter] = useState<"all" | "user" | "org" | "system">("all");
-  const [detailLog, setDetailLog] = useState<any | null>(null);
+  const [detailLog, setDetailLog] = useState<AuditLog | null>(null);
 
   const filteredLogs = auditLogs.filter(log => {
     const logDate = new Date(log.time);
@@ -1821,12 +1884,12 @@ const SystemView = ({
             </h4>
             <p className="text-xs text-muted-foreground mb-4 font-sans">{t("adminAiProviderDesc")}</p>
             <div className="flex gap-2">
-              {["gemini", "openai"].map(p => (
+              {(["gemini", "openai"] as const).map(p => (
                 <Button
                   key={p}
                   variant={aiProvider === p ? "default" : "outline"}
                   onClick={() => {
-                    setAiProvider(p as any);
+                    setAiProvider(p);
                     adminService.setSetting("ai_provider", p);
                     toast.success(`Переключено на ${p}`);
                   }}
@@ -2021,8 +2084,8 @@ const AdminPanel = () => {
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [financials, setFinancials] = useState<FinancialStats>({ mrr: 0, total_revenue: 0, active_subscriptions: 0, pending_payments: 0 });
-  const [auditLogs, setAuditLogs] = useState<any[]>([]); // simplified type for logs
-  const [analytics, setAnalytics] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
@@ -2042,7 +2105,7 @@ const AdminPanel = () => {
     }
   };
 
-  const generateDailyTokens = (teachers: any[]) => {
+  const generateDailyTokens = (_teachers: Teacher[]) => {
     const today = new Date();
     const days = Array.from({length: 7}, (_, i) => {
       const d = new Date(today);
@@ -2081,7 +2144,7 @@ const AdminPanel = () => {
 
       if (alertData) setSystemAlert(alertData.value);
       if (enabledData) setAlertEnabled(enabledData.value === "true");
-      if (providerData) setAiProvider(providerData.value as any);
+      if (providerData) setAiProvider(providerData.value as "gemini" | "openai");
       if (telegramData) setAdminTelegram(telegramData.value || "");
       if (financialsData) setFinancials({
         mrr: financialsData.mrr ?? 0,
@@ -2090,9 +2153,9 @@ const AdminPanel = () => {
         pending_payments: financialsData.pending_payments ?? 0,
       });
 
-      const analyticsMap = new Map((analyticsData as any).map((a: any) => [a.user_id, a]));
-      const mappedTeachers: Teacher[] = (teachersData as any).map((u: any) => {
-        const stats = analyticsMap.get(u.id) as any;
+      const analyticsMap = new Map((analyticsData as ApiAnalyticEntry[]).map(a => [a.user_id, a]));
+      const mappedTeachers: Teacher[] = (teachersData as ApiTeacher[]).map(u => {
+        const stats = analyticsMap.get(u.id);
         return {
           id: u.id,
           name: u.full_name || "Unknown",
@@ -2111,7 +2174,7 @@ const AdminPanel = () => {
         };
       });
       setTeachers(mappedTeachers);
-      setOrgs((orgsData as any).map((o: any) => ({
+      setOrgs((orgsData as ApiOrg[]).map(o => ({
         id: o.id,
         name: o.name,
         contact: o.contact_person,
@@ -2120,7 +2183,7 @@ const AdminPanel = () => {
         expires: o.expires_at,
         status: o.status
       })));
-      setPayments((paymentsData as any).map((p: any) => ({
+      setPayments((paymentsData as ApiPayment[]).map(p => ({
         id: p.id,
         org: p.org_name || "Unknown",
         amount: p.amount,
@@ -2130,7 +2193,7 @@ const AdminPanel = () => {
         status: p.status,
         period: p.period
       })));
-      setAuditLogs((logsData as any).map((l: any) => ({
+      setAuditLogs((logsData as ApiAuditLog[]).map(l => ({
         id: l.id,
         action: l.action,
         target: l.target,
