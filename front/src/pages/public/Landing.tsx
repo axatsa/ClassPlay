@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
 
 const FEATURES_CONFIG = [
   { icon: Sparkles, colorClass: "text-primary", bg: "bg-primary/5 border-primary/10", iconBg: "bg-primary/10", key: 0 },

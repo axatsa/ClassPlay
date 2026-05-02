@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ArrowLeft, FileText, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { MaterialUpload, Material } from "@/components/MaterialUpload";
+import { MaterialUpload, Material } from "@/components/library/MaterialUpload";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { useTranslation } from "react-i18next";

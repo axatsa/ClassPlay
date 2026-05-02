@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { OverloadCountdown } from "@/components/OverloadCountdown";
+import { OverloadCountdown } from "@/components/feedback/OverloadCountdown";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -18,13 +18,13 @@ import Login from "./pages/auth/Login";
 import JoinWithInvite from "./pages/auth/JoinWithInvite";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
-import Landing from "./pages/Landing";
+import Landing from "./pages/public/Landing";
 import NotFound from "./pages/NotFound";
 
 // Lazy imports (heavy or route-specific)
 const AdminPanel = lazy(() => import("./pages/dashboard/AdminPanel"));
 const TeacherDashboard = lazy(() => import("./pages/dashboard/TeacherDashboard"));
-const ClassManager = lazy(() => import("./pages/ClassManager"));
+const ClassManager = lazy(() => import("./pages/classes/ClassManager"));
 const Generator = lazy(() => import("./pages/tools/Generator"));
 const GamesLibrary = lazy(() => import("./pages/library/GamesLibrary"));
 const Tools = lazy(() => import("./pages/tools/Tools"));
@@ -42,9 +42,9 @@ const Profile = lazy(() => import("./pages/dashboard/Profile"));
 const HistoryPage = lazy(() => import("./pages/dashboard/HistoryPage"));
 const Library = lazy(() => import("./pages/library/Library"));
 const MaterialsPage = lazy(() => import("./pages/library/MaterialsPage"));
-const DemoGenerator = lazy(() => import("./pages/DemoGenerator"));
+const DemoGenerator = lazy(() => import("./pages/public/DemoGenerator"));
 const Checkout = lazy(() => import("./pages/payment/Checkout"));
-const ShareResource = lazy(() => import("./pages/ShareResource"));
+const ShareResource = lazy(() => import("./pages/public/ShareResource"));
 const PaymentSuccess = lazy(() => import("./pages/payment/PaymentSuccess"));
 const PaymentFail = lazy(() => import("./pages/payment/PaymentFail"));
 const OrgAdminDashboard = lazy(() => import("./pages/dashboard/OrgAdminDashboard"));

@@ -4,7 +4,7 @@ import GameShell from "./GameShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RotateCcw, LogOut, CheckCircle2 } from "lucide-react";
-import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
+import { AIGeneratingOverlay } from "@/components/feedback/AIGeneratingOverlay";
 import { useClass } from "@/context/ClassContext";
 import api from "@/lib/api";
 import { toast } from "sonner";

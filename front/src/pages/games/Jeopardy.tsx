@@ -11,17 +11,18 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { handleAIError } from "@/lib/errorUtils";
 import { RichTextRenderer } from "@/components/common/RichTextRenderer";
-import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
+import { AIGeneratingOverlay } from "@/components/feedback/AIGeneratingOverlay";
 
 const POINTS = [100, 200, 300, 400, 500];
 
 const Jeopardy = () => {
   const { activeClassId } = useClass();
   const { t, i18n } = useTranslation();
-  const lang = i18n.language as "ru" | "uz";
+  const lang = i18n.language;
   const [status, setStatus] = useState<"setup" | "loading" | "playing">("setup");
   const [topic, setTopic] = useState("");
-  const [selectedLang, setSelectedLang] = useState<"ru" | "uz" | "en">(lang as any || "ru");
+  const initialLang = (["ru", "uz", "en"] as const).find(l => l === lang) ?? "ru";
+  const [selectedLang, setSelectedLang] = useState<"ru" | "uz" | "en">(initialLang);
   const [teams, setTeams] = useState<{ name: string; score: number }[]>([
     { name: `${t('game_team1')}`, score: 0 },
     { name: `${t('game_team2')}`, score: 0 },

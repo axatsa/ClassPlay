@@ -5,7 +5,7 @@ import {
     BookOpen, Plus, ArrowLeft, Sparkles, ChevronLeft, ChevronRight,
     X, Loader2, BookMarked, Globe, Users, Wand2, Trash2, BookText, Info
 } from "lucide-react";
-import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
+import { AIGeneratingOverlay } from "@/components/feedback/AIGeneratingOverlay";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { toast } from "sonner";

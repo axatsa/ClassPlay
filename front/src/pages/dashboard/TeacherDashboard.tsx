@@ -10,7 +10,7 @@ import { useClass } from "@/context/ClassContext";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import OnboardingModal from "@/components/Onboarding/OnboardingModal";
+import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 

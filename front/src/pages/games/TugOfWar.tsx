@@ -11,7 +11,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { handleAIError } from "@/lib/errorUtils";
 import { RichTextRenderer } from "@/components/common/RichTextRenderer";
-import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
+import { AIGeneratingOverlay } from "@/components/feedback/AIGeneratingOverlay";
 
 type GameStatus = "setup" | "loading" | "playing" | "finished";
 
@@ -42,7 +42,8 @@ const TugOfWar = () => {
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState<"просто" | "средне" | "тяжело">("средне");
   // FIX #4: выбор языка вопросов
-  const [selectedLang, setSelectedLang] = useState<"ru" | "uz" | "en">(lang as any || "ru");
+  const initialLang = (["ru", "uz", "en"] as const).find(l => l === lang) ?? "ru";
+  const [selectedLang, setSelectedLang] = useState<"ru" | "uz" | "en">(initialLang);
   // FIX #3: два разных вопроса для двух команд из одного пула
   const [blueQuestions, setBlueQuestions] = useState<{ q: string; options: string[]; a: string }[]>([]);
   const [redQuestions, setRedQuestions] = useState<{ q: string; options: string[]; a: string }[]>([]);

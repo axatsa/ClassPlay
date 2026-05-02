@@ -3,7 +3,7 @@ import React, { useRef, RefObject, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Printer, Download, Pencil, Loader2, Sparkles, Calculator, LayoutGrid, GraduationCap, ChevronDown, Check, Plus, Save, Brain, Trophy, FileText, BookmarkPlus } from "lucide-react";
-import { AIGeneratingOverlay } from "@/components/AIGeneratingOverlay";
+import { AIGeneratingOverlay } from "@/components/feedback/AIGeneratingOverlay";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
