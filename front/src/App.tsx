@@ -48,7 +48,6 @@ const ShareResource = lazy(() => import("./pages/public/ShareResource"));
 const PaymentSuccess = lazy(() => import("./pages/payment/PaymentSuccess"));
 const PaymentFail = lazy(() => import("./pages/payment/PaymentFail"));
 const OrgAdminDashboard = lazy(() => import("./pages/dashboard/OrgAdminDashboard"));
-const AnalyticsPage = lazy(() => import("./pages/dashboard/AnalyticsPage"));
 
 // Suspense loading fallback
 const RouteLoadingFallback = () => (
@@ -128,11 +127,6 @@ const App = () => (
                 <Route path="/history" element={
                   <ProtectedRoute allowedRoles={["teacher", "org_admin"]}>
                     <HistoryPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/analytics" element={
-                  <ProtectedRoute allowedRoles={["teacher", "org_admin"]}>
-                    <AnalyticsPage />
                   </ProtectedRoute>
                 } />
                 <Route path="/library" element={
