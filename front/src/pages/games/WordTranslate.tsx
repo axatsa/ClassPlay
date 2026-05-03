@@ -180,7 +180,12 @@ function FlashcardGame({ pairs, src, tgt, onBack }: { pairs: WordPair[]; src: st
                style={{ transform: "rotateY(180deg)" }}>
             <p className="text-xs font-medium text-primary-foreground/70 uppercase tracking-wider">{LANG_LABELS[tgt]}</p>
             <p className="text-3xl font-bold text-primary-foreground">{current.target}</p>
-            <p className="text-xs text-primary-foreground/70 text-center mt-2 italic">{current.example}</p>
+            {current.alternatives && current.alternatives.length > 0 && (
+              <p className="text-xs text-primary-foreground/60 text-center">
+                также: {current.alternatives.join(", ")}
+              </p>
+            )}
+            <p className="text-xs text-primary-foreground/70 text-center mt-1 italic">{current.example}</p>
           </div>
         </motion.div>
       </div>
@@ -220,10 +225,13 @@ function QuizGame({ pairs, src, tgt, onBack }: { pairs: WordPair[]; src: string;
   const current = pairs[index];
   const isLast = index + 1 >= pairs.length;
 
+  const isAltCorrect = (opt: string) =>
+    opt === current.target || (current.alternatives?.includes(opt) ?? false);
+
   const pick = (opt: string) => {
     if (selected) return;
     setSelected(opt);
-    const ok = opt === current.target;
+    const ok = isAltCorrect(opt);
     if (ok) setScore((s) => s + 1); else setWrong((w) => w + 1);
     setTimeout(() => {
       if (isLast) { onBack(); return; }
@@ -261,7 +269,7 @@ function QuizGame({ pairs, src, tgt, onBack }: { pairs: WordPair[]; src: string;
       {/* Options */}
       <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
         {options.map((opt) => {
-          const isCorrect = opt === current.target;
+          const isCorrect = isAltCorrect(opt);
           const isPicked = opt === selected;
           let cls = "rounded-xl border-2 p-3 text-sm font-medium transition-all text-left ";
           if (!selected) cls += "border-input hover:border-primary hover:bg-primary/5 cursor-pointer";
@@ -277,6 +285,7 @@ function QuizGame({ pairs, src, tgt, onBack }: { pairs: WordPair[]; src: string;
               whileTap={!selected ? { scale: 0.97 } : {}}
             >
               {isPicked && (isCorrect ? "✓ " : "✗ ")}{opt}
+              {selected && isCorrect && !isPicked && <span className="ml-1 text-green-600 text-xs">✓</span>}
             </motion.button>
           );
         })}

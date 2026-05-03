@@ -216,6 +216,7 @@ export interface SpellingWord {
   word: string;
   definition: string;
   example: string;
+  alternatives?: string[];
 }
 
 export interface SpellingGenerateResponse {
@@ -228,6 +229,7 @@ export interface WordPair {
   source: string;
   target: string;
   example: string;
+  alternatives?: string[];
 }
 
 export interface WordPairsGenerateResponse {

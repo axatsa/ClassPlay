@@ -195,13 +195,16 @@ function SpellingGame({ words, lang, onBack }: { words: SpellingWord[]; lang: st
   const normalize = (s: string) =>
     s.trim().toLowerCase().replace(/ё/g, "е");
 
-  const checkAnswer = (input: string, word: string) =>
-    normalize(input) === normalize(word);
+  const allAnswers = (w: typeof current) =>
+    [w.word, ...(w.alternatives ?? [])];
+
+  const checkAnswer = (input: string) =>
+    allAnswers(current).some((a) => normalize(input) === normalize(a));
 
   const check = () => {
     if (!input.trim()) return;
     setChecking(true);
-    const correct = checkAnswer(input, current.word);
+    const correct = checkAnswer(input);
     if (correct) setCorrect((c) => c + 1);
     else setWrong((w) => w + 1);
     setRevealed(true);
@@ -215,7 +218,7 @@ function SpellingGame({ words, lang, onBack }: { words: SpellingWord[]; lang: st
     setRevealed(false);
   };
 
-  const isCorrect = checkAnswer(input, current.word);
+  const isCorrect = checkAnswer(input);
 
   return (
     <div className="flex flex-col items-center h-full overflow-auto py-6 px-4 gap-5">
@@ -284,9 +287,17 @@ function SpellingGame({ words, lang, onBack }: { words: SpellingWord[]; lang: st
               {isCorrect ? (
                 <p className="text-green-600 font-bold text-lg">🎉 Правильно!</p>
               ) : (
-                <div>
+                <div className="space-y-1">
                   <p className="text-red-500 font-bold">✗ Неверно</p>
-                  <p className="text-sm">Правильно: <strong className="text-green-700">{current.word}</strong></p>
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Правильно: </span>
+                    {allAnswers(current).map((a, i) => (
+                      <span key={a}>
+                        <strong className="text-green-700">{a}</strong>
+                        {i < allAnswers(current).length - 1 && <span className="text-muted-foreground"> / </span>}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
               <p className="text-xs text-muted-foreground">{current.example}</p>
