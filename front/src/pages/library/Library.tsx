@@ -11,6 +11,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { BookPage, Book } from "@/types/api";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 // Reader "slides": cover → [text, illustration] × 10  (21 total)
 type Slide =
@@ -221,6 +222,7 @@ const Library = () => {
     const [showForm, setShowForm] = useState(false);
     const [openBook, setOpenBook] = useState<Book | null>(null);
     const [bookProgress, setBookProgress] = useState<Record<number, number>>({});
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
     // Load reading progress from localStorage
     React.useEffect(() => {
@@ -252,11 +254,13 @@ const Library = () => {
         setOpenBook(book);
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm(t("libConfirmDelete"))) return;
+    const handleDelete = (id: number) => setConfirmDeleteId(id);
+
+    const confirmDelete = async () => {
+        if (confirmDeleteId === null) return;
         try {
-            await api.delete(`/library/books/${id}`);
-            setBooks(prev => prev.filter(b => b.id !== id));
+            await api.delete(`/library/books/${confirmDeleteId}`);
+            setBooks(prev => prev.filter(b => b.id !== confirmDeleteId));
             toast.success(t("libToastDeleted"));
         } catch {
             toast.error(t("libToastErrDelete"));
@@ -415,6 +419,15 @@ const Library = () => {
                 )}
                 {openBook && <BookReaderFlip book={openBook} onClose={() => setOpenBook(null)} />}
             </AnimatePresence>
+
+            <ConfirmDialog
+                open={confirmDeleteId !== null}
+                title="Удалить книгу?"
+                message="Книга будет удалена безвозвратно из вашей библиотеки."
+                confirmLabel="Удалить"
+                onConfirm={confirmDelete}
+                onClose={() => setConfirmDeleteId(null)}
+            />
         </div>
     );
 };

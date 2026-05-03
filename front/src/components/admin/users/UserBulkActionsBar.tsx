@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreditCard, Calendar, Lock, Unlock, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { adminService } from "@/api/adminService";
 
 interface UserBulkActionsBarProps {
@@ -14,6 +15,7 @@ interface UserBulkActionsBarProps {
 export const UserBulkActionsBar: React.FC<UserBulkActionsBarProps> = ({
   selectedIds, setSelectedIds, onRefresh,
 }) => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const handleChangePlan = async () => {
     const plan = prompt("Введите план (free, pro, school):", "pro");
     if (plan) {
@@ -48,13 +50,13 @@ export const UserBulkActionsBar: React.FC<UserBulkActionsBarProps> = ({
     toast.success("Пользователи разблокированы");
   };
 
-  const handleDelete = async () => {
-    if (confirm(`Вы уверены, что хотите удалить ${selectedIds.length} учителей?`)) {
-      await adminService.bulkDeleteTeachers(selectedIds);
-      setSelectedIds([]);
-      onRefresh();
-      toast.success("Пользователи удалены");
-    }
+  const handleDelete = () => setConfirmOpen(true);
+
+  const confirmDelete = async () => {
+    await adminService.bulkDeleteTeachers(selectedIds);
+    setSelectedIds([]);
+    onRefresh();
+    toast.success("Пользователи удалены");
   };
 
   return (
@@ -112,6 +114,15 @@ export const UserBulkActionsBar: React.FC<UserBulkActionsBarProps> = ({
           </div>
         </motion.div>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title={`Удалить ${selectedIds.length} учителей?`}
+        message="Все выбранные учителя будут удалены безвозвратно. Это действие нельзя отменить."
+        confirmLabel="Удалить всех"
+        onConfirm={confirmDelete}
+        onClose={() => setConfirmOpen(false)}
+      />
     </AnimatePresence>
   );
 };

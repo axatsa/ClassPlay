@@ -9,6 +9,7 @@ import { Teacher } from "@/types/admin";
 import { adminService } from "@/api/adminService";
 import { exportTeachersCSV, exportTeachersDOCX } from "@/lib/adminExport";
 import TeacherModal, { TeacherFormData } from "@/components/admin/TeacherModal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 import { useUserFilters } from "./users/useUserFilters";
 import { UserStatsBar } from "./users/UserStatsBar";
@@ -41,6 +42,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   const filters = useUserFilters(teachers);
   const [filterOpen, setFilterOpen] = useState(false);
   const [modal, setModal] = useState<{ isOpen: boolean; data?: TeacherFormData }>({ isOpen: false });
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!filterOpen) return;
@@ -56,12 +58,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     toast.success("Saved successfully");
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Вы уверены, что хотите удалить этого учителя?")) {
-      await adminService.deleteTeacher(id);
-      onRefresh();
-      toast.success("Deleted");
-    }
+  const handleDelete = (id: number) => setConfirmDeleteId(id);
+
+  const confirmDelete = async () => {
+    if (confirmDeleteId === null) return;
+    await adminService.deleteTeacher(confirmDeleteId);
+    onRefresh();
+    toast.success("Deleted");
   };
 
   return (
@@ -131,6 +134,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         onClose={() => setModal({ isOpen: false })}
         onSave={handleSave}
         initialData={modal.data}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Удалить учителя?"
+        message="Учитель будет удалён безвозвратно. Все его данные и классы будут потеряны."
+        confirmLabel="Удалить"
+        onConfirm={confirmDelete}
+        onClose={() => setConfirmDeleteId(null)}
       />
     </div>
   );

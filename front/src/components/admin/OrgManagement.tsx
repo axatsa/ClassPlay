@@ -17,6 +17,7 @@ import OrgModal, { OrgFormData } from "@/components/admin/OrgModal";
 import BulkImportModal from "@/components/dashboard/BulkImportModal";
 import OrgStatsModal from "@/components/dashboard/OrgStatsModal";
 import InviteModal from "@/components/dashboard/InviteModal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface OrgManagementProps {
   orgs: Org[];
@@ -32,6 +33,7 @@ export const OrgManagement: React.FC<OrgManagementProps> = ({ orgs, isLoading, o
   const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
   const [inviteOrg, setInviteOrg] = useState<{ id: number, name: string } | null>(null);
   const [modal, setModal] = useState<{isOpen: boolean, data?: OrgFormData}>({isOpen: false});
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [tokenLimitOrg, setTokenLimitOrg] = useState<{ id: number, name: string } | null>(null);
   const [tokenLimitValue, setTokenLimitValue] = useState("30000");
 
@@ -42,12 +44,13 @@ export const OrgManagement: React.FC<OrgManagementProps> = ({ orgs, isLoading, o
     toast.success("Saved correctly");
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Вы уверены?")) {
-      await adminService.deleteOrganization(id);
-      onRefresh();
-      toast.success("Organization deleted");
-    }
+  const handleDelete = (id: number) => setConfirmDeleteId(id);
+
+  const confirmDelete = async () => {
+    if (confirmDeleteId === null) return;
+    await adminService.deleteOrganization(confirmDeleteId);
+    onRefresh();
+    toast.success("Organization deleted");
   };
   
   return (
@@ -274,6 +277,15 @@ export const OrgManagement: React.FC<OrgManagementProps> = ({ orgs, isLoading, o
         </motion.div>
       )}
       {inviteOrg && <InviteModal orgId={inviteOrg.id} orgName={inviteOrg.name} onClose={() => setInviteOrg(null)} />}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Удалить организацию?"
+        message="Организация и все её данные будут удалены безвозвратно. Это действие нельзя отменить."
+        confirmLabel="Удалить"
+        onConfirm={confirmDelete}
+        onClose={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 };

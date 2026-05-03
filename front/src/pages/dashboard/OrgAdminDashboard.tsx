@@ -12,6 +12,7 @@ import { TeachersTable } from "@/components/org-admin/TeachersTable";
 import { AddTeacherModal } from "@/components/org-admin/AddTeacherModal";
 import { InviteModal } from "@/components/org-admin/InviteModal";
 import { UpgradePlanModal } from "@/components/org-admin/UpgradePlanModal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function OrgAdminDashboard() {
   const { user, logout } = useAuth();
@@ -24,6 +25,7 @@ export default function OrgAdminDashboard() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [adminTelegram, setAdminTelegramState] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -55,9 +57,13 @@ export default function OrgAdminDashboard() {
   };
 
   const deleteTeacher = async (id: number) => {
-    if (!confirm("Удалить учителя?")) return;
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDeleteTeacher = async () => {
+    if (confirmDeleteId === null) return;
     try {
-      await api.delete(`/org-admin/teachers/${id}`);
+      await api.delete(`/org-admin/teachers/${confirmDeleteId}`);
       toast.success("Учитель удалён");
       fetchData();
     } catch {
@@ -164,6 +170,15 @@ export default function OrgAdminDashboard() {
           />
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Удалить учителя?"
+        message="Учитель будет удалён из организации. Это действие нельзя отменить."
+        confirmLabel="Удалить"
+        onConfirm={confirmDeleteTeacher}
+        onClose={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }
