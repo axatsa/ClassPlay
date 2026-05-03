@@ -1,32 +1,17 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Loader2, LogIn, Rocket, Copy, Check } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Rocket, Copy, Check } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { paymentService, Plan, PaymentMethod, TelegramPaymentInfo } from "@/api/paymentService";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 
-const DARK = "#07101F";
-const BLUE = "#0EA5E9";
-const CORAL = "#FF3D68";
-const CYAN = "#06D6A0";
-const INK = "#0C1828";
-
-const PAYMENT_METHODS: { id: PaymentMethod; label: string; logo: string; color: string }[] = [
-    {
-        id: "payme",
-        label: "Payme",
-        logo: "https://static.payme.uz/img/logo_payme_mini.svg",
-        color: "#00AAFF",
-    },
-    {
-        id: "click",
-        label: "Click",
-        logo: "https://cdn.click.uz/click/assets/images/click-logo.svg",
-        color: "#FF6600",
-    },
+const PAYMENT_METHODS: { id: PaymentMethod; label: string; logo: string }[] = [
+    { id: "payme", label: "Payme", logo: "https://static.payme.uz/img/logo_payme_mini.svg" },
+    { id: "click", label: "Click", logo: "https://cdn.click.uz/click/assets/images/click-logo.svg" },
 ];
 
 export default function Checkout() {
@@ -42,19 +27,19 @@ export default function Checkout() {
         free: {
             name: t("planFreeName"), price: "$0", period: t("checkoutForever"),
             planKey: "pro" as Plan, free: true,
-            accent: `linear-gradient(135deg, #10B981, #06D6A0)`,
+            accent: "from-emerald-500 to-teal-400",
             features: [t("planFreeF1"), t("planFreeF2"), t("planFreeF3"), t("planFreeF4")],
         },
         pro: {
             name: t("planProName"), price: "$15", period: t("checkoutPerMonth"),
             planKey: "pro",
-            accent: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
+            accent: "from-primary via-accent to-secondary",
             features: [t("planProF1"), t("planProF2"), t("planProF3"), t("planProF4"), t("planProF5")],
         },
         school: {
             name: t("planSchoolName"), price: "$49", period: t("checkoutPerMonth"),
             planKey: "school",
-            accent: `linear-gradient(135deg, #F97316, #FBBF24)`,
+            accent: "from-orange-500 to-amber-400",
             features: [t("planSchoolF1"), t("planSchoolF2"), t("planSchoolF3"), t("planSchoolF4"), t("planSchoolF5")],
         },
     };
@@ -95,16 +80,13 @@ export default function Checkout() {
         setLoading(method);
         try {
             let activeUser = user;
-
-            // If not logged in, try to register/login first
             if (!activeUser) {
                 setAuthLoading(true);
                 try {
                     const endpoint = authMode === "login" ? "/auth/login" : "/auth/register";
-                    const payload = authMode === "login" 
-                        ? { email, password } 
+                    const payload = authMode === "login"
+                        ? { email, password }
                         : { email, password, full_name: fullName };
-                    
                     const res = await api.post(endpoint, payload);
                     contextLogin(res.data.access_token, res.data.user);
                     activeUser = res.data.user;
@@ -117,8 +99,6 @@ export default function Checkout() {
                 }
                 setAuthLoading(false);
             }
-
-            // Now initiate payment
             const res = await paymentService.initiate({ plan: plan.planKey, method });
             window.location.href = res.redirect_url;
         } catch (err: any) {
@@ -152,108 +132,70 @@ export default function Checkout() {
         return null;
     }
 
+    const inputClass = "w-full bg-background border border-border rounded-2xl px-5 py-3.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition";
+
     if (!user) {
         return (
-            <div style={{ minHeight: "100vh", background: DARK, display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 24px" }}>
+            <div className="min-h-screen bg-background flex items-center justify-center px-6 py-20">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    style={{
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: 32, padding: "40px",
-                        maxWidth: 480, width: "100%", textAlign: "center",
-                        backdropFilter: "blur(20px)",
-                    }}
+                    className="bg-card border border-border rounded-3xl p-10 max-w-md w-full text-center shadow-xl"
                 >
-                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
-                        <div style={{ width: 64, height: 64, borderRadius: 20, background: plan.accent, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 12px 32px rgba(14,165,233,0.3)" }}>
-                            <Rocket size={32} color="#fff" />
+                    <div className="flex justify-center mb-6">
+                        <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${plan.accent} flex items-center justify-center shadow-lg`}>
+                            <Rocket size={28} className="text-white" />
                         </div>
                     </div>
 
-                    <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: 8 }}>
+                    <h2 className="text-2xl font-bold font-serif text-foreground mb-2">
                         {authMode === "register" ? t("checkoutRegister") : t("checkoutLogin")}
                     </h2>
-                    <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 32 }}>
-                        {t("checkoutActivatePlan")} <strong style={{ color: "#fff" }}>{plan.name}</strong>
+                    <p className="text-sm text-muted-foreground mb-8">
+                        {t("checkoutActivatePlan")} <strong className="text-foreground">{plan.name}</strong>
                     </p>
 
-                    <form style={{ display: "flex", flexDirection: "column", gap: 16, textAlign: "left" }} onSubmit={(e) => e.preventDefault()}>
+                    <form className="flex flex-col gap-4 text-left" onSubmit={(e) => e.preventDefault()}>
                         {authMode === "register" && (
                             <div>
-                                <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>{t("checkoutFullName")}</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="Иван Иванов" 
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
-                                    style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "14px 20px", color: "#fff", outline: "none" }} 
-                                />
+                                <label className="text-xs font-semibold text-muted-foreground ml-1 mb-1.5 block">{t("checkoutFullName")}</label>
+                                <input type="text" placeholder="Иван Иванов" value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputClass} />
                             </div>
                         )}
                         <div>
-                            <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>Email</label>
-                            <input 
-                                type="email" 
-                                placeholder="example@mail.com" 
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "14px 20px", color: "#fff", outline: "none" }} 
-                            />
+                            <label className="text-xs font-semibold text-muted-foreground ml-1 mb-1.5 block">Email</label>
+                            <input type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginLeft: 12, marginBottom: 6, display: "block" }}>{t("checkoutPassword")}</label>
-                            <input 
-                                type="password" 
-                                placeholder="••••••••" 
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "14px 20px", color: "#fff", outline: "none" }} 
-                            />
+                            <label className="text-xs font-semibold text-muted-foreground ml-1 mb-1.5 block">{t("checkoutPassword")}</label>
+                            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
                         </div>
 
-                        <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div className="mt-4 flex flex-col gap-3">
                             {plan.free ? (
-                                <button
+                                <Button
                                     disabled={authLoading || !email || !password}
                                     onClick={handleFreeSignup}
-                                    style={{
-                                        width: "100%", padding: "16px",
-                                        background: authLoading ? "rgba(255,255,255,0.1)" : `linear-gradient(135deg, #10B981, #06D6A0)`,
-                                        color: "#fff", fontSize: 15, fontWeight: 700,
-                                        border: "none", borderRadius: 16, cursor: "pointer",
-                                        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                                        opacity: (!email || !password) ? 0.5 : 1,
-                                        boxShadow: (email && password) ? `0 8px 24px rgba(16,185,129,0.3)` : "none",
-                                    }}
+                                    className="w-full rounded-2xl py-6 text-sm font-bold"
                                 >
-                                    {authLoading ? <Loader2 size={18} className="animate-spin" /> : (authMode === "login" ? t("land_login") : t("land_hero_cta"))}
-                                </button>
+                                    {authLoading ? <Loader2 size={16} className="animate-spin" /> : (authMode === "login" ? t("land_login") : t("land_hero_cta"))}
+                                </Button>
                             ) : PAYMENT_METHODS.map(m => (
-                                <button
+                                <Button
                                     key={m.id}
                                     disabled={loading !== null || !email || !password}
                                     onClick={() => handleAuthAndPay(m.id)}
-                                    style={{
-                                        width: "100%", padding: "16px",
-                                        background: loading === m.id ? "rgba(255,255,255,0.1)" : `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
-                                        color: "#fff", fontSize: 15, fontWeight: 700,
-                                        border: "none", borderRadius: 16, cursor: "pointer",
-                                        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                                        opacity: (!email || !password) ? 0.5 : 1,
-                                        boxShadow: (email && password) ? `0 8px 24px rgba(14,165,233,0.3)` : "none",
-                                    }}
+                                    className="w-full rounded-2xl py-6 text-sm font-bold"
                                 >
-                                    {loading === m.id ? <Loader2 size={18} className="animate-spin" /> : <>{t("checkoutPayWith")} {m.label}</>}
-                                </button>
+                                    {loading === m.id ? <Loader2 size={16} className="animate-spin" /> : <>{t("checkoutPayWith")} {m.label}</>}
+                                </Button>
                             ))}
                         </div>
                     </form>
 
-                    <button 
+                    <button
                         onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
-                        style={{ marginTop: 24, background: "none", border: "none", color: BLUE, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+                        className="mt-6 text-sm font-semibold text-primary hover:underline bg-transparent border-none cursor-pointer"
                     >
                         {authMode === "login" ? t("checkoutNoAccount") : t("checkoutHasAccount")}
                     </button>
@@ -263,66 +205,49 @@ export default function Checkout() {
     }
 
     return (
-        <div style={{ minHeight: "100vh", background: DARK, padding: "32px 16px" }}>
-            <div style={{ maxWidth: 520, margin: "0 auto" }}>
-                {/* Back */}
+        <div className="min-h-screen bg-background py-10 px-4">
+            <div className="max-w-lg mx-auto">
                 <button
                     onClick={() => navigate(-1)}
-                    style={{
-                        display: "flex", alignItems: "center", gap: 6,
-                        background: "none", border: "none", cursor: "pointer",
-                        color: "rgba(255,255,255,0.4)", fontSize: 14, fontWeight: 500,
-                        marginBottom: 32, padding: 0,
-                    }}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition mb-8 bg-transparent border-none cursor-pointer p-0"
                 >
-                    <ArrowLeft size={16} /> {t("checkoutBack")}
+                    <ArrowLeft size={15} /> {t("checkoutBack")}
                 </button>
 
-                <h1 style={{
-                    fontFamily: "'Syne', sans-serif",
-                    fontSize: 28, fontWeight: 800, color: "#fff",
-                    marginBottom: 6,
-                }}>
+                <h1 className="text-3xl font-bold font-serif text-foreground mb-1.5">
                     {t("checkoutTitle")}
                 </h1>
-                <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 14, marginBottom: 28 }}>
+                <p className="text-sm text-muted-foreground mb-8">
                     {t("checkoutSelectMethod")}
                 </p>
 
                 {/* Plan card */}
                 <motion.div
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    style={{
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 20, padding: 24, marginBottom: 20,
-                        position: "relative", overflow: "hidden",
-                    }}
+                    className="bg-card border border-border rounded-3xl p-6 mb-5 relative overflow-hidden shadow-sm"
                 >
-                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: plan.accent }} />
+                    <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${plan.accent}`} />
 
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+                    <div className="flex justify-between items-start mb-5">
                         <div>
-                            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
                                 {t("checkoutSelectedPlan")}
                             </p>
-                            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 800, color: "#fff" }}>
-                                {plan.name}
-                            </h2>
+                            <h2 className="text-xl font-bold font-serif text-foreground">{plan.name}</h2>
                         </div>
-                        <div style={{ textAlign: "right" }}>
-                            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#fff" }}>
-                                {plan.price}
-                            </span>
-                            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}> {plan.period}</span>
+                        <div className="text-right">
+                            <span className="text-3xl font-black font-serif text-foreground">{plan.price}</span>
+                            <span className="text-sm text-muted-foreground"> {plan.period}</span>
                         </div>
                     </div>
 
-                    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <ul className="flex flex-col gap-2.5">
                         {plan.features.map((f, i) => (
-                            <li key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "rgba(255,255,255,0.65)" }}>
-                                <CheckCircle2 size={15} color={CYAN} style={{ flexShrink: 0 }} />
+                            <li key={i} className="flex items-center gap-2.5 text-sm text-foreground/75">
+                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 size={12} className="text-primary" />
+                                </div>
                                 {f}
                             </li>
                         ))}
@@ -330,169 +255,114 @@ export default function Checkout() {
                 </motion.div>
 
                 {/* Payment methods */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div className="flex flex-col gap-3">
                     {PAYMENT_METHODS.map((m, i) => (
                         <motion.button
                             key={m.id}
-                            initial={{ opacity: 0, y: 12 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 + i * 0.06 }}
-                            whileHover={{ scale: 1.02, background: "rgba(255,255,255,0.08)" }}
-                            whileTap={{ scale: 0.98 }}
+                            transition={{ delay: 0.05 + i * 0.06 }}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
                             disabled={loading !== null}
                             onClick={() => handleAuthAndPay(m.id)}
-                            style={{
-                                width: "100%", padding: "18px 24px",
-                                background: "rgba(255,255,255,0.05)",
-                                border: `1px solid rgba(255,255,255,0.1)`,
-                                borderRadius: 16, cursor: loading !== null ? "not-allowed" : "pointer",
-                                display: "flex", alignItems: "center", justifyContent: "space-between",
-                                transition: "background 0.2s",
-                                opacity: loading !== null && loading !== m.id ? 0.4 : 1,
-                            }}
+                            className="w-full px-5 py-4 bg-card border border-border rounded-2xl cursor-pointer flex items-center justify-between hover:border-primary/30 hover:bg-accent/5 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                                <div style={{
-                                    width: 44, height: 44, borderRadius: 12,
-                                    background: "#fff",
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                    flexShrink: 0,
-                                }}>
-                                    <img src={m.logo} alt={m.label} style={{ width: 28, height: 28, objectFit: "contain" }} />
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-11 h-11 rounded-xl bg-white border border-border flex items-center justify-center shrink-0 shadow-sm">
+                                    <img src={m.logo} alt={m.label} className="w-7 h-7 object-contain" />
                                 </div>
-                                <div style={{ textAlign: "left" }}>
-                                    <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>{m.label}</p>
-                                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>
-                                        {t("checkoutPayVia")} {m.label}
-                                    </p>
+                                <div className="text-left">
+                                    <p className="text-sm font-bold text-foreground">{m.label}</p>
+                                    <p className="text-xs text-muted-foreground">{t("checkoutPayVia")} {m.label}</p>
                                 </div>
                             </div>
-
                             {loading === m.id ? (
-                                <Loader2 size={20} color="rgba(255,255,255,0.5)" style={{ animation: "spin 1s linear infinite" }} />
+                                <Loader2 size={18} className="text-muted-foreground animate-spin" />
                             ) : (
-                                <div style={{
-                                    padding: "8px 18px", borderRadius: 10,
-                                    background: `linear-gradient(135deg, ${BLUE}, ${CORAL})`,
-                                    color: "#fff", fontSize: 13, fontWeight: 700,
-                                }}>
+                                <span className="px-4 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold">
                                     {t("checkoutPay")}
-                                </div>
+                                </span>
                             )}
                         </motion.button>
                     ))}
-                </div>
 
-                {/* Telegram payment option */}
-                <motion.button
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    disabled={loading !== null}
-                    onClick={handleTelegramPay}
-                    style={{
-                        width: "100%", padding: "18px 24px", marginTop: 12,
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(41,182,246,0.3)",
-                        borderRadius: 16, cursor: loading !== null ? "not-allowed" : "pointer",
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        opacity: loading !== null && loading !== "telegram" ? 0.4 : 1,
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                        <div style={{
-                            width: 44, height: 44, borderRadius: 12,
-                            background: "#229ED9",
-                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                        }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.93 13.48 5.007 12.6c-.657-.203-.671-.657.136-.975l11.157-4.303c.547-.196 1.026.12.594.899z"/>
-                            </svg>
+                    {/* Telegram */}
+                    <motion.button
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.18 }}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        disabled={loading !== null}
+                        onClick={handleTelegramPay}
+                        className="w-full px-5 py-4 bg-card border border-border rounded-2xl cursor-pointer flex items-center justify-between hover:border-sky-400/40 hover:bg-sky-50/50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-11 h-11 rounded-xl bg-[#229ED9] flex items-center justify-center shrink-0">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.93 13.48 5.007 12.6c-.657-.203-.671-.657.136-.975l11.157-4.303c.547-.196 1.026.12.594.899z"/>
+                                </svg>
+                            </div>
+                            <div className="text-left">
+                                <p className="text-sm font-bold text-foreground">Telegram</p>
+                                <p className="text-xs text-muted-foreground">Перевод на карту — 0% комиссии</p>
+                            </div>
                         </div>
-                        <div style={{ textAlign: "left" }}>
-                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Telegram</p>
-                            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>
-                                Перевод на карту — 0% комиссии
-                            </p>
-                        </div>
-                    </div>
-                    {loading === "telegram"
-                        ? <Loader2 size={20} color="rgba(255,255,255,0.5)" style={{ animation: "spin 1s linear infinite" }} />
-                        : <div style={{ padding: "8px 18px", borderRadius: 10, background: "#229ED9", color: "#fff", fontSize: 13, fontWeight: 700 }}>
-                            Оплатить
-                        </div>
-                    }
-                </motion.button>
+                        {loading === "telegram"
+                            ? <Loader2 size={18} className="text-muted-foreground animate-spin" />
+                            : <span className="px-4 py-1.5 rounded-xl bg-[#229ED9] text-white text-xs font-bold">Оплатить</span>
+                        }
+                    </motion.button>
+                </div>
 
                 {/* Telegram payment instructions */}
                 <AnimatePresence>
                     {tgPayment && (
                         <motion.div
-                            initial={{ opacity: 0, y: 12, height: 0 }}
+                            initial={{ opacity: 0, y: 10, height: 0 }}
                             animate={{ opacity: 1, y: 0, height: "auto" }}
                             exit={{ opacity: 0, y: -8, height: 0 }}
-                            style={{
-                                marginTop: 16, background: "rgba(34,158,217,0.08)",
-                                border: "1px solid rgba(34,158,217,0.3)",
-                                borderRadius: 16, padding: 20, overflow: "hidden",
-                            }}
+                            className="mt-4 bg-sky-50 border border-sky-200 rounded-2xl p-5 overflow-hidden"
                         >
-                            <p style={{ color: "#229ED9", fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
-                                📋 Инструкция по оплате
-                            </p>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,0.6)" }}>
+                            <p className="text-sky-700 text-sm font-bold mb-4">📋 Инструкция по оплате</p>
+                            <div className="flex flex-col gap-2.5 text-sm">
+                                <div className="flex justify-between text-muted-foreground">
                                     <span>💵 Сумма</span>
-                                    <span style={{ color: "#fff", fontWeight: 700 }}>
-                                        {tgPayment.amount_uzs.toLocaleString()} сўм
-                                    </span>
+                                    <span className="text-foreground font-bold">{tgPayment.amount_uzs.toLocaleString()} сўм</span>
                                 </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,0.6)" }}>
+                                <div className="flex justify-between text-muted-foreground">
                                     <span>🏦 Карта</span>
-                                    <span style={{ color: "#fff", fontWeight: 700 }}>{tgPayment.card_number}</span>
+                                    <span className="text-foreground font-bold">{tgPayment.card_number}</span>
                                 </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,0.6)" }}>
+                                <div className="flex justify-between text-muted-foreground">
                                     <span>👤 Получатель</span>
-                                    <span style={{ color: "#fff" }}>{tgPayment.card_holder}</span>
+                                    <span className="text-foreground">{tgPayment.card_holder}</span>
                                 </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,0.6)" }}>
+                                <div className="flex justify-between text-muted-foreground">
                                     <span>⏰ До</span>
-                                    <span style={{ color: "#fff" }}>{tgPayment.expires_at}</span>
+                                    <span className="text-foreground">{tgPayment.expires_at}</span>
                                 </div>
                             </div>
 
-                            <div style={{
-                                marginTop: 16, background: "rgba(255,255,255,0.06)",
-                                borderRadius: 12, padding: "12px 16px",
-                            }}>
-                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 6 }}>
-                                    ⚠️ Обязательно напиши в комментарии к переводу:
-                                </p>
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                                    <code style={{ color: "#06D6A0", fontSize: 13, fontWeight: 700, wordBreak: "break-all" }}>
-                                        {tgPayment.payment_code}
-                                    </code>
+                            <div className="mt-4 bg-white border border-border rounded-xl px-4 py-3">
+                                <p className="text-xs text-muted-foreground mb-2">⚠️ Обязательно напиши в комментарии к переводу:</p>
+                                <div className="flex items-center justify-between gap-2">
+                                    <code className="text-primary text-sm font-bold break-all">{tgPayment.payment_code}</code>
                                     <button
                                         onClick={copyCode}
-                                        style={{ background: "none", border: "none", cursor: "pointer", color: codeCopied ? "#06D6A0" : "rgba(255,255,255,0.4)", flexShrink: 0 }}
+                                        className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-primary transition shrink-0"
                                     >
-                                        {codeCopied ? <Check size={16} /> : <Copy size={16} />}
+                                        {codeCopied ? <Check size={15} className="text-primary" /> : <Copy size={15} />}
                                     </button>
                                 </div>
                             </div>
 
                             <a
-                                href={`https://t.me/ClassPlayEdu_Purchase_Bot?start=pay`}
+                                href="https://t.me/ClassPlayEdu_Purchase_Bot?start=pay"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                style={{
-                                    display: "block", marginTop: 14, padding: "14px",
-                                    background: "#229ED9", borderRadius: 12,
-                                    color: "#fff", fontSize: 14, fontWeight: 700,
-                                    textAlign: "center", textDecoration: "none",
-                                }}
+                                className="block mt-4 py-3 bg-[#229ED9] rounded-xl text-white text-sm font-bold text-center no-underline hover:opacity-90 transition"
                             >
                                 📱 Открыть Telegram бот и отправить чек
                             </a>
@@ -500,8 +370,7 @@ export default function Checkout() {
                     )}
                 </AnimatePresence>
 
-                {/* Footer note */}
-                <p style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 12, marginTop: 24, lineHeight: 1.6 }}>
+                <p className="text-center text-xs text-muted-foreground mt-6 leading-relaxed">
                     {t("checkoutFooter")}
                 </p>
             </div>

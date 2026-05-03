@@ -290,13 +290,29 @@ def bulk_delete_teachers(req: BulkActionRequest, db: Session = Depends(get_db), 
     
     from apps.generator.models import TokenUsage, GenerationLog
     from apps.payments.models import UserSubscription, UserPayment
-    
+    from apps.auth.models import PasswordResetToken, AuditLog
+    from apps.gamification.models import StudentProfile, DailyProgress, XPTransaction, CoinTransaction, SeasonStats, Purchase
+    from apps.library.models import SavedResource, GeneratedBook, UserMaterial
+    from apps.classes.models import ClassGroup
+
     try:
+        db.query(PasswordResetToken).filter(PasswordResetToken.user_id.in_(user_ids)).delete(synchronize_session=False)
         db.query(TokenUsage).filter(TokenUsage.user_id.in_(user_ids)).delete(synchronize_session=False)
         db.query(GenerationLog).filter(GenerationLog.user_id.in_(user_ids)).delete(synchronize_session=False)
         db.query(UserSubscription).filter(UserSubscription.user_id.in_(user_ids)).delete(synchronize_session=False)
         db.query(UserPayment).filter(UserPayment.user_id.in_(user_ids)).delete(synchronize_session=False)
-        
+        db.query(StudentProfile).filter(StudentProfile.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(DailyProgress).filter(DailyProgress.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(XPTransaction).filter(XPTransaction.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(CoinTransaction).filter(CoinTransaction.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(SeasonStats).filter(SeasonStats.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(Purchase).filter(Purchase.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(SavedResource).filter(SavedResource.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(GeneratedBook).filter(GeneratedBook.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(UserMaterial).filter(UserMaterial.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(ClassGroup).filter(ClassGroup.teacher_id.in_(user_ids)).update({"teacher_id": None}, synchronize_session=False)
+        db.query(AuditLog).filter(AuditLog.user_id.in_(user_ids)).update({"user_id": None}, synchronize_session=False)
+
         db.query(User).filter(User.id.in_(user_ids)).delete(synchronize_session=False)
         db.commit()
     except Exception as e:
@@ -377,8 +393,14 @@ def delete_org(org_id: int, db: Session = Depends(get_db), admin: User = Depends
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
 
+    from apps.admin.models import Payment, InviteToken
+    from apps.classes.models import ClassGroup
+
     name = org.name
-    db.query(User).filter(User.organization_id == org_id).update({"organization_id": None})
+    db.query(User).filter(User.organization_id == org_id).update({"organization_id": None}, synchronize_session=False)
+    db.query(ClassGroup).filter(ClassGroup.organization_id == org_id).update({"organization_id": None}, synchronize_session=False)
+    db.query(Payment).filter(Payment.organization_id == org_id).delete(synchronize_session=False)
+    db.query(InviteToken).filter(InviteToken.org_id == org_id).delete(synchronize_session=False)
     db.delete(org)
     db.commit()
     
