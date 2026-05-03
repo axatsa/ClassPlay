@@ -1,5 +1,4 @@
 """Main entry point for the ClassPlay payment Telegram bot."""
-import asyncio
 from telegram import Update
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
