@@ -89,7 +89,7 @@ def update_teacher(user_id: int, req: UpdateTeacherRequest, db: Session = Depend
     if not user:
         raise HTTPException(status_code=404, detail="Teacher not found")
     
-    update_data = req.dict(exclude_unset=True)
+    update_data = req.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         if key == "plan":
             sub = db.query(UserSubscription).filter(UserSubscription.user_id == user_id).first()
@@ -344,7 +344,7 @@ def get_orgs(
 
 @router.post("/organizations", response_model=OrganizationResponse)
 def create_org(req: OrganizationCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    org = Organization(**req.dict())
+    org = Organization(**req.model_dump())
     db.add(org)
     db.commit()
     db.refresh(org)
@@ -360,7 +360,7 @@ def update_org(org_id: int, req: OrganizationUpdate, db: Session = Depends(get_d
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
     
-    for field, value in req.dict(exclude_unset=True).items():
+    for field, value in req.model_dump(exclude_unset=True).items():
         setattr(org, field, value)
     
     db.commit()

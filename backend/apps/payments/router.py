@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from datetime import datetime, timedelta
 from typing import Optional
 import os
@@ -613,7 +614,7 @@ def get_token_stats(
         User.email, User.tokens_used_this_month, User.tokens_limit
     ).order_by(User.tokens_used_this_month.desc()).limit(10).all()
 
-    plan_stats = db.execute(
+    plan_stats = db.execute(text(
         """
         SELECT COALESCE(us.plan, 'free') as plan,
                COUNT(DISTINCT u.id) as users,
@@ -622,7 +623,7 @@ def get_token_stats(
         LEFT JOIN user_subscriptions us ON us.user_id = u.id AND us.expires_at > NOW()
         GROUP BY COALESCE(us.plan, 'free')
         """
-    ).fetchall()
+    )).fetchall()
 
     return {
         "gemini_keys": keys_status,

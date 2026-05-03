@@ -54,7 +54,6 @@ async def gen_storybook(
     check_book_daily_limit(user, db)
 
     result = None
-    provider = None
     custom_key = get_org_gemini_key(user, db)
 
     # ── Попытка 1: Gemini ────────────────────────────────────────────────────
@@ -70,7 +69,6 @@ async def gen_storybook(
                 custom_api_key=custom_key,
             )
             if result:
-                provider = "gemini"
                 logger.info("Storybook generated successfully via Gemini")
         except Exception as e:
             logger.warning(f"Gemini failed: {e}. Falling back to OpenAI...")
@@ -93,7 +91,6 @@ async def gen_storybook(
                 openai_api_key=OPENAI_API_KEY,
             )
             if result:
-                provider = "openai"
                 logger.info("Storybook generated successfully via OpenAI fallback")
         except Exception as e:
             logger.error(f"OpenAI fallback also failed: {e}")
@@ -187,7 +184,7 @@ def get_resources(db: Session = Depends(get_db), user: User = Depends(get_curren
 
 @resources_router.post("/", response_model=SavedResourceResponse)
 def create_resource(res: SavedResourceCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    db_res = SavedResource(**res.dict(), user_id=user.id)
+    db_res = SavedResource(**res.model_dump(), user_id=user.id)
     db.add(db_res)
     db.commit()
     db.refresh(db_res)

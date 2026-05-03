@@ -12,6 +12,7 @@ import { toast } from "sonner";
 const Login = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const lang = i18n.language;
   const { login, user } = useAuth();
 
   useEffect(() => {

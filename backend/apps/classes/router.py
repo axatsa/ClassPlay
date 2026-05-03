@@ -27,7 +27,7 @@ def create_class(
     current_user: User = Depends(get_current_user),
 ):
     db_class = ClassGroup(
-        **cls.dict(),
+        **cls.model_dump(),
         teacher_id=current_user.id,
         organization_id=current_user.organization_id,
     )
@@ -50,7 +50,7 @@ def update_class(
     if db_class.teacher_id != current_user.id and current_user.role != "super_admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to modify this class")
 
-    for key, value in cls.dict().items():
+    for key, value in cls.model_dump().items():
         setattr(db_class, key, value)
 
     db.commit()
