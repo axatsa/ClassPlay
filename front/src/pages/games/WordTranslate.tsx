@@ -17,13 +17,29 @@ type GameMode = "flashcard" | "quiz";
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 function SetupForm({ onStart }: { onStart: (pairs: WordPair[], src: string, tgt: string, mode: GameMode) => void }) {
+  const [inputMode, setInputMode] = useState<"ai" | "custom">("ai");
   const [topic, setTopic] = useState("");
+  const [customText, setCustomText] = useState("");
   const [sourceLang, setSourceLang] = useState("Russian");
   const [targetLang, setTargetLang] = useState("English");
   const [mode, setMode] = useState<GameMode>("flashcard");
   const [loading, setLoading] = useState(false);
 
-  const generate = async () => {
+  const handleStart = async () => {
+    if (inputMode === "custom") {
+      const lines = customText.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (!lines.length) return toast.error("Введите хотя бы одну пару слов");
+      const pairs: WordPair[] = lines.map((l) => {
+        const sep = l.includes("—") ? "—" : l.includes(":") ? ":" : "-";
+        const idx = l.indexOf(sep);
+        if (idx > 0) {
+          return { source: l.slice(0, idx).trim(), target: l.slice(idx + sep.length).trim(), example: "" };
+        }
+        return { source: l.trim(), target: "", example: "" };
+      });
+      onStart(pairs, sourceLang, targetLang, mode);
+      return;
+    }
     if (!topic.trim()) return toast.error("Введите тему");
     if (sourceLang === targetLang) return toast.error("Языки должны быть разными");
     setLoading(true);
@@ -54,38 +70,65 @@ function SetupForm({ onStart }: { onStart: (pairs: WordPair[], src: string, tgt:
       <div className="w-full max-w-md space-y-4 bg-white rounded-2xl shadow-md p-6 border">
         <h2 className="text-xl font-bold text-center font-serif">Перевод слов</h2>
 
-        <div className="space-y-2">
-          <Label>Тема</Label>
-          <Input
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Например: еда, профессии, глаголы движения"
-            onKeyDown={(e) => e.key === "Enter" && generate()}
-          />
+        {/* Mode toggle */}
+        <div className="flex rounded-xl border border-input overflow-hidden">
+          {([["ai", "✨ AI генерация"], ["custom", "✏️ Свои слова"]] as const).map(([m, label]) => (
+            <button key={m} onClick={() => setInputMode(m)}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                inputMode === m ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}>
+              {label}
+            </button>
+          ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Исходный язык</Label>
-            <select
-              value={sourceLang}
-              onChange={(e) => setSourceLang(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {langs.map((l) => <option key={l} value={l}>{LANG_LABELS[l]}</option>)}
-            </select>
+        {inputMode === "ai" ? (
+          <>
+            <div className="space-y-2">
+              <Label>Тема</Label>
+              <Input
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="Например: еда, профессии, глаголы движения"
+                onKeyDown={(e) => e.key === "Enter" && handleStart()}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Исходный язык</Label>
+                <select
+                  value={sourceLang}
+                  onChange={(e) => setSourceLang(e.target.value)}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {langs.map((l) => <option key={l} value={l}>{LANG_LABELS[l]}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Перевод на</Label>
+                <select
+                  value={targetLang}
+                  onChange={(e) => setTargetLang(e.target.value)}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {langs.map((l) => <option key={l} value={l}>{LANG_LABELS[l]}</option>)}
+                </select>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="space-y-2">
+            <Label>Пары слов (по одной на строку)</Label>
+            <p className="text-xs text-muted-foreground">Формат: <code className="bg-muted px-1 rounded">слово — перевод</code></p>
+            <textarea
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              rows={6}
+              placeholder={"кот — cat\nсобака — dog\nдерево — tree"}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Перевод на</Label>
-            <select
-              value={targetLang}
-              onChange={(e) => setTargetLang(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {langs.map((l) => <option key={l} value={l}>{LANG_LABELS[l]}</option>)}
-            </select>
-          </div>
-        </div>
+        )}
 
         <div className="space-y-2">
           <Label>Режим игры</Label>
@@ -103,7 +146,11 @@ function SetupForm({ onStart }: { onStart: (pairs: WordPair[], src: string, tgt:
           ))}
         </div>
 
-        <Button onClick={generate} disabled={loading || !topic.trim()} className="w-full gap-2">
+        <Button
+          onClick={handleStart}
+          disabled={loading || (inputMode === "ai" ? !topic.trim() : !customText.trim())}
+          className="w-full gap-2"
+        >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "✨"}
           {loading ? "Генерирую..." : "Начать"}
         </Button>

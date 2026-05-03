@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, X, Dices, Eraser, Palette, FileText, Printer, Download, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, X, Dices, Eraser, Palette, FileText, Printer, Download, Loader2, Sparkles, Timer, Play, Pause, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -569,8 +569,170 @@ const AssignmentGenerator = () => {
   );
 };
 
+// ──────────────── Timer ────────────────
+const TIMER_PRESETS = [1, 3, 5, 10, 15, 20, 30];
+
+const TimerTool = () => {
+  const [totalSecs, setTotalSecs] = useState(5 * 60);
+  const [remaining, setRemaining] = useState(5 * 60);
+  const [running, setRunning] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [customMin, setCustomMin] = useState("5");
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const ss = String(remaining % 60).padStart(2, "0");
+  const pct = totalSecs > 0 ? remaining / totalSecs : 0;
+
+  const r = 80;
+  const circ = 2 * Math.PI * r;
+  const dashOffset = circ * (1 - pct);
+
+  useEffect(() => {
+    if (running) {
+      intervalRef.current = setInterval(() => {
+        setRemaining((prev) => {
+          if (prev <= 1) {
+            setRunning(false);
+            setFinished(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [running]);
+
+  const applyPreset = (mins: number) => {
+    const secs = mins * 60;
+    setTotalSecs(secs);
+    setRemaining(secs);
+    setRunning(false);
+    setFinished(false);
+    setCustomMin(String(mins));
+  };
+
+  const handleCustom = (val: string) => {
+    setCustomMin(val);
+    const mins = parseInt(val) || 0;
+    if (mins > 0 && mins <= 120) {
+      const secs = mins * 60;
+      setTotalSecs(secs);
+      setRemaining(secs);
+      setRunning(false);
+      setFinished(false);
+    }
+  };
+
+  const toggle = () => {
+    if (finished) return;
+    setRunning((r) => !r);
+  };
+
+  const reset = () => {
+    setRunning(false);
+    setFinished(false);
+    setRemaining(totalSecs);
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-8 items-start justify-center">
+      {/* Controls */}
+      <div className="w-full lg:w-72 bg-card rounded-2xl border border-border p-6 flex flex-col gap-4">
+        <h3 className="font-bold text-foreground font-serif text-lg">Таймер обратного отсчёта</h3>
+
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground font-sans font-semibold uppercase tracking-wider">Пресеты (мин)</p>
+          <div className="flex flex-wrap gap-2">
+            {TIMER_PRESETS.map((m) => (
+              <button
+                key={m}
+                onClick={() => applyPreset(m)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium font-sans border transition-colors ${
+                  totalSecs === m * 60 ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="text-xs text-muted-foreground font-sans font-semibold uppercase tracking-wider">Своё время (мин)</p>
+          <input
+            type="number"
+            min={1}
+            max={120}
+            value={customMin}
+            onChange={(e) => handleCustom(e.target.value)}
+            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="1–120"
+          />
+        </div>
+
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={toggle}
+            disabled={finished || remaining === 0}
+            className={`flex-1 flex items-center justify-center gap-2 h-11 rounded-xl font-sans font-semibold text-sm transition-colors ${
+              finished ? "bg-muted text-muted-foreground cursor-not-allowed" :
+              running ? "bg-yellow-500 hover:bg-yellow-600 text-white" : "bg-primary hover:bg-primary/90 text-primary-foreground"
+            }`}
+          >
+            {running ? <><Pause className="w-4 h-4" /> Пауза</> : <><Play className="w-4 h-4" /> Старт</>}
+          </button>
+          <button
+            onClick={reset}
+            className="w-11 h-11 flex items-center justify-center rounded-xl border border-border hover:bg-muted transition-colors text-muted-foreground"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Clock face */}
+      <div className="flex-1 flex items-center justify-center py-8">
+        <div className="relative flex items-center justify-center">
+          <svg width={220} height={220} className="-rotate-90">
+            <circle cx={110} cy={110} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={10} />
+            <circle
+              cx={110} cy={110} r={r} fill="none"
+              stroke={finished ? "#ef4444" : running ? "#22c55e" : "hsl(var(--primary))"}
+              strokeWidth={10}
+              strokeLinecap="round"
+              strokeDasharray={circ}
+              strokeDashoffset={dashOffset}
+              style={{ transition: running ? "stroke-dashoffset 1s linear" : "none" }}
+            />
+          </svg>
+          <div className="absolute flex flex-col items-center">
+            <span className={`text-5xl font-mono font-bold tabular-nums ${finished ? "text-destructive" : "text-foreground"}`}>
+              {mm}:{ss}
+            </span>
+            {finished && (
+              <motion.span
+                initial={{ scale: 0 }} animate={{ scale: 1 }}
+                className="mt-1 text-sm font-semibold text-destructive font-sans"
+              >
+                Время вышло!
+              </motion.span>
+            )}
+            {running && !finished && (
+              <span className="mt-1 text-xs text-green-600 font-sans font-medium">Идёт...</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ──────────────── Main Tools Page ────────────────
-type Tool = "roulette" | "board" | "generator";
+type Tool = "roulette" | "board" | "generator" | "timer";
 
 const Tools = () => {
   const navigate = useNavigate();
@@ -600,6 +762,7 @@ const Tools = () => {
     { id: "roulette", icon: <Dices className="w-4 h-4" />, label: t("tool_roulette") },
     { id: "board", icon: <Palette className="w-4 h-4" />, label: t("tool_board") },
     { id: "generator", icon: <FileText className="w-4 h-4" />, label: t("tool_generator") },
+    { id: "timer", icon: <Timer className="w-4 h-4" />, label: "Таймер" },
   ];
 
   return (
@@ -684,6 +847,11 @@ const Tools = () => {
           {activeTool === "generator" && (
             <motion.div key="generator" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <AssignmentGenerator />
+            </motion.div>
+          )}
+          {activeTool === "timer" && (
+            <motion.div key="timer" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <TimerTool />
             </motion.div>
           )}
         </AnimatePresence>

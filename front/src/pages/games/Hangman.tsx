@@ -41,11 +41,27 @@ type Phase = "setup" | "playing" | "result";
 
 // ── Setup form ────────────────────────────────────────────────────────────────
 function SetupForm({ onStart }: { onStart: (words: WordEntry[], lang: string) => void }) {
+  const [mode, setMode] = useState<"ai" | "custom">("ai");
   const [topic, setTopic] = useState("");
+  const [customText, setCustomText] = useState("");
   const [language, setLanguage] = useState("Russian");
   const [loading, setLoading] = useState(false);
 
-  const generate = async () => {
+  const handleStart = async () => {
+    if (mode === "custom") {
+      const lines = customText.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (!lines.length) return toast.error("Введите хотя бы одно слово");
+      const words: WordEntry[] = lines.map((l) => {
+        const sep = l.includes("—") ? "—" : l.includes(":") ? ":" : null;
+        if (sep) {
+          const idx = l.indexOf(sep);
+          return { word: l.slice(0, idx).trim(), hint: l.slice(idx + sep.length).trim(), hints: [] };
+        }
+        return { word: l.trim(), hint: "", hints: [] };
+      });
+      onStart(words, language);
+      return;
+    }
     if (!topic.trim()) return toast.error("Введите тему");
     setLoading(true);
     try {
@@ -69,14 +85,16 @@ function SetupForm({ onStart }: { onStart: (words: WordEntry[], lang: string) =>
         <h2 className="text-xl font-bold text-center font-serif">Виселица</h2>
         <p className="text-sm text-muted-foreground text-center">Угадайте слово по подсказке</p>
 
-        <div className="space-y-2">
-          <Label>Тема</Label>
-          <Input
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Например: животные, физика, история"
-            onKeyDown={(e) => e.key === "Enter" && generate()}
-          />
+        {/* Mode toggle */}
+        <div className="flex rounded-xl border border-input overflow-hidden">
+          {([["ai", "✨ AI генерация"], ["custom", "✏️ Свои слова"]] as const).map(([m, label]) => (
+            <button key={m} onClick={() => setMode(m)}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                mode === m ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}>
+              {label}
+            </button>
+          ))}
         </div>
 
         <div className="space-y-2">
@@ -96,7 +114,35 @@ function SetupForm({ onStart }: { onStart: (words: WordEntry[], lang: string) =>
           </div>
         </div>
 
-        <Button onClick={generate} disabled={loading || !topic.trim()} className="w-full gap-2">
+        {mode === "ai" ? (
+          <div className="space-y-2">
+            <Label>Тема</Label>
+            <Input
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Например: животные, физика, история"
+              onKeyDown={(e) => e.key === "Enter" && handleStart()}
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label>Слова (по одному на строку)</Label>
+            <p className="text-xs text-muted-foreground">Формат: <code className="bg-muted px-1 rounded">слово</code> или <code className="bg-muted px-1 rounded">слово — подсказка</code></p>
+            <textarea
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              rows={6}
+              placeholder={"медведь — крупное лесное животное\nлиса\nволк — хищник"}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            />
+          </div>
+        )}
+
+        <Button
+          onClick={handleStart}
+          disabled={loading || (mode === "ai" ? !topic.trim() : !customText.trim())}
+          className="w-full gap-2"
+        >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "✨"}
           {loading ? "Генерирую..." : "Начать игру"}
         </Button>

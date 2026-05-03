@@ -32,6 +32,7 @@ import { MathPreview } from "@/components/generator/preview/MathPreview";
 import { QuizPreview } from "@/components/generator/preview/QuizPreview";
 import { AssignmentPreview } from "@/components/generator/preview/AssignmentPreview";
 import { CrosswordPreview } from "@/components/generator/preview/CrosswordPreview";
+import { ResourceQRCode } from "@/components/common/ResourceQRCode";
 
 
 
@@ -115,6 +116,7 @@ const Generator = () => {
     setRawCrosswordWords([]);
     setQuizData([]);
     setAssignmentData(null);
+    setSavedResourceId(null);
 
     try {
       const langLabel = targetLang;
@@ -247,6 +249,7 @@ const Generator = () => {
   const [saveTitle, setSaveTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [savedResourceId, setSavedResourceId] = useState<number | null>(null);
 
   // Template State
   const [templates, setTemplates] = useState<any[]>([]);
@@ -376,12 +379,13 @@ const Generator = () => {
       else if (genType === "quiz") content = JSON.stringify({ questions: quizData });
       else if (genType === "assignment") content = JSON.stringify(assignmentData);
 
-      await api.post("/resources/", {
+      const res = await api.post("/resources/", {
         title: saveTitle,
         type: genType,
         content: content
       });
-      toast.success("Resource saved to Profile!");
+      setSavedResourceId(res.data.id ?? null);
+      toast.success("Ресурс сохранён в профиле!");
       setShowSaveDialog(false);
       setSaveTitle("");
     } catch (e) {
@@ -791,7 +795,27 @@ const Generator = () => {
                 <Button variant="outline" size="sm" onClick={handleDownloadDOCX} className="gap-2 bg-white/80 backdrop-blur">
                   <Download className="w-4 h-4" /> Download DOCX
                 </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowSaveDialog(true)} className="gap-2 bg-white/80 backdrop-blur">
+                  <Save className="w-4 h-4" /> Сохранить
+                </Button>
               </div>
+
+              {/* QR code panel — appears after saving */}
+              {savedResourceId && (
+                <div className="absolute top-6 left-6 print:hidden z-10">
+                  <ResourceQRCode
+                    logId={savedResourceId}
+                    topic={genType === "math" ? mathTopic : genType === "quiz" ? quizTopic : genType === "assignment" ? assignTopic : crosswordTopic}
+                    generatorType={genType}
+                    content={
+                      genType === "math" ? generatedProblems :
+                      genType === "quiz" ? quizData :
+                      genType === "assignment" ? assignmentData :
+                      crosswordData
+                    }
+                  />
+                </div>
+              )}
 
               {genType === "quiz" && quizData.length > 0 && (
                 <QuizPreview

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import GameShell from "./GameShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RotateCcw, LogOut } from "lucide-react";
+import { RotateCcw, LogOut, Printer } from "lucide-react";
 import { AIGeneratingOverlay } from "@/components/feedback/AIGeneratingOverlay";
 import { useClass } from "@/context/ClassContext";
 import { useTranslation } from "react-i18next";
@@ -73,6 +73,28 @@ const WordSearch = () => {
   const [selecting, setSelecting] = useState<[number, number][]>([]);
   const [highlighted, setHighlighted] = useState<Map<string, string>>(new Map());
   const dragging = useRef(false);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = () => {
+    const el = printRef.current;
+    if (!el) return;
+    const win = window.open("", "", "width=800,height=900");
+    if (!win) return;
+    win.document.write(`<html><head><title>Поиск слов — ${currentTopic}</title>
+      <style>
+        body { font-family: monospace; padding: 24px; }
+        h2 { text-align: center; margin-bottom: 4px; }
+        .sub { text-align: center; color: #666; font-size: 12px; margin-bottom: 20px; }
+        .grid { display: inline-grid; grid-template-columns: repeat(${GRID_COLS}, 32px); gap: 4px; margin-bottom: 20px; }
+        .cell { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid #ccc; font-weight: bold; font-size: 14px; }
+        .words { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .word { border: 1px solid #999; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; }
+      </style></head><body>
+      ${el.innerHTML}
+      <script>window.onload=function(){window.print();window.close();}</script>
+      </body></html>`);
+    win.document.close();
+  };
 
   const HIGHLIGHT_COLORS = ["bg-blue-400/60", "bg-green-400/60", "bg-yellow-400/60", "bg-pink-400/60", "bg-purple-400/60", "bg-orange-400/60"];
   const foundColorMap = useRef<Map<string, string>>(new Map());
@@ -299,11 +321,16 @@ const WordSearch = () => {
               </div>
 
               {/* Actions */}
-              <div className="border-t border-gray-100 pt-2 flex gap-2">
+              <div className="border-t border-gray-100 pt-2 flex gap-2 flex-wrap">
                 <button onClick={startGame}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-sans font-medium transition-colors">
                   <RotateCcw className="w-3.5 h-3.5" />
                   {t('reset')}
+                </button>
+                <button onClick={handlePrint}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-sans font-medium transition-colors">
+                  <Printer className="w-3.5 h-3.5" />
+                  Печать
                 </button>
                 <button onClick={() => setStatus("setup")}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 text-xs font-sans font-medium transition-colors">
@@ -312,6 +339,23 @@ const WordSearch = () => {
                 </button>
               </div>
             </div>
+          {/* Hidden printable content */}
+          <div ref={printRef} style={{ display: "none" }}>
+            <h2>{currentTopic} — Поиск слов</h2>
+            <div className="sub">{difficulty}</div>
+            <div className="grid">
+              {grid.map((row, r) =>
+                row.map((letter, c) => (
+                  <div key={`${r}-${c}`} className="cell">{letter}</div>
+                ))
+              )}
+            </div>
+            <div className="words">
+              {placedWords.map(({ word }) => (
+                <div key={word} className="word">{word}</div>
+              ))}
+            </div>
+          </div>
           </motion.div>
         )}
       </AnimatePresence>

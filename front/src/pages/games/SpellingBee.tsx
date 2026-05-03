@@ -76,12 +76,28 @@ function saveVoicePreference(id: VoicePresetId) {
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 function SetupForm({ onStart }: { onStart: (words: SpellingWord[], lang: string) => void }) {
+  const [mode, setMode] = useState<"ai" | "custom">("ai");
   const [topic, setTopic] = useState("");
+  const [customText, setCustomText] = useState("");
   const [language, setLanguage] = useState("Russian");
   const [difficulty, setDifficulty] = useState("medium");
   const [loading, setLoading] = useState(false);
 
-  const generate = async () => {
+  const handleStart = async () => {
+    if (mode === "custom") {
+      const lines = customText.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (!lines.length) return toast.error("Введите хотя бы одно слово");
+      const words: SpellingWord[] = lines.map((l) => {
+        const sep = l.includes("—") ? "—" : l.includes(":") ? ":" : null;
+        if (sep) {
+          const idx = l.indexOf(sep);
+          return { word: l.slice(0, idx).trim(), definition: l.slice(idx + sep.length).trim(), example: "" };
+        }
+        return { word: l.trim(), definition: "", example: "" };
+      });
+      onStart(words, language);
+      return;
+    }
     if (!topic.trim()) return toast.error("Введите тему");
     setLoading(true);
     try {
@@ -106,14 +122,16 @@ function SetupForm({ onStart }: { onStart: (words: SpellingWord[], lang: string)
         <h2 className="text-xl font-bold text-center font-serif">Орфография</h2>
         <p className="text-sm text-muted-foreground text-center">Прослушай слово — напиши правильно</p>
 
-        <div className="space-y-2">
-          <Label>Тема</Label>
-          <Input
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Например: природа, технологии, спорт"
-            onKeyDown={(e) => e.key === "Enter" && generate()}
-          />
+        {/* Mode toggle */}
+        <div className="flex rounded-xl border border-input overflow-hidden">
+          {([["ai", "✨ AI генерация"], ["custom", "✏️ Свои слова"]] as const).map(([m, label]) => (
+            <button key={m} onClick={() => setMode(m)}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                mode === m ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}>
+              {label}
+            </button>
+          ))}
         </div>
 
         <div className="space-y-2">
@@ -130,21 +148,50 @@ function SetupForm({ onStart }: { onStart: (words: SpellingWord[], lang: string)
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Сложность</Label>
-          <div className="flex gap-2">
-            {[["easy", "Лёгкий"], ["medium", "Средний"], ["hard", "Сложный"]].map(([d, label]) => (
-              <button key={d} onClick={() => setDifficulty(d)}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
-                  difficulty === d ? "bg-primary text-primary-foreground border-primary" : "border-input hover:border-primary"
-                }`}>
-                {label}
-              </button>
-            ))}
+        {mode === "ai" ? (
+          <>
+            <div className="space-y-2">
+              <Label>Тема</Label>
+              <Input
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="Например: природа, технологии, спорт"
+                onKeyDown={(e) => e.key === "Enter" && handleStart()}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Сложность</Label>
+              <div className="flex gap-2">
+                {[["easy", "Лёгкий"], ["medium", "Средний"], ["hard", "Сложный"]].map(([d, label]) => (
+                  <button key={d} onClick={() => setDifficulty(d)}
+                    className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                      difficulty === d ? "bg-primary text-primary-foreground border-primary" : "border-input hover:border-primary"
+                    }`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="space-y-2">
+            <Label>Слова (по одному на строку)</Label>
+            <p className="text-xs text-muted-foreground">Формат: <code className="bg-muted px-1 rounded">слово</code> или <code className="bg-muted px-1 rounded">слово — подсказка</code></p>
+            <textarea
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              rows={6}
+              placeholder={"автомобиль\nкомпьютер — электронное устройство\nтелефон"}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            />
           </div>
-        </div>
+        )}
 
-        <Button onClick={generate} disabled={loading || !topic.trim()} className="w-full gap-2">
+        <Button
+          onClick={handleStart}
+          disabled={loading || (mode === "ai" ? !topic.trim() : !customText.trim())}
+          className="w-full gap-2"
+        >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "✨"}
           {loading ? "Генерирую..." : "Начать"}
         </Button>
