@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Header, Request
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
 import os
+import uuid
+import string
+import random
 
 from database import get_db
 from apps.auth.dependencies import get_current_user
@@ -13,6 +16,10 @@ from apps.payments.schemas import (
     PaymentStatusResponse,
     PaymeWebhookRequest,
     ClickPrepareRequest, ClickCompleteRequest, ClickBaseResponse,
+    TelegramPaymentInitiateRequest, TelegramPaymentInitiateResponse,
+    TelegramPaymentVerifyRequest,
+    TelegramPaymentAdminApproveRequest, TelegramPaymentAdminRejectRequest,
+    TelegramPaymentStatusResponse,
 )
 from apps.payments import click_service, payme_service
 
@@ -26,6 +33,16 @@ PAYME_SECRET_KEY = os.getenv("PAYME_SECRET_KEY", "")
 CLICK_SERVICE_ID = os.getenv("CLICK_SERVICE_ID", "")
 CLICK_MERCHANT_ID = os.getenv("CLICK_MERCHANT_ID", "")
 CLICK_SECRET_KEY = os.getenv("CLICK_SECRET_KEY", "")
+
+PAYMENT_CARD_NUMBER = os.getenv("PAYMENT_CARD_NUMBER", "4916 9903 4677 8100")
+PAYMENT_CARD_HOLDER = os.getenv("PAYMENT_HOLDER", "Salamov A.")
+UPLOADS_DIR = os.getenv("UPLOADS_DIR", "uploads/payments")
+
+# Plan prices in UZS for Telegram payments
+PLAN_PRICES_UZS: dict[str, int] = {
+    "pro": 190_000,
+    "school": 620_000,
+}
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
@@ -203,6 +220,194 @@ def get_payment_status(
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
     return payment
+
+
+# ── Telegram payments ─────────────────────────────────────────
+
+
+def _generate_payment_code(plan: str, user_id: int) -> str:
+    suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    return f"PLAN_{plan.upper()}_USER{user_id}_{suffix}"
+
+
+@router.post("/telegram/initiate", response_model=TelegramPaymentInitiateResponse)
+def telegram_initiate_payment(
+    body: TelegramPaymentInitiateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if body.plan not in PLAN_PRICES_UZS:
+        raise HTTPException(status_code=400, detail=f"Unknown plan: {body.plan}")
+
+    amount_uzs = PLAN_PRICES_UZS[body.plan]
+    amount_tiyin = amount_uzs * 100
+    payment_code = _generate_payment_code(body.plan, current_user.id)
+    expires_at = datetime.utcnow() + timedelta(hours=24)
+
+    payment = UserPayment(
+        user_id=current_user.id,
+        plan=body.plan,
+        provider="telegram",
+        amount_tiyin=amount_tiyin,
+        status="pending_admin_verification",
+        payment_code=payment_code,
+        code_expires_at=expires_at,
+    )
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
+
+    return TelegramPaymentInitiateResponse(
+        payment_id=payment.id,
+        payment_code=payment_code,
+        amount_uzs=amount_uzs,
+        card_number=PAYMENT_CARD_NUMBER,
+        card_holder=PAYMENT_CARD_HOLDER,
+        expires_at=expires_at.strftime("%d.%m.%Y %H:%M UTC"),
+    )
+
+
+@router.post("/telegram/verify")
+async def telegram_verify_payment(
+    body: TelegramPaymentVerifyRequest,
+    db: Session = Depends(get_db),
+):
+    from apps.payments.telegram_service import notify_admin_group_new_payment
+
+    payment = db.query(UserPayment).filter(UserPayment.payment_code == body.payment_code).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.status != "pending_admin_verification":
+        raise HTTPException(status_code=400, detail="Payment already processed")
+    if payment.code_expires_at and payment.code_expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Payment code expired")
+
+    payment.screenshot_url = body.screenshot_url
+    payment.telegram_user_id = body.telegram_user_id
+    payment.telegram_username = body.telegram_username
+    db.commit()
+    db.refresh(payment)
+
+    user = db.query(User).filter(User.id == payment.user_id).first()
+    await notify_admin_group_new_payment({
+        "payment_id": payment.id,
+        "user_email": user.email if user else "—",
+        "user_phone": user.phone if user else "—",
+        "telegram_username": body.telegram_username,
+        "plan": payment.plan,
+        "amount_uzs": payment.amount_tiyin // 100,
+        "payment_code": payment.payment_code,
+        "screenshot_url": body.screenshot_url,
+        "expires_at": payment.code_expires_at.strftime("%d.%m.%Y %H:%M UTC") if payment.code_expires_at else "—",
+    })
+
+    return {"status": "pending_admin_verification", "message": "Скриншот получен, ожидаем подтверждения администратора"}
+
+
+@router.post("/telegram/upload-screenshot")
+async def telegram_upload_screenshot(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a payment screenshot and return its URL."""
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
+    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    filename = f"{uuid.uuid4()}{ext}"
+    file_path = os.path.join(UPLOADS_DIR, filename)
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+    backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
+    return {"screenshot_url": f"{backend_url}/{file_path}"}
+
+
+@router.post("/telegram/admin-approve")
+async def telegram_admin_approve(
+    body: TelegramPaymentAdminApproveRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Admins only")
+
+    from apps.payments.telegram_service import notify_user_payment_approved
+
+    payment = db.query(UserPayment).filter(UserPayment.id == body.payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.status == "completed":
+        raise HTTPException(status_code=400, detail="Already approved")
+
+    payment.status = "completed"
+    payment.completed_at = datetime.utcnow()
+    payment.verified_at = datetime.utcnow()
+    db.commit()
+
+    _activate_subscription(db, payment.user_id, payment.plan, payment.id)
+
+    if payment.telegram_user_id:
+        await notify_user_payment_approved(payment.telegram_user_id, payment.plan)
+
+    return {"success": True, "message": f"Платеж #{body.payment_id} подтвержден"}
+
+
+@router.post("/telegram/admin-reject")
+async def telegram_admin_reject(
+    body: TelegramPaymentAdminRejectRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Admins only")
+
+    from apps.payments.telegram_service import notify_user_payment_rejected
+
+    payment = db.query(UserPayment).filter(UserPayment.id == body.payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.status in ("completed", "rejected"):
+        raise HTTPException(status_code=400, detail="Payment already finalized")
+
+    payment.status = "rejected"
+    payment.admin_notes = body.reason
+    db.commit()
+
+    if payment.telegram_user_id:
+        await notify_user_payment_rejected(payment.telegram_user_id, body.reason)
+
+    return {"success": True, "message": f"Платеж #{body.payment_id} отклонен"}
+
+
+@router.get("/telegram/pending")
+def telegram_pending_payments(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Admins only")
+
+    payments = db.query(UserPayment).filter(
+        UserPayment.provider == "telegram",
+        UserPayment.status == "pending_admin_verification",
+    ).order_by(UserPayment.created_at.desc()).all()
+
+    result = []
+    for p in payments:
+        user = db.query(User).filter(User.id == p.user_id).first()
+        result.append({
+            "payment_id": p.id,
+            "user_email": user.email if user else "—",
+            "user_phone": user.phone if user else "—",
+            "telegram_username": p.telegram_username,
+            "plan": p.plan,
+            "amount_uzs": p.amount_tiyin // 100,
+            "payment_code": p.payment_code,
+            "screenshot_url": p.screenshot_url,
+            "created_at": p.created_at.isoformat(),
+            "expires_at": p.code_expires_at.isoformat() if p.code_expires_at else None,
+        })
+    return result
 
 
 # ── Payme Merchant API (JSON-RPC) ──────────────────────────────

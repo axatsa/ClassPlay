@@ -57,11 +57,34 @@ echo "✅ База данных готова (${WAITED}с)"
 echo '⚙️ Синхронизация схемы базы данных...'
 docker exec -t online_games_backend_prod python scripts/fix_db.py
 
-# 8. Запуск сидов
+# 8. Миграция Telegram-платежей (новые колонки)
+echo '💳 Применяем миграцию Telegram-платежей...'
+PG_USER=$(grep ^POSTGRES_USER .env | cut -d= -f2)
+PG_DB=$(grep ^POSTGRES_DB .env | cut -d= -f2)
+docker cp migrations/telegram_payments.sql online_games_db_prod:/tmp/telegram_payments.sql
+docker exec -t online_games_db_prod psql -U "$PG_USER" -d "$PG_DB" -f /tmp/telegram_payments.sql && \
+    echo "✅ Миграция telegram_payments применена" || \
+    echo "⚠️  Миграция уже была применена или не нужна — продолжаем"
+
+# 9. Запуск сидов
 echo '🌱 Наполнение базы данных (Seeding)...'
 docker exec -t online_games_backend_prod python scripts/seed_users.py
 docker exec -t online_games_backend_prod python scripts/seed.py
 docker exec -t online_games_backend_prod python scripts/seed_gamification.py
 
+# 10. Проверка Telegram бота
+echo '🤖 Проверяем статус Telegram бота...'
+if docker ps | grep -q online_games_telegram_bot; then
+    echo "✅ Telegram бот запущен"
+else
+    echo "⚠️  Telegram бот не запустился, проверь: docker logs online_games_telegram_bot"
+fi
+
+echo ''
 echo '✅ Деплой успешно завершен!'
 echo '🌐 Проект доступен по адресу: https://classplay.uz!'
+echo '🤖 Telegram бот: @ClassPlayEdu_Purchase_Bot'
+echo ''
+echo 'Полезные команды:'
+echo '  docker logs online_games_telegram_bot -f   # логи бота'
+echo '  docker logs online_games_backend_prod -f   # логи backend'

@@ -13,16 +13,25 @@ class UserPayment(Base):
 
     # Plan: "pro" | "school"
     plan = Column(String, nullable=False)
-    # Provider: "payme" | "click"
+    # Provider: "payme" | "click" | "telegram"
     provider = Column(String, nullable=False)
     # Amount in tiyin (1 UZS = 100 tiyin)
     amount_tiyin = Column(BigInteger, nullable=False)
 
-    # Status: initialized | pending | completed | failed | cancelled
+    # Status: initialized | pending | completed | failed | cancelled | pending_admin_verification | rejected
     status = Column(String, default="initialized", nullable=False)
 
     # Provider transaction IDs
     provider_transaction_id = Column(String, nullable=True, index=True)
+
+    # Telegram-specific fields
+    payment_code = Column(String, nullable=True, unique=True, index=True)  # PLAN_PRO_USER123_ABC456
+    screenshot_url = Column(String, nullable=True)
+    telegram_user_id = Column(Integer, nullable=True, index=True)
+    telegram_username = Column(String, nullable=True)
+    admin_notes = Column(String, nullable=True)
+    code_expires_at = Column(DateTime, nullable=True)  # 24h from creation
+    verified_at = Column(DateTime, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
