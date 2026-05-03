@@ -192,11 +192,17 @@ function SpellingGame({ words, lang, onBack }: { words: SpellingWord[]; lang: st
     speak(current.word, lang, id);
   };
 
+  const normalize = (s: string) =>
+    s.trim().toLowerCase().replace(/ё/g, "е");
+
+  const checkAnswer = (input: string, word: string) =>
+    normalize(input) === normalize(word);
+
   const check = () => {
     if (!input.trim()) return;
     setChecking(true);
-    const isCorrect = input.trim().toLowerCase() === current.word.toLowerCase();
-    if (isCorrect) setCorrect((c) => c + 1);
+    const correct = checkAnswer(input, current.word);
+    if (correct) setCorrect((c) => c + 1);
     else setWrong((w) => w + 1);
     setRevealed(true);
     setTimeout(() => setChecking(false), 0);
@@ -209,7 +215,7 @@ function SpellingGame({ words, lang, onBack }: { words: SpellingWord[]; lang: st
     setRevealed(false);
   };
 
-  const isCorrect = input.trim().toLowerCase() === current.word.toLowerCase();
+  const isCorrect = checkAnswer(input, current.word);
 
   return (
     <div className="flex flex-col items-center h-full overflow-auto py-6 px-4 gap-5">

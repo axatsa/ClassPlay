@@ -1,8 +1,8 @@
 import axios from "axios";
 
-// Create axios instance with base URL
 const api = axios.create({
     baseURL: "/api/v1",
+    timeout: 30000,
     headers: {
         "Content-Type": "application/json",
     },
@@ -51,6 +51,15 @@ api.interceptors.response.use(
             if (retryAfter) {
                 window.dispatchEvent(new CustomEvent("api:overloaded", { detail: { retryAfter } }));
             }
+        }
+        if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+            import("sonner").then(({ toast }) => {
+                toast.error("Сервер не отвечает. Проверьте соединение и попробуйте снова.", { duration: 6000 });
+            });
+        } else if (!error.response) {
+            import("sonner").then(({ toast }) => {
+                toast.error("Нет соединения с сервером. Проверьте интернет.", { duration: 6000 });
+            });
         }
         return Promise.reject(error);
     }

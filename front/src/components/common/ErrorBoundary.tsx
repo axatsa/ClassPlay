@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -39,15 +39,15 @@ class ErrorBoundary extends Component<Props, State> {
 
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold text-foreground">
-              {this.props.fallbackTitle || "Something went wrong"}
+              {this.props.fallbackTitle || "Что-то пошло не так"}
             </h2>
             <p className="text-sm text-muted-foreground max-w-sm">
-              An unexpected error occurred. Try refreshing the page or contact support if the problem persists.
+              Произошла непредвиденная ошибка. Попробуйте обновить страницу или вернитесь на главную.
             </p>
             {this.state.error && (
               <details className="mt-2 text-left">
                 <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                  Technical details
+                  Технические детали
                 </summary>
                 <pre className="mt-2 p-3 bg-muted rounded-lg text-xs text-muted-foreground overflow-auto max-h-32 whitespace-pre-wrap">
                   {this.state.error.message}
@@ -56,13 +56,22 @@ class ErrorBoundary extends Component<Props, State> {
             )}
           </div>
 
-          <button
-            onClick={this.handleReset}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Try Again
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={this.handleReset}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Попробовать снова
+            </button>
+            <a
+              href="/teacher"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card text-foreground text-sm font-medium hover:bg-muted transition-colors"
+            >
+              <Home className="w-4 h-4" />
+              На главную
+            </a>
+          </div>
         </div>
       );
     }
