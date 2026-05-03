@@ -9,6 +9,7 @@ from handlers.start import handle_start
 from handlers.payment import handle_pay_command, handle_plan_selection, handle_screenshot
 from handlers.status import handle_status
 from handlers.admin import handle_admin_callback
+from handlers.auth import handle_login, handle_logout
 
 
 async def handle_menu_callback(update: Update, context):
@@ -46,6 +47,8 @@ def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", handle_start))
+    app.add_handler(CommandHandler("login", handle_login))
+    app.add_handler(CommandHandler("logout", handle_logout))
     app.add_handler(CommandHandler("pay", handle_pay_command))
     app.add_handler(CommandHandler("status", handle_status))
 
