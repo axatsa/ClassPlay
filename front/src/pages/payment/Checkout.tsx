@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Loader2, LogIn, Rocket } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, CheckCircle2, Loader2, LogIn, Rocket, Copy, Check } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { paymentService, Plan, PaymentMethod } from "@/api/paymentService";
+import { paymentService, Plan, PaymentMethod, TelegramPaymentInfo } from "@/api/paymentService";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { useTranslation } from "react-i18next";
@@ -62,7 +62,9 @@ export default function Checkout() {
     const planId = params.get("plan") || "pro";
     const plan = PLANS[planId] ?? PLANS.pro;
 
-    const [loading, setLoading] = useState<PaymentMethod | null>(null);
+    const [loading, setLoading] = useState<PaymentMethod | "telegram" | null>(null);
+    const [tgPayment, setTgPayment] = useState<TelegramPaymentInfo | null>(null);
+    const [codeCopied, setCodeCopied] = useState(false);
     const [authMode, setAuthMode] = useState<"login" | "register">("register");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -123,6 +125,26 @@ export default function Checkout() {
             toast.error(err.response?.data?.detail || t("checkoutPaymentError"));
             setLoading(null);
         }
+    };
+
+    const handleTelegramPay = async () => {
+        if (!user) { toast.error("Сначала войди в аккаунт"); return; }
+        setLoading("telegram");
+        try {
+            const data = await paymentService.initiateTelegram(plan.planKey);
+            setTgPayment(data);
+        } catch {
+            toast.error("Ошибка при создании платежа. Попробуй снова.");
+        } finally {
+            setLoading(null);
+        }
+    };
+
+    const copyCode = () => {
+        if (!tgPayment) return;
+        navigator.clipboard.writeText(tgPayment.payment_code);
+        setCodeCopied(true);
+        setTimeout(() => setCodeCopied(false), 2000);
     };
 
     if (plan.free && user) {
@@ -360,6 +382,123 @@ export default function Checkout() {
                         </motion.button>
                     ))}
                 </div>
+
+                {/* Telegram payment option */}
+                <motion.button
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={loading !== null}
+                    onClick={handleTelegramPay}
+                    style={{
+                        width: "100%", padding: "18px 24px", marginTop: 12,
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(41,182,246,0.3)",
+                        borderRadius: 16, cursor: loading !== null ? "not-allowed" : "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        opacity: loading !== null && loading !== "telegram" ? 0.4 : 1,
+                    }}
+                >
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        <div style={{
+                            width: 44, height: 44, borderRadius: 12,
+                            background: "#229ED9",
+                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                        }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.93 13.48 5.007 12.6c-.657-.203-.671-.657.136-.975l11.157-4.303c.547-.196 1.026.12.594.899z"/>
+                            </svg>
+                        </div>
+                        <div style={{ textAlign: "left" }}>
+                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Telegram</p>
+                            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>
+                                Перевод на карту — 0% комиссии
+                            </p>
+                        </div>
+                    </div>
+                    {loading === "telegram"
+                        ? <Loader2 size={20} color="rgba(255,255,255,0.5)" style={{ animation: "spin 1s linear infinite" }} />
+                        : <div style={{ padding: "8px 18px", borderRadius: 10, background: "#229ED9", color: "#fff", fontSize: 13, fontWeight: 700 }}>
+                            Оплатить
+                        </div>
+                    }
+                </motion.button>
+
+                {/* Telegram payment instructions */}
+                <AnimatePresence>
+                    {tgPayment && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 12, height: 0 }}
+                            animate={{ opacity: 1, y: 0, height: "auto" }}
+                            exit={{ opacity: 0, y: -8, height: 0 }}
+                            style={{
+                                marginTop: 16, background: "rgba(34,158,217,0.08)",
+                                border: "1px solid rgba(34,158,217,0.3)",
+                                borderRadius: 16, padding: 20, overflow: "hidden",
+                            }}
+                        >
+                            <p style={{ color: "#229ED9", fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
+                                📋 Инструкция по оплате
+                            </p>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,0.6)" }}>
+                                    <span>💵 Сумма</span>
+                                    <span style={{ color: "#fff", fontWeight: 700 }}>
+                                        {tgPayment.amount_uzs.toLocaleString()} сўм
+                                    </span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,0.6)" }}>
+                                    <span>🏦 Карта</span>
+                                    <span style={{ color: "#fff", fontWeight: 700 }}>{tgPayment.card_number}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,0.6)" }}>
+                                    <span>👤 Получатель</span>
+                                    <span style={{ color: "#fff" }}>{tgPayment.card_holder}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,0.6)" }}>
+                                    <span>⏰ До</span>
+                                    <span style={{ color: "#fff" }}>{tgPayment.expires_at}</span>
+                                </div>
+                            </div>
+
+                            <div style={{
+                                marginTop: 16, background: "rgba(255,255,255,0.06)",
+                                borderRadius: 12, padding: "12px 16px",
+                            }}>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 6 }}>
+                                    ⚠️ Обязательно напиши в комментарии к переводу:
+                                </p>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                                    <code style={{ color: "#06D6A0", fontSize: 13, fontWeight: 700, wordBreak: "break-all" }}>
+                                        {tgPayment.payment_code}
+                                    </code>
+                                    <button
+                                        onClick={copyCode}
+                                        style={{ background: "none", border: "none", cursor: "pointer", color: codeCopied ? "#06D6A0" : "rgba(255,255,255,0.4)", flexShrink: 0 }}
+                                    >
+                                        {codeCopied ? <Check size={16} /> : <Copy size={16} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <a
+                                href={`https://t.me/ClassPlayEdu_Purchase_Bot?start=pay`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: "block", marginTop: 14, padding: "14px",
+                                    background: "#229ED9", borderRadius: 12,
+                                    color: "#fff", fontSize: 14, fontWeight: 700,
+                                    textAlign: "center", textDecoration: "none",
+                                }}
+                            >
+                                📱 Открыть Telegram бот и отправить чек
+                            </a>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Footer note */}
                 <p style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 12, marginTop: 24, lineHeight: 1.6 }}>
